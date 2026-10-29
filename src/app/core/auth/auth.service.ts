@@ -1,0 +1,135 @@
+import { Injectable, inject, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
+import { Observable, tap, catchError, throwError, of } from 'rxjs';
+import { ApiService } from '../services/api.service';
+import { TokenService } from './token.service';
+import { User, UserRole } from '../models/user.model';
+import { AuthResponse, LoginCredentials, SetInitialPasswordRequest } from '../models/auth-response.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private readonly api = inject(ApiService);
+  private readonly tokenService = inject(TokenService);
+  private readonly router = inject(Router);
+
+  private readonly USER_STORAGE_KEY = 'sch_user_profile';
+
+  // Signals for state management
+  readonly currentUser = signal<User | null>(this.getStoredUser());
+  readonly isLoading = signal<boolean>(false);
+  readonly authError = signal<string | null>(null);
+
+  // Computed signals
+  readonly isAuthenticated = computed(() => !!this.currentUser() && this.tokenService.hasTokenSignal());
+  readonly userRole = computed<UserRole | null>(() => this.currentUser()?.role ?? null);
+  readonly mustChangePassword = computed(() => this.currentUser()?.mustChangePassword ?? false);
+  readonly userName = computed(() => this.currentUser()?.fullName ?? 'المستخدم');
+
+  constructor() {
+    // If token exists but no user in memory, try parsing from token payload or storage
+    if (this.tokenService.hasValidToken() && !this.currentUser()) {
+      const stored = this.getStoredUser();
+      if (stored) {
+        this.currentUser.set(stored);
+      }
+    }
+  }
+
+  login(credentials: LoginCredentials): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.authError.set(null);
+
+    return this.api.post<AuthResponse>('auth/login', credentials).pipe(
+      tap((res) => {
+        this.isLoading.set(false);
+        this.tokenService.setTokens(res.accessToken, res.refreshToken);
+        this.currentUser.set(res.user);
+        this.storeUser(res.user);
+        
+        if (res.user.mustChangePassword) {
+          this.router.navigate(['/auth/set-initial-password']);
+        } else {
+          this.navigateToRoleDashboard(res.user.role);
+        }
+      }),
+      catchError((err) => {
+        this.isLoading.set(false);
+        const msg = err?.error?.message || 'فشل تسجيل الدخول. يرجى التحقق من الرقم القومي وكلمة المرور.';
+        this.authError.set(msg);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  setInitialPassword(req: SetInitialPasswordRequest): Observable<{ success: boolean; message: string }> {
+    this.isLoading.set(true);
+    return this.api.post<{ success: boolean; message: string }>('auth/set-initial-password', req).pipe(
+      tap(() => {
+        this.isLoading.set(false);
+        // Update user mustChangePassword status locally
+        const current = this.currentUser();
+        if (current) {
+          const updated: User = { ...current, mustChangePassword: false };
+          this.currentUser.set(updated);
+          this.storeUser(updated);
+          this.navigateToRoleDashboard(updated.role);
+        }
+      }),
+      catchError((err) => {
+        this.isLoading.set(false);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  logout(): void {
+    this.tokenService.clearTokens();
+    localStorage.removeItem(this.USER_STORAGE_KEY);
+    this.currentUser.set(null);
+    this.router.navigate(['/auth/login']);
+  }
+
+  hasRole(roles: UserRole | UserRole[]): boolean {
+    const current = this.currentUser();
+    if (!current) return false;
+    if (Array.isArray(roles)) {
+      return roles.includes(current.role);
+    }
+    return current.role === roles;
+  }
+
+  navigateToRoleDashboard(role: UserRole): void {
+    switch (role) {
+      case 'ADMIN':
+      case 'SUPER_ADMIN':
+        this.router.navigate(['/admin/dashboard']);
+        break;
+      case 'TEACHER':
+        this.router.navigate(['/teacher/dashboard']);
+        break;
+      case 'STUDENT':
+      case 'PARENT':
+        this.router.navigate(['/student/dashboard']);
+        break;
+      default:
+        this.router.navigate(['/dashboard']);
+        break;
+    }
+  }
+
+  private storeUser(user: User): void {
+    localStorage.setItem(this.USER_STORAGE_KEY, JSON.stringify(user));
+  }
+
+  private getStoredUser(): User | null {
+    try {
+      const data = localStorage.getItem(this.USER_STORAGE_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+}
+

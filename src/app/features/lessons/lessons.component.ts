@@ -1,0 +1,144 @@
+import { Component, signal, computed } from '@angular/core';
+
+interface Lesson {
+  id: string;
+  day: string;
+  period: number;
+  time: string;
+  subject: string;
+  teacher: string;
+  room: string;
+  topic: string;
+}
+
+@Component({
+  selector: 'app-lessons',
+  standalone: true,
+  template: `
+    <div class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-slate-800 tracking-tight">الجدول المدرسي والحصص اليومية</h2>
+          <p class="text-xs text-slate-500 mt-1">توزيع الحصص الأسبوعية والمعامل الدراسية ومتابعة تحضير الدروس</p>
+        </div>
+
+        <button 
+          type="button" 
+          class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          <span>طباعة الجدول الأسبوعي</span>
+        </button>
+      </div>
+
+      <!-- Day Selector Tabs -->
+      <div class="flex flex-wrap gap-2">
+        @for (day of days; track day) {
+          <button 
+            type="button" 
+            (click)="selectedDay.set(day)"
+            [class]="selectedDay() === day ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+            class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+            {{ day }}
+          </button>
+        }
+      </div>
+
+      <!-- Schedule Timeline / Cards -->
+      <div class="space-y-3">
+        @for (lesson of dailyLessons(); track lesson.id) {
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-primary-200 transition-all">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-primary-50 text-primary-800 flex flex-col items-center justify-center font-bold shrink-0 border border-primary-100">
+                <span class="text-[10px] text-primary-500 font-medium">الحصة</span>
+                <span class="text-base font-black leading-none">{{ lesson.period }}</span>
+              </div>
+
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-black text-slate-800 text-base">{{ lesson.subject }}</h3>
+                  <span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                    قاعة {{ lesson.room }}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">المعلم: <strong class="text-slate-700">{{ lesson.teacher }}</strong> | موضوع الدرس: <span class="text-primary-700 font-semibold">{{ lesson.topic }}</span></p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between sm:justify-end gap-3 text-xs">
+              <span class="font-mono text-slate-500 font-semibold dir-ltr bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                {{ lesson.time }}
+              </span>
+              <button type="button" class="px-3 py-1.5 rounded-xl bg-primary-50 text-primary-800 hover:bg-primary-100 font-bold transition-colors">
+                تحضير الحصة
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  `
+})
+export class LessonsComponent {
+  readonly days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+  readonly selectedDay = signal<string>('الأحد');
+
+  readonly lessons = signal<Lesson[]>([
+    {
+      id: 'l1',
+      day: 'الأحد',
+      period: 1,
+      time: '08:00 - 08:45 AM',
+      subject: 'Advanced English',
+      teacher: 'أ/ نادية كمال الشربيني',
+      room: 'A-101',
+      topic: 'Unit 3: Technological Advancements & AI Ethics'
+    },
+    {
+      id: 'l2',
+      day: 'الأحد',
+      period: 2,
+      time: '08:50 - 09:35 AM',
+      subject: 'Pure Mathematics',
+      teacher: 'أ. د. محمود الشناوي',
+      room: 'A-101',
+      topic: 'Trigonometry & Polar Coordinates'
+    },
+    {
+      id: 'l3',
+      day: 'الأحد',
+      period: 3,
+      time: '09:40 - 10:25 AM',
+      subject: 'Chemistry (لغات)',
+      teacher: 'د/ شريف فؤاد',
+      room: 'معمل الكيمياء الرئيسي',
+      topic: 'Chemical Equilibrium & Reaction Rates'
+    },
+    {
+      id: 'l4',
+      day: 'الأحد',
+      period: 4,
+      time: '10:50 - 11:35 AM',
+      subject: 'اللغة العربية',
+      teacher: 'الشيخ عبد الرحمن طه',
+      room: 'A-101',
+      topic: 'النحو: المشتقات وإعمال اسم الفاعل'
+    },
+    {
+      id: 'l5',
+      day: 'الأحد',
+      period: 5,
+      time: '11:40 - 12:25 PM',
+      subject: 'French Language',
+      teacher: 'مدام جيهان سليم',
+      room: 'A-101',
+      topic: 'Le subjonctif présent et expression de l\'opinion'
+    }
+  ]);
+
+  readonly dailyLessons = computed(() => {
+    return this.lessons().filter(l => l.day === this.selectedDay());
+  });
+}
+

@@ -1,0 +1,124 @@
+import { Component, signal, computed } from '@angular/core';
+
+interface GradeItem {
+  subject: string;
+  coursework: number;
+  midterm: number;
+  finalExam: number;
+  maxScore: number;
+  evaluation: string;
+}
+
+@Component({
+  selector: 'app-grades',
+  standalone: true,
+  template: `
+    <div class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-slate-800 tracking-tight">كشوف الدرجات والشهادات المدرسية</h2>
+          <p class="text-xs text-slate-500 mt-1">شهادات التقييم الفصلي، كشوف أعمال السنة، واعتماد نتائج الكنترول</p>
+        </div>
+
+        <button 
+          type="button" 
+          class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          <span>طباعة الشهادة الرسمية</span>
+        </button>
+      </div>
+
+      <!-- Student Certificate Card -->
+      <div class="bg-white rounded-3xl p-6 md:p-8 shadow-card border border-slate-100 space-y-6">
+        <!-- Certificate Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary-800 to-primary-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-primary-900/20">
+              أ
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 font-semibold">شهادة بيان درجات الطالب</span>
+              <h3 class="text-xl font-black text-slate-800">أحمد ياسين محمد إبراهيم</h3>
+              <p class="text-xs text-slate-500 mt-0.5">الصف الأول الثانوي (لغات) - فصل 1/3 متفوقين | كود: STD-2026-001</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div class="text-center">
+              <span class="text-[11px] text-slate-400 block font-semibold">المجموع الكلي</span>
+              <span class="text-xl font-black text-primary-800">{{ totalScore() }} / {{ maxTotalScore() }}</span>
+            </div>
+            <div class="w-px h-8 bg-slate-200"></div>
+            <div class="text-center">
+              <span class="text-[11px] text-slate-400 block font-semibold">النسبة المئوية</span>
+              <span class="text-xl font-black text-emerald-600">{{ overallPercentage() }}%</span>
+            </div>
+            <div class="w-px h-8 bg-slate-200"></div>
+            <div class="text-center">
+              <span class="text-[11px] text-slate-400 block font-semibold">الترتيب بالفصل</span>
+              <span class="text-xl font-black text-amber-600">الأول 🥇</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grades Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-sm">
+            <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+              <tr>
+                <th class="py-3 px-4 rounded-r-xl">المادة الدراسية</th>
+                <th class="py-3 px-4 text-center">أعمال السنة والمشاريع (20%)</th>
+                <th class="py-3 px-4 text-center">اختبار نصف العام (30%)</th>
+                <th class="py-3 px-4 text-center">امتحان نهاية الفصل (50%)</th>
+                <th class="py-3 px-4 text-center">المجموع الكلي</th>
+                <th class="py-3 px-4 rounded-l-xl text-center">التقدير العام</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              @for (item of grades(); track item.subject) {
+                <tr class="hover:bg-slate-50/70 transition-colors">
+                  <td class="py-3.5 px-4 font-bold text-slate-800">{{ item.subject }}</td>
+                  <td class="py-3.5 px-4 text-center font-mono">{{ item.coursework }}</td>
+                  <td class="py-3.5 px-4 text-center font-mono">{{ item.midterm }}</td>
+                  <td class="py-3.5 px-4 text-center font-mono">{{ item.finalExam }}</td>
+                  <td class="py-3.5 px-4 text-center font-mono font-bold text-primary-800">
+                    {{ item.coursework + item.midterm + item.finalExam }} / {{ item.maxScore }}
+                  </td>
+                  <td class="py-3.5 px-4 text-center">
+                    <span class="px-2.5 py-0.5 rounded-full font-bold text-xs bg-emerald-50 text-emerald-700">
+                      {{ item.evaluation }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class GradesComponent {
+  readonly grades = signal<GradeItem[]>([
+    { subject: 'Advanced English', coursework: 20, midterm: 30, finalExam: 48, maxScore: 100, evaluation: 'امتياز (A+)' },
+    { subject: 'Pure Mathematics', coursework: 20, midterm: 29, finalExam: 49, maxScore: 100, evaluation: 'امتياز (A+)' },
+    { subject: 'Chemistry (لغات)', coursework: 19, midterm: 28, finalExam: 47, maxScore: 100, evaluation: 'امتياز (A)' },
+    { subject: 'اللغة العربية والتربية الإسلامية', coursework: 18, midterm: 28, finalExam: 46, maxScore: 100, evaluation: 'امتياز (A)' },
+    { subject: 'French Language', coursework: 10, midterm: 14, finalExam: 24, maxScore: 50, evaluation: 'امتياز (A+)' }
+  ]);
+
+  readonly totalScore = computed(() => {
+    return this.grades().reduce((sum, item) => sum + item.coursework + item.midterm + item.finalExam, 0);
+  });
+
+  readonly maxTotalScore = computed(() => {
+    return this.grades().reduce((sum, item) => sum + item.maxScore, 0);
+  });
+
+  readonly overallPercentage = computed(() => {
+    return ((this.totalScore() / this.maxTotalScore()) * 100).toFixed(1);
+  });
+}
+
