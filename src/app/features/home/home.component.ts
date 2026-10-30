@@ -21,32 +21,40 @@ interface SchoolNotice {
   description: string;
 }
 
+interface AcademicPillar {
+  id: 'smart-class' | 'labs' | 'monitoring' | 'activities';
+  title: string;
+  description: string;
+  iconBg: string;
+  iconColor: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [RouterLink, FormsModule],
   template: `
-    <div class="min-h-screen bg-[#f8fafc] text-slate-800 font-cairo selection:bg-portal-teal/20 selection:text-portal-teal">
+    <div class="min-h-screen bg-[#f8fafc] text-slate-800 font-cairo selection:bg-portal-teal/20 selection:text-portal-teal w-full overflow-x-hidden">
       
       <!-- ================= 1. Top Notice & Academic Session Ticker ================= -->
-      <div class="bg-gradient-to-r from-portal-navyDark via-portal-navy to-portal-navy text-white text-xs py-2 px-4 md:px-8 border-b border-white/10">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="bg-gradient-to-r from-portal-navyDark via-portal-navy to-portal-navy text-white text-xs py-2 px-3 sm:px-6 lg:px-8 border-b border-white/10 w-full overflow-hidden">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-1.5 md:gap-4">
           <!-- Right Announcement -->
-          <div class="flex items-center gap-2 text-[11px] sm:text-xs">
+          <div class="flex items-center gap-2 text-[11px] sm:text-xs min-w-0 w-full md:w-auto text-center md:text-right justify-center md:justify-start">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-            <span class="text-slate-200">
+            <span class="text-slate-200 truncate">
               <strong class="text-white font-bold">تنويه أكاديمي:</strong> 
               بدء تفعيل نظام رصد درجات أعمال السنة والاختبار الشهري عبر بوابة المعلمين الإلكترونية لكافة المواد (الفصل الدراسي الثاني 2024/2025).
             </span>
           </div>
 
           <!-- Left Pill Badges -->
-          <div class="flex items-center gap-3 shrink-0 text-[11px]">
-            <span class="bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15 text-slate-200">
+          <div class="hidden sm:flex items-center gap-2 shrink-0 text-[11px]">
+            <span class="bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15 text-slate-200 whitespace-nowrap">
               العام الدراسي: 2024 - 2025
             </span>
-            <span class="hidden md:inline-flex items-center gap-1.5 text-primary-200 bg-portal-navyDark/60 px-2.5 py-0.5 rounded-full border border-primary-400/20">
-              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <span class="inline-flex items-center gap-1.5 text-primary-200 bg-portal-navyDark/60 px-2.5 py-0.5 rounded-full border border-primary-400/20 whitespace-nowrap">
+              <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>نظام التعليم المصري المعتمد</span>
@@ -56,158 +64,321 @@ interface SchoolNotice {
       </div>
 
       <!-- ================= 2. Main Navigation Bar ================= -->
-      <header class="bg-white sticky top-0 z-40 border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
+      <header class="bg-white sticky top-0 z-40 border-b border-slate-200/90 shadow-sm w-full">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           
-          <!-- School Identity & Crest -->
-          <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-portal-navy text-white flex items-center justify-center p-2 shadow-md shadow-portal-navy/20 border border-portal-navyLight">
-              <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <!-- School Identity & Crest (Right in RTL) -->
+          <div class="flex items-center gap-2.5 sm:gap-3.5 shrink-0 min-w-0">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-portal-navy text-white flex items-center justify-center p-2 shadow-md shadow-portal-navy/20 border border-portal-navyLight shrink-0">
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
               </svg>
             </div>
-            <div>
-              <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
-                مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين
+            <div class="min-w-0">
+              <h1 class="text-xs sm:text-sm lg:text-base font-black text-slate-900 tracking-tight leading-tight whitespace-nowrap">
+                مدرسة الشهيد أحمد إبراهيم حسب الله
+                <span class="hidden sm:inline font-bold text-slate-700"> الإعدادية بنين</span>
               </h1>
-              <p class="text-[11px] text-slate-500 font-semibold">
+              <p class="text-[10px] sm:text-[11px] text-slate-500 font-semibold truncate hidden lg:block">
                 بوابة التعلم والخدمات الأكاديمية الإلكترونية
               </p>
             </div>
           </div>
 
-          <!-- Middle Navigation Links -->
-          <nav class="hidden lg:flex items-center gap-1 text-xs font-bold text-slate-600">
-            <a routerLink="/" class="px-4 py-2 rounded-xl bg-portal-navy text-white shadow-sm transition-all">
+          <!-- Middle Navigation Links (Desktop: lg and above) - Centered & Balanced -->
+          <nav class="hidden lg:flex items-center justify-center gap-1 xl:gap-2 text-[11px] xl:text-xs font-bold text-slate-600 flex-1 mx-1 xl:mx-4">
+            <a routerLink="/" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl bg-portal-navy text-white shadow-sm whitespace-nowrap transition-all">
               الرئيسية
             </a>
-            <button (click)="openStudentModal()" class="px-3.5 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors">
-              لوحة الطالب
+            <button 
+              (click)="handleDirectDashboard()" 
+              type="button" 
+              class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
+              لوحة التحكم
             </button>
-            <a routerLink="/subjects" class="px-3.5 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors">
+            <a routerLink="/subjects" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
               المواد الدراسية
             </a>
-            <a routerLink="/exams" class="px-3.5 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors">
+            <a routerLink="/exams" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
               الاختبارات
             </a>
-            <a routerLink="/grades" class="px-3.5 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors">
+            <a routerLink="/grades" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
               النتائج
             </a>
-            <a routerLink="/announcements" class="px-3.5 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors">
+            <a routerLink="/announcements" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
               الإعلانات والتنبيهات
             </a>
           </nav>
 
-          <!-- Left User Status Widget -->
-          <div class="flex items-center gap-3">
-            <div class="hidden sm:flex items-center gap-3 p-1.5 pr-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <div class="text-right">
-                <span class="block text-xs font-bold text-slate-800 leading-tight">عمر أحمد محمود</span>
-                <span class="block text-[10px] text-slate-500 font-medium">الصف الثاني الإعدادي • فصل 2/3</span>
+          <!-- Left User Widget / Quick Actions (Left in RTL) -->
+          <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            @if (authService.isAuthenticated()) {
+              <!-- Active User Profile Pill -->
+              <div class="flex items-center gap-2 p-1 sm:p-1.5 sm:pr-3 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="text-right hidden sm:block max-w-[100px] xl:max-w-[150px]">
+                  <span class="block text-xs font-bold text-slate-800 leading-tight truncate whitespace-nowrap">{{ authService.userName() }}</span>
+                  <span class="block text-[10px] text-slate-500 font-medium">جلسة نشطة</span>
+                </div>
+                <button 
+                  (click)="handleDirectDashboard()"
+                  type="button" 
+                  class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold text-xs shadow-sm hover:bg-portal-navyDark transition-colors shrink-0"
+                  title="الذهاب للوحة التحكم">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                </button>
               </div>
-              <div class="w-9 h-9 rounded-xl bg-portal-teal text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            } @else {
+              <!-- Quick Portal Entrance Button -->
+              <a 
+                href="#portal-login-section"
+                class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs transition-colors whitespace-nowrap">
+                <svg class="w-4 h-4 text-portal-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                 </svg>
-              </div>
-            </div>
+                <span>دخول البوابات</span>
+              </a>
+            }
 
             <!-- Notifications Bell -->
-            <button 
-              type="button" 
-              class="relative p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+            <a 
+              routerLink="/announcements" 
+              class="relative p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shrink-0"
               title="الإشعارات المدرسية">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
+              <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+            </a>
+
+            <!-- Mobile / Tablet Hamburger Menu Toggle (< lg) -->
+            <button 
+              (click)="toggleMobileMenu()"
+              type="button"
+              class="lg:hidden p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-portal-navy transition-colors shrink-0 focus:outline-none"
+              title="القائمة">
+              @if (isMobileMenuOpen()) {
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              } @else {
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              }
             </button>
           </div>
         </div>
       </header>
 
+      <!-- ================= Mobile / Tablet Navigation Drawer (< lg) ================= -->
+      @if (isMobileMenuOpen()) {
+        <div 
+          (click)="closeMobileMenu()"
+          class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm lg:hidden transition-opacity">
+        </div>
+      }
+
+      <aside 
+        [class.translate-x-full]="!isMobileMenuOpen()"
+        [class.invisible]="!isMobileMenuOpen()"
+        [class.pointer-events-none]="!isMobileMenuOpen()"
+        class="fixed top-0 right-0 z-50 h-screen w-80 max-w-[85vw] bg-white text-slate-800 shadow-2xl lg:hidden transition-all duration-300 ease-in-out flex flex-col border-l border-slate-200">
+        
+        <!-- Drawer Header -->
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-black text-xs text-slate-900 leading-tight">مدرسة الشهيد أحمد إبراهيم</h3>
+              <span class="text-[10px] text-slate-500 font-medium">الإعدادية بنين - القائمة الموحدة</span>
+            </div>
+          </div>
+
+          <button 
+            (click)="closeMobileMenu()" 
+            type="button" 
+            class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Quick Access Section in Mobile Drawer -->
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+          @if (authService.isAuthenticated()) {
+            <div class="p-3 bg-white rounded-2xl border border-slate-200/80 space-y-2.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold text-xs shrink-0">
+                  {{ authService.userName().slice(0, 1) }}
+                </div>
+                <div class="min-w-0">
+                  <span class="block text-xs font-bold text-slate-900 truncate">{{ authService.userName() }}</span>
+                  <span class="block text-[10px] text-slate-500">جلسة نشطة</span>
+                </div>
+              </div>
+              <button 
+                (click)="handleDirectDashboard(); closeMobileMenu()"
+                type="button" 
+                class="w-full py-2.5 px-3 rounded-xl bg-portal-navy text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
+                <span>الذهاب للوحة التحكم</span>
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </div>
+          } @else {
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                (click)="openStudentModal(); closeMobileMenu()"
+                type="button" 
+                class="p-2.5 rounded-xl bg-portal-teal text-white font-bold text-xs text-center shadow-xs">
+                دخول الطالب
+              </button>
+              <button 
+                (click)="openTeacherModal(); closeMobileMenu()"
+                type="button" 
+                class="p-2.5 rounded-xl bg-portal-navy text-white font-bold text-xs text-center shadow-xs">
+                دخول المعلم
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Mobile Drawer Nav Links -->
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1.5">
+          <a 
+            routerLink="/" 
+            (click)="closeMobileMenu()" 
+            class="flex items-center gap-3 p-3 rounded-xl bg-portal-navy text-white text-xs font-bold shadow-xs">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span>الرئيسية</span>
+          </a>
+          <a 
+            routerLink="/subjects" 
+            (click)="closeMobileMenu()" 
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
+            <svg class="w-4 h-4 text-portal-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span>المناهج والمقررات الدراسية</span>
+          </a>
+          <a 
+            routerLink="/lessons" 
+            (click)="closeMobileMenu()" 
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
+            <svg class="w-4 h-4 text-portal-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>الجدول المدرسي والحصص</span>
+          </a>
+          <a 
+            routerLink="/exams" 
+            (click)="closeMobileMenu()" 
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
+            <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>الاختبارات والتقييمات</span>
+          </a>
+          <a 
+            routerLink="/grades" 
+            (click)="closeMobileMenu()" 
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+            </svg>
+            <span>كشوف الدرجات والشهادات</span>
+          </a>
+          <a 
+            routerLink="/announcements" 
+            (click)="closeMobileMenu()" 
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
+            <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span>لوحة الإعلانات والتعميمات</span>
+          </a>
+        </nav>
+
+        <!-- Drawer Footer -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50 text-[11px] text-slate-500 text-center">
+          <span>العام الدراسي 2024 / 2025 • مدرسة الشهيد أحمد إبراهيم</span>
+        </div>
+      </aside>
+
       <!-- ================= 3. Hero Section ================= -->
-      <section class="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
+      <section class="max-w-7xl mx-auto px-4 md:px-8 py-6 sm:py-8 md:py-12">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           
           <!-- Hero Text (Right Column in RTL) -->
-          <div class="lg:col-span-7 space-y-6">
+          <div class="lg:col-span-7 space-y-5 sm:space-y-6">
             
             <!-- Category Badge -->
             <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-bold shadow-xs">
-              <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
               <span>المنظومة الرقمية الموحدة للمعلم والطالب</span>
             </div>
 
             <!-- Main Headline -->
-            <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.25]">
+            <h2 class="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.25]">
               منصة التعلم الذكية والبيئة الأكاديمية المتكاملة
             </h2>
 
             <!-- Paragraph -->
-            <p class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl">
+            <p class="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed max-w-2xl">
               فضاء رقمي تربوي رصين يُمكّن أبناءنا الطلاب من استيعاب المناهج وحل الاختبارات التفاعلية، ويوفر للسادة المعلمين بيئة احترافية لإدارة التحضير، بنوك الأسئلة، والرصد الفوري للدرجات بكل دقة واعتمادية.
             </p>
 
-            <!-- Hero Action Buttons -->
-            <div class="flex flex-wrap items-center gap-3 pt-2">
+            <!-- Hero Primary Academic Navigation Actions (Responsive for Mobile & Desktop) -->
+            <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
               
-              <!-- Teacher Portal Button -->
-              <button 
-                (click)="openTeacherModal()"
-                type="button"
-                class="px-5 py-3.5 rounded-2xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-xs sm:text-sm shadow-md shadow-portal-navy/20 flex items-center gap-3 transition-all transform hover:-translate-y-0.5">
-                <div class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                  </svg>
-                </div>
-                <div class="text-right">
-                  <span class="block">دخول بوابة المعلم الأكاديمية</span>
-                  <span class="block text-[10px] text-primary-200 font-normal">كود الفحص السريع: 2001-TCH</span>
-                </div>
-                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-
-              <!-- Student Portal Button -->
-              <button 
-                (click)="openStudentModal()"
-                type="button"
-                class="px-5 py-3.5 rounded-2xl bg-portal-teal hover:bg-portal-tealDark text-white font-bold text-xs sm:text-sm shadow-md shadow-portal-teal/20 flex items-center gap-3 transition-all transform hover:-translate-y-0.5">
-                <div class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                  </svg>
-                </div>
-                <div class="text-right">
-                  <span class="block">دخول بوابة الطالب</span>
-                  <span class="block text-[10px] text-emerald-200 font-normal">كود التجربة: 1001-STU</span>
-                </div>
-                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-
-              <!-- Admin Control Button -->
+              <!-- Curricula & Lessons -->
               <a 
-                routerLink="/admin/dashboard"
-                class="px-4 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 shadow-sm flex items-center gap-2 transition-colors">
-                <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                routerLink="/subjects"
+                class="w-full sm:w-auto px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-xs sm:text-sm shadow-md shadow-portal-navy/20 flex items-center justify-center gap-2.5 transition-all transform hover:-translate-y-0.5">
+                <svg class="w-4 h-4 text-primary-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-                <span>بوابة الإدارة والكنترول</span>
+                <span>استعراض المناهج والمقررات</span>
+              </a>
+
+              <!-- Weekly Timetable -->
+              <a 
+                routerLink="/lessons"
+                class="w-full sm:w-auto px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs sm:text-sm border border-slate-200 shadow-sm flex items-center justify-center gap-2.5 transition-all">
+                <svg class="w-4 h-4 text-portal-teal shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>الجدول المدرسي والحصص</span>
+              </a>
+
+              <!-- Exam Schedules -->
+              <a 
+                routerLink="/exams"
+                class="w-full sm:w-auto px-4 py-3 sm:py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-600 font-bold text-xs border border-slate-200 shadow-sm flex items-center justify-center gap-2 transition-colors">
+                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>جداول الاختبارات المعتمدة</span>
               </a>
 
             </div>
 
-            <!-- KPI Counters Bar -->
-            <div class="pt-6 border-t border-slate-200/80 grid grid-cols-4 gap-2 sm:gap-4 max-w-xl">
+            <!-- KPI Counters Bar (2x2 on Mobile, 4x1 on Tablet/Desktop) -->
+            <div class="pt-6 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-xl">
               <div class="text-center sm:text-right">
                 <span class="block text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-mono">+840</span>
                 <span class="block text-[11px] font-semibold text-slate-500 mt-0.5">طالباً منتظماً</span>
@@ -216,7 +387,7 @@ interface SchoolNotice {
                 <span class="block text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-mono">+54</span>
                 <span class="block text-[11px] font-semibold text-slate-500 mt-0.5">معلماً وخبيراً تربوياً</span>
               </div>
-              <div class="text-center sm:text-right border-r border-slate-200 pr-2 sm:pr-4">
+              <div class="text-center sm:text-right sm:border-r border-slate-200 sm:pr-4">
                 <span class="block text-xl sm:text-2xl font-black text-emerald-600 tracking-tight font-mono">98%</span>
                 <span class="block text-[11px] font-semibold text-slate-500 mt-0.5">نسبة التفوق والنجاح</span>
               </div>
@@ -230,7 +401,7 @@ interface SchoolNotice {
 
           <!-- Hero Image & Live Badge (Left Column in RTL) -->
           <div class="lg:col-span-5 relative">
-            <div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-800 aspect-[4/3] group">
+            <div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-800 aspect-[4/3] max-h-[380px] lg:max-h-none group">
               <!-- Illustrated Classroom Photo Background -->
               <img 
                 src="https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1000&auto=format&fit=crop" 
@@ -238,46 +409,59 @@ interface SchoolNotice {
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
               />
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent"></div>
-
-              <!-- Floating Live Activity Badge on Image -->
-              <div class="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-white/40 shadow-lg flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-xs font-bold text-slate-900 leading-tight">
-                      تم اكتمال تصحيح اختبار العلوم
-                    </p>
-                    <p class="text-[10px] text-slate-500 mt-0.5">
-                      الصف الثاني الإعدادي • فصل 2/3 (32 ورقة)
-                    </p>
-                  </div>
-                </div>
-
-                <span class="text-[11px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg shrink-0">
-                  100% رصد
-                </span>
-              </div>
             </div>
           </div>
 
         </div>
       </section>
 
-      <!-- ================= 4. Dedicated Portal Login Section (The Two Big Buttons) ================= -->
-      <section class="max-w-7xl mx-auto px-4 md:px-8 py-6">
-        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-card border border-slate-200/80">
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <!-- ================= 4. Academic Pillars & School Highlights Grid ================= -->
+      <section class="max-w-7xl mx-auto px-4 md:px-8 py-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          @for (pillar of pillars; track pillar.id) {
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft hover:shadow-md transition-all space-y-2.5 group">
+              <div [class]="pillar.iconBg + ' ' + pillar.iconColor" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+                @switch (pillar.id) {
+                  @case ('smart-class') {
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  }
+                  @case ('labs') {
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                  }
+                  @case ('monitoring') {
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  }
+                  @case ('activities') {
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                  }
+                }
+              </div>
+              <h4 class="text-sm font-bold text-slate-900">{{ pillar.title }}</h4>
+              <p class="text-xs text-slate-500 leading-relaxed">{{ pillar.description }}</p>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- ================= 5. The Dedicated Portal Login Section (The Two Exclusive Login Cards) ================= -->
+      <section id="portal-login-section" class="max-w-7xl mx-auto px-4 md:px-8 py-6 sm:py-8 scroll-mt-24">
+        <div class="bg-white rounded-3xl p-5 sm:p-8 shadow-card border border-slate-200/80">
+          <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
             
             <!-- Information Text (Right in RTL) -->
-            <div class="space-y-1.5 max-w-xl">
+            <div class="space-y-1.5 max-w-xl text-center sm:text-right">
               <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full inline-block border border-emerald-200">
                 منظومة الدخول الإلكترونية الموحدة
               </span>
-              <h3 class="text-2xl font-black text-slate-900 tracking-tight">
+              <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 تسجيل الدخول إلى البوابات التعليمية
               </h3>
               <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
@@ -285,14 +469,14 @@ interface SchoolNotice {
               </p>
             </div>
 
-            <!-- Two Distinctive Portal Action Buttons (Left in RTL) -->
-            <div class="flex flex-col sm:flex-row items-center gap-4 shrink-0">
+            <!-- The Two Exclusive Action Buttons (Student & Teacher) -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-center xl:justify-end gap-3 sm:gap-4 shrink-0 w-full xl:w-auto">
               
               <!-- 1. Student Login Button (Opens Modal) -->
               <button 
                 (click)="openStudentModal()"
                 type="button" 
-                class="w-full sm:w-auto min-w-[240px] px-6 py-4 rounded-2xl bg-portal-teal hover:bg-portal-tealDark text-white font-bold shadow-lg shadow-portal-teal/20 transition-all flex items-center justify-between gap-4 group">
+                class="w-full sm:w-auto flex-1 xl:flex-initial min-w-0 sm:min-w-[220px] px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl bg-portal-teal hover:bg-portal-tealDark text-white font-bold shadow-lg shadow-portal-teal/20 transition-all flex items-center justify-between gap-3 group">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
                     <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -314,7 +498,7 @@ interface SchoolNotice {
               <button 
                 (click)="openTeacherModal()"
                 type="button" 
-                class="w-full sm:w-auto min-w-[240px] px-6 py-4 rounded-2xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold shadow-lg shadow-portal-navy/20 transition-all flex items-center justify-between gap-4 group">
+                class="w-full sm:w-auto flex-1 xl:flex-initial min-w-0 sm:min-w-[220px] px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold shadow-lg shadow-portal-navy/20 transition-all flex items-center justify-between gap-3 group">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
                     <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -337,8 +521,8 @@ interface SchoolNotice {
         </div>
       </section>
 
-      <!-- ================= 5. Elite Faculty Showcase ("نخبة المعلمين والموجهين الأوائل") ================= -->
-      <section class="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12 space-y-6">
+      <!-- ================= 6. Elite Faculty Showcase ("نخبة المعلمين والموجهين الأوائل") ================= -->
+      <section class="max-w-7xl mx-auto px-4 md:px-8 py-6 sm:py-8 md:py-12 space-y-6">
         
         <!-- Section Title -->
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
@@ -348,43 +532,43 @@ interface SchoolNotice {
               <span>•</span>
               <span class="text-amber-600 font-bold">التقييم التربوي المعتمد: تميز تكنولوجي 2024</span>
             </div>
-            <h3 class="text-2xl font-black text-slate-900 tracking-tight">نخبة المعلمين والموجهين الأوائل</h3>
+            <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">نخبة المعلمين والموجهين الأوائل</h3>
           </div>
         </div>
 
-        <!-- Teachers Grid (6 Cards Matching Design) -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <!-- Teachers Grid (2 on mobile, 3 on tablet, 6 on desktop) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
           @for (teacher of teachers; track teacher.id) {
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 hover:border-portal-navy/40 transition-all flex flex-col items-center text-center justify-between group">
+            <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/90 hover:border-portal-navy/40 transition-all flex flex-col items-center text-center justify-between group">
               
               <!-- Avatar -->
-              <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm mb-3">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-slate-100 shadow-sm mb-2.5 sm:mb-3">
                 <img [src]="teacher.avatar" [alt]="teacher.name" class="w-full h-full object-cover" />
               </div>
 
               <!-- Subject Category Badge -->
-              <span class="text-[10px] font-bold text-primary-800 bg-primary-50 px-2.5 py-0.5 rounded-full mb-1">
+              <span class="text-[10px] font-bold text-primary-800 bg-primary-50 px-2 py-0.5 rounded-full mb-1 truncate max-w-full">
                 {{ teacher.category }}
               </span>
 
               <!-- Name & Role -->
-              <div class="space-y-0.5 my-1">
-                <h4 class="text-xs font-black text-slate-900">{{ teacher.name }}</h4>
+              <div class="space-y-0.5 my-1 w-full">
+                <h4 class="text-xs font-black text-slate-900 truncate">{{ teacher.name }}</h4>
                 <p class="text-[10px] text-slate-500 leading-tight line-clamp-2">{{ teacher.role }}</p>
               </div>
 
               <!-- Quota & Star Rating -->
-              <div class="w-full pt-2.5 mt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 font-medium">
-                <span>{{ teacher.quota }}</span>
-                <span class="font-bold text-amber-500 font-mono">{{ teacher.rating }} ★</span>
+              <div class="w-full pt-2 sm:pt-2.5 mt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                <span class="truncate">{{ teacher.quota }}</span>
+                <span class="font-bold text-amber-500 font-mono shrink-0">{{ teacher.rating }} ★</span>
               </div>
             </div>
           }
         </div>
 
         <!-- Honor Banner Below Teachers -->
-        <div class="bg-gradient-to-r from-portal-navyDark via-portal-navy to-portal-navy text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
-          <div class="flex items-center gap-3.5 text-right">
+        <div class="bg-gradient-to-r from-portal-navyDark via-portal-navy to-portal-navy text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md text-center sm:text-right">
+          <div class="flex flex-col sm:flex-row items-center gap-3.5">
             <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-amber-400">
               <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -398,48 +582,48 @@ interface SchoolNotice {
             </div>
           </div>
 
-          <button 
-            type="button" 
-            class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 shrink-0 transition-colors">
-            تسجيل إنجاز تربوي جديد
-          </button>
+          <a 
+            routerLink="/announcements" 
+            class="w-full sm:w-auto text-center px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 shrink-0 transition-colors">
+            عرض أرشيف الإنجازات المدرسية
+          </a>
         </div>
 
       </section>
 
-      <!-- ================= 6. Bottom Split: Announcements & Academic KPI Monitors ================= -->
-      <section class="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- ================= 7. Bottom Split: Announcements & Academic KPI Monitors ================= -->
+      <section class="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           <!-- Right: Announcements & School Notices (7 cols) -->
-          <div class="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-7 shadow-card border border-slate-200/80 space-y-5">
+          <div class="lg:col-span-7 bg-white rounded-3xl p-4 sm:p-7 shadow-card border border-slate-200/80 space-y-5">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-portal-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-5 h-5 text-portal-navy shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <h3 class="text-base font-black text-slate-900">آخر الإعلانات والتنبيهات المدرسية</h3>
+                <h3 class="text-sm sm:text-base font-black text-slate-900">آخر الإعلانات والتنبيهات المدرسية</h3>
               </div>
             </div>
 
             <!-- Announcements List -->
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
               @for (item of notices; track item.title) {
-                <div class="flex items-start gap-4 p-3.5 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
+                <div class="flex items-start gap-3 sm:gap-4 p-3 sm:p-3.5 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
                   <!-- Date Badge -->
-                  <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 flex flex-col items-center justify-center shrink-0 border border-slate-200">
-                    <span class="text-sm font-black leading-none font-mono">{{ item.day }}</span>
+                  <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-slate-100 text-slate-800 flex flex-col items-center justify-center shrink-0 border border-slate-200">
+                    <span class="text-xs sm:text-sm font-black leading-none font-mono">{{ item.day }}</span>
                     <span class="text-[9px] font-bold text-slate-500 mt-0.5">{{ item.month }}</span>
                   </div>
 
                   <!-- Details -->
-                  <div class="flex-1 space-y-1">
+                  <div class="flex-1 min-w-0 space-y-1">
                     <div class="flex items-center gap-2">
                       <span class="text-[10px] font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md">
                         {{ item.tag }}
                       </span>
                     </div>
-                    <h4 class="text-xs sm:text-sm font-bold text-slate-900">{{ item.title }}</h4>
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{{ item.title }}</h4>
                     <p class="text-xs text-slate-500 leading-relaxed">{{ item.description }}</p>
                   </div>
                 </div>
@@ -448,16 +632,16 @@ interface SchoolNotice {
           </div>
 
           <!-- Left: Academic Engagement Metrics (5 cols) -->
-          <div class="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-7 shadow-card border border-slate-200/80 space-y-5">
+          <div class="lg:col-span-5 bg-white rounded-3xl p-4 sm:p-7 shadow-card border border-slate-200/80 space-y-5">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-portal-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-5 h-5 text-portal-teal shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <h3 class="text-base font-black text-slate-900">مؤشرات التفاعل الأكاديمي المباشر</h3>
+                <h3 class="text-sm sm:text-base font-black text-slate-900">مؤشرات التفاعل الأكاديمي المباشر</h3>
               </div>
-              <a routerLink="/announcements" class="text-xs font-bold text-portal-teal hover:underline">
-                عرض أرشيف الإعلانات
+              <a routerLink="/announcements" class="text-xs font-bold text-portal-teal hover:underline shrink-0">
+                عرض الأرشيف
               </a>
             </div>
 
@@ -512,7 +696,7 @@ interface SchoolNotice {
 
             <!-- Inquiry Box -->
             <div class="pt-2">
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+              <div class="p-3 sm:p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div class="flex items-center gap-2.5">
                   <div class="w-8 h-8 rounded-xl bg-primary-100 text-primary-800 flex items-center justify-center font-bold text-xs shrink-0">
                     ؟
@@ -523,9 +707,9 @@ interface SchoolNotice {
                   </div>
                 </div>
 
-                <button type="button" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 shadow-xs">
+                <a routerLink="/announcements" class="w-full sm:w-auto text-center px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 shadow-xs">
                   طرح سؤال
-                </button>
+                </a>
               </div>
             </div>
 
@@ -534,22 +718,22 @@ interface SchoolNotice {
         </div>
       </section>
 
-      <!-- ================= 7. Footer ================= -->
-      <footer class="bg-white border-t border-slate-200 mt-12 py-8 text-xs text-slate-500">
+      <!-- ================= 8. Footer ================= -->
+      <footer class="bg-white border-t border-slate-200 mt-8 sm:mt-12 py-6 sm:py-8 text-xs text-slate-500">
         <div class="max-w-7xl mx-auto px-4 md:px-8 space-y-6">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-center md:text-right">
             <div>
               <h4 class="text-sm font-black text-slate-900">مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين</h4>
               <p class="text-xs text-slate-500 mt-1 italic font-medium">« بالعلم نبني الأوطان.. وبالخلق نسمو بالإنسان »</p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-y-2 gap-x-4 text-xs font-semibold text-slate-600">
               <a href="javascript:void(0)" class="hover:text-portal-navy">لائحة الانضباط المدرسي</a>
-              <span>•</span>
+              <span class="hidden sm:inline">•</span>
               <a href="javascript:void(0)" class="hover:text-portal-navy">الدعم الفني والإرشاد</a>
-              <span>•</span>
+              <span class="hidden sm:inline">•</span>
               <a href="javascript:void(0)" class="hover:text-portal-navy">بوابة ولي الأمر</a>
-              <span>•</span>
+              <span class="hidden sm:inline">•</span>
               <a href="javascript:void(0)" class="hover:text-portal-navy">إشراف إدارة المدرسة والتعليم الإعدادي</a>
             </div>
           </div>
@@ -560,10 +744,10 @@ interface SchoolNotice {
         </div>
       </footer>
 
-      <!-- ================= 8. STUDENT LOGIN MODAL (Matching Image 2) ================= -->
+      <!-- ================= 9. STUDENT LOGIN MODAL ================= -->
       @if (isStudentModalOpen()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 relative animate-in zoom-in-95 duration-200">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
+          <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[92vh] overflow-y-auto border border-slate-100 relative animate-in zoom-in-95 duration-200">
             
             <!-- Modal Header -->
             <div class="p-6 pb-4 text-center relative border-b border-slate-100">
@@ -660,10 +844,10 @@ interface SchoolNotice {
         </div>
       }
 
-      <!-- ================= 9. TEACHER LOGIN MODAL (Matching Image 1) ================= -->
+      <!-- ================= 10. TEACHER LOGIN MODAL ================= -->
       @if (isTeacherModalOpen()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 relative animate-in zoom-in-95 duration-200">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
+          <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[92vh] overflow-y-auto border border-slate-100 relative animate-in zoom-in-95 duration-200">
             
             <!-- Dark Navy Header -->
             <div class="bg-portal-navy text-white p-6 pb-5 text-center relative">
@@ -784,12 +968,13 @@ interface SchoolNotice {
   `
 })
 export class HomeComponent {
-  private readonly authService = inject(AuthService);
+  readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  // Modal Control Signals
+  // Modal & Drawer Control Signals
   readonly isStudentModalOpen = signal<boolean>(false);
   readonly isTeacherModalOpen = signal<boolean>(false);
+  readonly isMobileMenuOpen = signal<boolean>(false);
 
   // Student Form Model Signals
   readonly studentEmail = signal<string>('omar.ahmed@alshaheed.edu.eg');
@@ -801,6 +986,38 @@ export class HomeComponent {
   readonly teacherPassword = signal<string>('Academic#2026');
   readonly teacherShowPassword = signal<boolean>(false);
   readonly teacherRememberMe = signal<boolean>(true);
+
+  // Core Pillars / Highlights Replacing Duplicates
+  readonly pillars: AcademicPillar[] = [
+    {
+      id: 'smart-class',
+      title: 'الفصول والقاعات الذكية',
+      description: 'فصول تفاعلية وقاعات دراسية مجهزة بأحدث الشاشات والوسائل التعليمية الرقمية المتطورة.',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-portal-navy'
+    },
+    {
+      id: 'labs',
+      title: 'معامل التجارب واللغات',
+      description: 'معامل علمية وبحثية مجهزة لتطبيق التجارب الكيميائية والفيزيائية والبرمجية عملياً.',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-portal-teal'
+    },
+    {
+      id: 'monitoring',
+      title: 'المتابعة والرصد اللحظي',
+      description: 'منظومة رصد إلكترونية معتمدة للغياب اليومي ودرجات أعمال السنة وإشعارات فورية لولي الأمر.',
+      iconBg: 'bg-indigo-50',
+      iconColor: 'text-indigo-700'
+    },
+    {
+      id: 'activities',
+      title: 'رعاية الموهوبين والأنشطة',
+      description: 'برامج متخصصة لرعاية الطلاب الفائقين والمبدعين في مسابقات العلوم والذكاء الاصطناعي.',
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-700'
+    }
+  ];
 
   // 6 Top Faculty Members matching the design
   readonly teachers: TeacherShowcase[] = [
@@ -898,6 +1115,23 @@ export class HomeComponent {
   closeModals(): void {
     this.isStudentModalOpen.set(false);
     this.isTeacherModalOpen.set(false);
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen.update(v => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.isMobileMenuOpen.set(false);
+  }
+
+  handleDirectDashboard(): void {
+    const role = this.authService.userRole();
+    if (role) {
+      this.authService.navigateToRoleDashboard(role);
+    } else {
+      this.router.navigate(['/admin/dashboard']);
+    }
   }
 
   submitStudentLogin(): void {

@@ -14,11 +14,16 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   body {
     @apply bg-slate-50 text-slate-800 selection:bg-primary-100 selection:text-primary-900;
     min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
   }
 }
 
