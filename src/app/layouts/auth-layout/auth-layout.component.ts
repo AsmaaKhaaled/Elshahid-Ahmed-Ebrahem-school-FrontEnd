@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { SCHOOL_INFO } from '../../core/constants/school.constants';
 
 @Component({
   selector: 'app-auth-layout',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, NgOptimizedImage],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900 text-slate-100 flex flex-col justify-between relative overflow-hidden font-cairo">
       <!-- Background Ambient Glow & Patterns -->
@@ -14,17 +17,16 @@ import { RouterOutlet } from '@angular/router';
       <!-- Header with School Identity -->
       <header class="p-6 md:p-8 flex items-center justify-between relative z-10">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-500 to-sky-400 p-0.5 flex items-center justify-center shadow-lg shadow-primary-900/50">
-            <div class="w-full h-full bg-slate-950/40 rounded-[14px] flex items-center justify-center">
-              <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-              </svg>
-            </div>
-          </div>
+          <img
+            [ngSrc]="school.logoUrl"
+            width="52"
+            height="52"
+            priority
+            [alt]="'شعار ' + school.fullName"
+            class="rounded-full ring-2 ring-white/20 shadow-lg shadow-primary-900/50" />
           <div>
-            <h1 class="text-lg md:text-xl font-black text-white tracking-tight">مدرسة الشهيد أحمد إبراهيم</h1>
-            <p class="text-xs text-primary-300 font-medium">الرسمية المتميزة لغات - نظام الإدارة المدرسية الموحد</p>
+            <h1 class="text-lg md:text-xl font-black text-white tracking-tight">{{ school.name }}</h1>
+            <p class="text-xs text-primary-300 font-medium">{{ school.type }} - نظام الإدارة المدرسية الموحد</p>
           </div>
         </div>
 
@@ -43,12 +45,12 @@ import { RouterOutlet } from '@angular/router';
 
       <!-- Footer -->
       <footer class="p-6 text-center text-xs text-slate-400 relative z-10 border-t border-white/5">
-        <p>جميع الحقوق محفوظة © {{ currentYear }} لمدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات - وزارة التربية والتعليم</p>
+        <p>جميع الحقوق محفوظة © {{ currentYear }} ل{{ school.fullName }} - وزارة التربية والتعليم</p>
       </footer>
     </div>
   `
 })
 export class AuthLayoutComponent {
+  readonly school = SCHOOL_INFO;
   readonly currentYear = new Date().getFullYear();
 }
-

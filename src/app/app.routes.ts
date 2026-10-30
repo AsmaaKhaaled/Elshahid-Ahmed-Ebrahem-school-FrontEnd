@@ -38,6 +38,8 @@ export const routes: Routes = [
       { path: 'assignments', loadComponent: () => import('./features/assignments/assignments.component').then(m => m.AssignmentsComponent) },
       { path: 'exams', loadComponent: () => import('./features/exams/exams.component').then(m => m.ExamsComponent) },
       { path: 'attendance', loadComponent: () => import('./features/attendance/attendance.component').then(m => m.AttendanceComponent) },
+      { path: 'attendance-stats', loadComponent: () => import('./features/attendance-stats/attendance-stats.component').then(m => m.AttendanceStatsComponent) },
+      { path: 'teacher-attendance', loadComponent: () => import('./features/teacher-attendance/teacher-attendance.component').then(m => m.TeacherAttendanceComponent) },
       { path: 'grades', loadComponent: () => import('./features/grades/grades.component').then(m => m.GradesComponent) },
       { path: 'announcements', loadComponent: () => import('./features/announcements/announcements.component').then(m => m.AnnouncementsComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

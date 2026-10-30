@@ -1,12 +1,15 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { provideMaterialDefaults } from '../../shared/material/material-defaults.providers';
 
 @Component({
   selector: 'app-teacher-layout',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, NavbarComponent, SidebarComponent],
+  providers: [provideMaterialDefaults()],
   template: `
     <div class="flex h-screen overflow-hidden bg-slate-50 font-cairo">
       <app-sidebar 

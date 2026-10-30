@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 
 interface Exam {
@@ -16,6 +16,7 @@ interface Exam {
 @Component({
   selector: 'app-exams',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArabicDatePipe],
   template: `
     <div class="space-y-6">
@@ -88,7 +89,7 @@ export class ExamsComponent {
       id: 'ex-1',
       name: 'امتحان نصف العام - Advanced English',
       subject: 'اللغة الإنجليزية الرفيعة',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       date: new Date(Date.now() + 86400000 * 5).toISOString(),
       durationMinutes: 120,
       totalMarks: 100,
@@ -99,7 +100,7 @@ export class ExamsComponent {
       id: 'ex-2',
       name: 'امتحان نصف العام - Pure Mathematics',
       subject: 'الرياضيات البحتة',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       date: new Date(Date.now() + 86400000 * 7).toISOString(),
       durationMinutes: 120,
       totalMarks: 100,
@@ -110,7 +111,7 @@ export class ExamsComponent {
       id: 'ex-3',
       name: 'امتحان نصف العام - Integrated Chemistry',
       subject: 'الكيمياء لغات',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       date: new Date(Date.now() + 86400000 * 9).toISOString(),
       durationMinutes: 90,
       totalMarks: 80,

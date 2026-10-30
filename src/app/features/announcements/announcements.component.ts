@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 
 interface Announcement {
@@ -15,6 +15,7 @@ interface Announcement {
 @Component({
   selector: 'app-announcements',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArabicDatePipe],
   template: `
     <div class="space-y-6">
@@ -99,7 +100,7 @@ export class AnnouncementsComponent {
     {
       id: 'anc-1',
       title: 'اعتماد جدول اختبارات منتصف العام الدراسي 2026/2027',
-      content: 'تعلن إدارة المدرسة عن اعتماد ونشر جدول امتحانات الفصل الدراسي الأول لجميع صفوف المرحلة الإعدادية والثانوية لغات. يُرجى من جميع أبنائنا الطلاب الالتزام بالحضور بالزي المدرسي الموحد والالتزام بالتواجد بالقاعات قبل موعد الامتحان بنصف ساعة.',
+      content: 'تعلن إدارة المدرسة عن اعتماد ونشر جدول امتحانات الفصل الدراسي الأول لجميع صفوف المرحلة الإعدادية. يُرجى من جميع أبنائنا الطلاب الالتزام بالحضور بالزي المدرسي الموحد والالتزام بالتواجد بالقاعات قبل موعد الامتحان بنصف ساعة.',
       category: 'عاجل وهام',
       publishDate: new Date().toISOString(),
       author: 'إدارة شؤون الامتحانات والكنترول',
@@ -119,7 +120,7 @@ export class AnnouncementsComponent {
     {
       id: 'anc-3',
       title: 'الجمعية العمومية لمجلس الآباء والمعلمين',
-      content: 'تتشرف إدارة مدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات بدعوة السادة أولياء الأمور الكرام لحضور الجمعية العمومية لمجلس الآباء والمعلمين لمناقشة الخطة الأكاديمية والتطويرية للعام الدراسي.',
+      content: 'تتشرف إدارة مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين بدعوة السادة أولياء الأمور الكرام لحضور الجمعية العمومية لمجلس الآباء والمعلمين لمناقشة الخطة الأكاديمية والتطويرية للعام الدراسي.',
       category: 'أولياء الأمور',
       publishDate: new Date(Date.now() - 86400000 * 3).toISOString(),
       author: 'مكتب الأخصائي الاجتماعي',

@@ -1,25 +1,32 @@
-import { Component, inject, input, output, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
+
+const NAME_TITLES = new Set(['أ', 'د', 'م', 'الأستاذ', 'الأستاذة', 'الشيخ', 'المهندس', 'الدكتور']);
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, ArabicDatePipe],
+  imports: [RouterLink, ArabicDatePipe, NgOptimizedImage],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="sticky top-0 z-30 h-18 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 md:px-8 flex items-center justify-between transition-all">
       <!-- Right Side: Sidebar Toggle & Breadcrumbs / Title -->
       <div class="flex items-center gap-4">
-        <button 
-          (click)="toggleSidebar.emit()"
-          type="button"
-          class="p-2 rounded-xl text-slate-500 hover:text-primary-700 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-          title="القائمة الجانبية">
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        @if (showSidebarToggle()) {
+          <button
+            (click)="toggleSidebar.emit()"
+            type="button"
+            class="p-2 rounded-xl text-slate-500 hover:text-primary-700 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            title="القائمة الجانبية">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        }
 
         <div>
           <h1 class="text-xl font-bold text-slate-800 tracking-tight">{{ title() }}</h1>
@@ -32,9 +39,9 @@ import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
       <!-- Left Side: Search, Quick Stats, Notifications & User Menu -->
       <div class="flex items-center gap-2 sm:gap-4">
         <!-- School Tag Badge -->
-        <div class="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100 text-xs text-primary-800 font-semibold">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>مدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات</span>
+        <div class="hidden xl:flex items-center gap-2 ps-1 pe-3 py-1 rounded-full bg-primary-50 border border-primary-100 text-xs text-primary-800 font-semibold">
+          <img [ngSrc]="school.logoUrl" width="26" height="26" alt="" class="rounded-full" />
+          <span>{{ school.fullName }}</span>
         </div>
 
         <!-- Notification Bell -->
@@ -84,11 +91,11 @@ import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
             type="button" 
             class="flex items-center gap-3 p-1.5 rounded-2xl hover:bg-slate-100 transition-colors focus:outline-none">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-800 to-primary-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-primary-900/10">
-              {{ getUserInitials() }}
+              {{ userInitials() }}
             </div>
             <div class="text-right hidden md:block">
               <span class="block text-xs font-bold text-slate-800 leading-tight">{{ authService.userName() }}</span>
-              <span class="block text-[11px] text-slate-600 font-medium">{{ getRoleLabel() }}</span>
+              <span class="block text-[11px] text-slate-600 font-medium">{{ roleLabel() }}</span>
             </div>
             <svg class="w-4 h-4 text-slate-400 hidden md:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -100,7 +107,7 @@ import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
             <div class="absolute left-0 mt-2 w-56 rounded-2xl bg-white shadow-elevated border border-slate-100 py-2 z-50">
               <div class="px-4 py-2 border-b border-slate-100 md:hidden">
                 <p class="text-sm font-bold text-slate-800">{{ authService.userName() }}</p>
-                <p class="text-xs text-slate-500">{{ getRoleLabel() }}</p>
+                <p class="text-xs text-slate-500">{{ roleLabel() }}</p>
               </div>
 
               <a 
@@ -131,9 +138,11 @@ import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
 })
 export class NavbarComponent {
   readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
+
+  readonly school = SCHOOL_INFO;
 
   readonly title = input<string>('لوحة التحكم');
+  readonly showSidebarToggle = input<boolean>(true);
   readonly toggleSidebar = output<void>();
 
   readonly today = new Date();
@@ -154,21 +163,19 @@ export class NavbarComponent {
     }
   }
 
-  getUserInitials(): string {
-    const name = this.authService.userName();
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + ' ' + parts[1][0]).toUpperCase();
-    }
-    return name.slice(0, 2);
-  }
+  // Initials of the logged-in user's real name, skipping titles like "أ." / "د." / "الأستاذ"
+  readonly userInitials = computed(() => {
+    const nameParts = this.authService.userName()
+      .split(/\s+/)
+      .filter(part => part && !NAME_TITLES.has(part.replace(/[./]/g, '')));
+    return nameParts.slice(0, 2).map(part => part[0]).join(' ');
+  });
 
-  getRoleLabel(): string {
-    const role = this.authService.userRole();
-    switch (role) {
+  readonly roleLabel = computed(() => {
+    switch (this.authService.userRole()) {
       case 'ADMIN':
       case 'SUPER_ADMIN':
-        return 'الإدارة العامة';
+        return this.authService.userName() === SCHOOL_INFO.principal ? 'مدير المدرسة' : 'إدارة المدرسة';
       case 'TEACHER':
         return 'هيئة التدريس';
       case 'STUDENT':
@@ -178,7 +185,7 @@ export class NavbarComponent {
       default:
         return 'مستخدم النظام';
     }
-  }
+  });
 
   handleLogout(): void {
     this.isProfileMenuOpen.set(false);

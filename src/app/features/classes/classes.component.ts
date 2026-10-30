@@ -1,5 +1,5 @@
-import { Component, signal, computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
+import { GRADE_LEVELS } from '../../core/constants/school.constants';
 
 interface SchoolClass {
   id: string;
@@ -15,7 +15,8 @@ interface SchoolClass {
 @Component({
   selector: 'app-classes',
   standalone: true,
-  imports: [FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [],
   template: `
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -104,70 +105,29 @@ export class ClassesComponent {
   readonly selectedTab = signal<string>('ALL');
 
   readonly gradeTabs = [
-    { id: 'ALL', label: 'كافة المراحل' },
-    { id: 'الصف الأول الثانوي', label: 'الأول الثانوي' },
-    { id: 'الصف الثاني الثانوي', label: 'الثاني الثانوي' },
-    { id: 'الصف الثالث الثانوي', label: 'الثالث الثانوي' },
-    { id: 'المرحلة الإعدادية', label: 'المرحلة الإعدادية' }
+    { id: 'ALL', label: 'كافة الصفوف' },
+    ...GRADE_LEVELS.map(g => ({ id: g.label, label: g.shortLabel }))
   ];
 
   readonly classes = signal<SchoolClass[]>([
-    {
-      id: 'c1',
-      name: 'فصل 1/1 لغات (متميز)',
-      gradeLevel: 'الصف الأول الثانوي',
-      roomNumber: 'A-101',
-      capacity: 35,
-      enrolledStudents: 32,
-      classTeacher: 'أ/ نادية الشربيني',
-      shift: 'صباحي'
-    },
-    {
-      id: 'c2',
-      name: 'فصل 1/2 لغات',
-      gradeLevel: 'الصف الأول الثانوي',
-      roomNumber: 'A-102',
-      capacity: 35,
-      enrolledStudents: 34,
-      classTeacher: 'أ/ سامية نبيل',
-      shift: 'صباحي'
-    },
-    {
-      id: 'c3',
-      name: 'فصل 1/3 متفوقين لغات',
-      gradeLevel: 'الصف الأول الثانوي',
-      roomNumber: 'A-103',
-      capacity: 30,
-      enrolledStudents: 28,
-      classTeacher: 'د/ شريف فؤاد',
-      shift: 'صباحي'
-    },
-    {
-      id: 'c4',
-      name: 'فصل 2/1 علمي لغات',
-      gradeLevel: 'الصف الثاني الثانوي',
-      roomNumber: 'B-201',
-      capacity: 35,
-      enrolledStudents: 31,
-      classTeacher: 'أ. د. محمود الشناوي',
-      shift: 'صباحي'
-    },
-    {
-      id: 'c5',
-      name: 'فصل 3/1 شهادة لغات',
-      gradeLevel: 'الصف الثالث الثانوي',
-      roomNumber: 'C-301',
-      capacity: 35,
-      enrolledStudents: 33,
-      classTeacher: 'أ/ عبد الرحمن طه',
-      shift: 'صباحي'
-    }
+    { id: 'c1', name: 'فصل 1/1', gradeLevel: 'الصف الأول الإعدادي', roomNumber: 'A-101', capacity: 45, enrolledStudents: 42, classTeacher: 'أ. كمال الشربيني', shift: 'صباحي' },
+    { id: 'c2', name: 'فصل 1/2', gradeLevel: 'الصف الأول الإعدادي', roomNumber: 'A-102', capacity: 45, enrolledStudents: 41, classTeacher: 'أ. سامي نبيل', shift: 'صباحي' },
+    { id: 'c3', name: 'فصل 1/3', gradeLevel: 'الصف الأول الإعدادي', roomNumber: 'A-103', capacity: 45, enrolledStudents: 40, classTeacher: 'أ. شريف فؤاد', shift: 'صباحي' },
+    { id: 'c4', name: 'فصل 1/4', gradeLevel: 'الصف الأول الإعدادي', roomNumber: 'A-104', capacity: 45, enrolledStudents: 39, classTeacher: 'أ. وليد منصور', shift: 'صباحي' },
+    { id: 'c5', name: 'فصل 2/1', gradeLevel: 'الصف الثاني الإعدادي', roomNumber: 'B-201', capacity: 45, enrolledStudents: 43, classTeacher: 'أ. محمود الشناوي', shift: 'صباحي' },
+    { id: 'c6', name: 'فصل 2/2', gradeLevel: 'الصف الثاني الإعدادي', roomNumber: 'B-202', capacity: 45, enrolledStudents: 42, classTeacher: 'أ. حسن إبراهيم', shift: 'صباحي' },
+    { id: 'c7', name: 'فصل 2/3', gradeLevel: 'الصف الثاني الإعدادي', roomNumber: 'B-203', capacity: 45, enrolledStudents: 40, classTeacher: 'أ. أحمد مصطفى', shift: 'صباحي' },
+    { id: 'c8', name: 'فصل 2/4', gradeLevel: 'الصف الثاني الإعدادي', roomNumber: 'B-204', capacity: 45, enrolledStudents: 41, classTeacher: 'أ. طارق عبد الحميد', shift: 'صباحي' },
+    { id: 'c9', name: 'فصل 3/1', gradeLevel: 'الصف الثالث الإعدادي', roomNumber: 'C-301', capacity: 45, enrolledStudents: 44, classTeacher: 'الشيخ عبد الرحمن طه', shift: 'صباحي' },
+    { id: 'c10', name: 'فصل 3/2', gradeLevel: 'الصف الثالث الإعدادي', roomNumber: 'C-302', capacity: 45, enrolledStudents: 43, classTeacher: 'أ. خالد سعيد', shift: 'صباحي' },
+    { id: 'c11', name: 'فصل 3/3', gradeLevel: 'الصف الثالث الإعدادي', roomNumber: 'C-303', capacity: 45, enrolledStudents: 41, classTeacher: 'أ. ياسر عادل', shift: 'صباحي' },
+    { id: 'c12', name: 'فصل 3/4', gradeLevel: 'الصف الثالث الإعدادي', roomNumber: 'C-304', capacity: 45, enrolledStudents: 42, classTeacher: 'أ. إبراهيم سالم', shift: 'صباحي' }
   ]);
 
   readonly filteredClasses = computed(() => {
     const tab = this.selectedTab();
     if (tab === 'ALL') return this.classes();
-    return this.classes().filter(c => c.gradeLevel.includes(tab));
+    return this.classes().filter(c => c.gradeLevel === tab);
   });
 }
 

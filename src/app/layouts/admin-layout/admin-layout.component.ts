@@ -1,26 +1,29 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
+import { provideMaterialDefaults } from '../../shared/material/material-defaults.providers';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, NavbarComponent, SidebarComponent],
+  providers: [provideMaterialDefaults()],
   template: `
     <div class="flex h-screen overflow-hidden bg-slate-50 font-cairo">
-      <!-- Sidebar with 2-way Signal Model Binding -->
-      <app-sidebar 
-        [role]="'ADMIN'" 
-        [(isCollapsed)]="isSidebarCollapsed">
+      <!-- Fixed (pinned) sidebar - always visible in the admin panel -->
+      <app-sidebar
+        [role]="'ADMIN'"
+        [pinned]="true">
       </app-sidebar>
 
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
         <!-- Top Navigation Bar -->
-        <app-navbar 
-          [title]="'لوحة تحكم إدارة المدرسة والكنترول'" 
-          (toggleSidebar)="toggleSidebar()">
+        <app-navbar
+          [title]="'لوحة تحكم إدارة المدرسة والكنترول'"
+          [showSidebarToggle]="false">
         </app-navbar>
 
         <!-- Dynamic Feature Views -->
@@ -31,11 +34,4 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar.compon
     </div>
   `
 })
-export class AdminLayoutComponent {
-  readonly isSidebarCollapsed = signal<boolean>(false);
-
-  toggleSidebar(): void {
-    this.isSidebarCollapsed.update(state => !state);
-  }
-}
-
+export class AdminLayoutComponent {}

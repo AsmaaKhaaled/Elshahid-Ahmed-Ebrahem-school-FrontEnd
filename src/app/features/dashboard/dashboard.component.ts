@@ -1,7 +1,8 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
+import { SCHOOL_INFO } from '../../core/constants/school.constants';
 
 interface StatMetric {
   title: string;
@@ -24,6 +25,7 @@ interface ActivityItem {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ArabicDatePipe],
   template: `
     <div class="space-y-6">
@@ -39,7 +41,10 @@ interface ActivityItem {
               مرحباً بك مجدداً، {{ authService.userName() }}
             </h2>
             <p class="text-sm text-slate-300 leading-relaxed">
-              تتابع الآن المؤشرات الأكاديمية وسير العملية التعليمية بمدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات. جميع الأنظمة تعمل بكفاءة.
+              تتابع الآن المؤشرات الأكاديمية وسير العملية التعليمية ب{{ school.fullName }} ({{ school.category }}). جميع الأنظمة تعمل بكفاءة.
+            </p>
+            <p class="text-xs text-primary-200 font-semibold">
+              مدير المدرسة: {{ school.principal }}
             </p>
           </div>
 
@@ -202,6 +207,7 @@ interface ActivityItem {
 })
 export class DashboardComponent {
   readonly authService = inject(AuthService);
+  readonly school = SCHOOL_INFO;
   readonly today = new Date();
 
   readonly stats = signal<StatMetric[]>([
@@ -247,9 +253,9 @@ export class DashboardComponent {
     {
       id: '1',
       periodNumber: '1',
-      subject: 'اللغة الإنجليزية المتقدمة (Advanced English)',
+      subject: 'اللغة الإنجليزية',
       teacher: 'مستر أحمد عبد السلام',
-      className: 'فصل 1/1 لغات',
+      className: 'فصل 1/1',
       time: '08:00 - 08:45 AM',
       status: 'جارية الآن',
       statusBadgeClass: 'bg-emerald-100 text-emerald-800'
@@ -257,9 +263,9 @@ export class DashboardComponent {
     {
       id: '2',
       periodNumber: '2',
-      subject: 'الرياضيات واللغات (Math)',
-      teacher: 'أ/ سامية نبيل',
-      className: 'فصل 2/2 لغات',
+      subject: 'الرياضيات',
+      teacher: 'أ/ سامي نبيل',
+      className: 'فصل 2/2',
       time: '08:50 - 09:35 AM',
       status: 'قادمة',
       statusBadgeClass: 'bg-slate-100 text-slate-700'
@@ -267,9 +273,9 @@ export class DashboardComponent {
     {
       id: '3',
       periodNumber: '3',
-      subject: 'العلوم التجريبية (Science Lab)',
+      subject: 'العلوم',
       teacher: 'د/ شريف فؤاد',
-      className: 'فصل 3/1 معمل 2',
+      className: 'فصل 3/1',
       time: '09:40 - 10:25 AM',
       status: 'قادمة',
       statusBadgeClass: 'bg-slate-100 text-slate-700'
@@ -279,7 +285,7 @@ export class DashboardComponent {
       periodNumber: '4',
       subject: 'اللغة العربية والتربية الإسلامية',
       teacher: 'الشيخ عبد الرحمن طه',
-      className: 'فصل 1/2 لغات',
+      className: 'فصل 1/2',
       time: '10:50 - 11:35 AM',
       status: 'قادمة',
       statusBadgeClass: 'bg-slate-100 text-slate-700'
@@ -303,8 +309,8 @@ export class DashboardComponent {
     },
     {
       id: 'a3',
-      title: 'طرح واجب الفيزياء (Physics Assignment #4)',
-      description: 'أضاف قسم العلوم واجباً لطلاب الصف الثاني الثانوي لغات.',
+      title: 'طرح واجب العلوم',
+      description: 'أضاف قسم العلوم واجباً لطلاب الصف الثاني الإعدادي.',
       time: 'منذ ساعتين',
       type: 'ASSIGNMENT'
     }
