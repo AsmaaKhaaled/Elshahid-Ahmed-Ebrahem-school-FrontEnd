@@ -1,6 +1,9 @@
-import { Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
+import { GRADE_LEVELS } from '../../core/constants/school.constants';
 
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
 
@@ -15,7 +18,8 @@ interface AttendanceRecord {
 @Component({
   selector: 'app-attendance',
   standalone: true,
-  imports: [FormsModule, ArabicDatePipe],
+  imports: [FormsModule, ArabicDatePipe, MatFormFieldModule, MatSelectModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -66,14 +70,18 @@ interface AttendanceRecord {
 
       <!-- Controls: Date & Class Selector -->
       <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <label class="text-xs font-bold text-slate-700">الفصل الدراسي:</label>
-          <select class="px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700">
-            <option>الصف الأول الثانوي - فصل 1/1 لغات</option>
-            <option>الصف الأول الثانوي - فصل 1/2 لغات</option>
-            <option>الصف الأول الثانوي - فصل 1/3 متفوقين</option>
-          </select>
-        </div>
+        <mat-form-field class="w-full sm:w-72">
+          <mat-label>الفصل الدراسي</mat-label>
+          <mat-select [(value)]="selectedSection">
+            @for (grade of grades; track grade.id) {
+              <mat-optgroup [label]="grade.label">
+                @for (section of grade.sections; track section) {
+                  <mat-option [value]="section">فصل {{ section }}</mat-option>
+                }
+              </mat-optgroup>
+            }
+          </mat-select>
+        </mat-form-field>
 
         <div class="flex items-center gap-2 text-xs text-slate-500">
           <span>تاريخ اليوم:</span>
@@ -149,14 +157,16 @@ interface AttendanceRecord {
 })
 export class AttendanceComponent {
   readonly today = new Date();
+  readonly grades = GRADE_LEVELS;
+  readonly selectedSection = signal<string>(GRADE_LEVELS[0].sections[0]);
 
   readonly records = signal<AttendanceRecord[]>([
     { studentId: '1', name: 'أحمد ياسين محمد إبراهيم', code: 'STD-2026-001', status: 'PRESENT' },
-    { studentId: '2', name: 'مريم شريف عبد المنعم', code: 'STD-2026-002', status: 'PRESENT' },
+    { studentId: '2', name: 'مازن شريف عبد المنعم', code: 'STD-2026-002', status: 'PRESENT' },
     { studentId: '3', name: 'كريم خالد مصطفى السعيد', code: 'STD-2026-003', status: 'LATE', note: 'تأخر عن الطابور الصباحي' },
-    { studentId: '4', name: 'نوران حسام حسن رضوان', code: 'STD-2026-004', status: 'PRESENT' },
+    { studentId: '4', name: 'نور الدين حسام حسن رضوان', code: 'STD-2026-004', status: 'PRESENT' },
     { studentId: '5', name: 'عمر طارق عبد الله خليل', code: 'STD-2026-005', status: 'ABSENT', note: 'إشعار مرسل للوالد' },
-    { studentId: '6', name: 'ياسمين مدحت سامي', code: 'STD-2026-006', status: 'EXCUSED', note: 'عذر مرضي معتمد' }
+    { studentId: '6', name: 'ياسين مدحت سامي', code: 'STD-2026-006', status: 'EXCUSED', note: 'عذر مرضي معتمد' }
   ]);
 
   readonly presentCount = computed(() => this.records().filter(r => r.status === 'PRESENT').length);

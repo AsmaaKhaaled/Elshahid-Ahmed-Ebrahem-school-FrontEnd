@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -7,6 +7,7 @@ import { passwordMatchValidator } from '../../../shared/validators/password-matc
 @Component({
   selector: 'app-set-initial-password',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   template: `
     <div class="bg-white/95 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl space-y-6 text-slate-800">

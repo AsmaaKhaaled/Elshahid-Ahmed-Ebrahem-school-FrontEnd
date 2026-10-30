@@ -1,6 +1,8 @@
-import { Component, inject, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, model } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 import { UserRole } from '../../../core/models/user.model';
 
 interface NavItem {
@@ -15,40 +17,43 @@ interface NavItem {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, NgOptimizedImage],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Mobile Backdrop -->
-    @if (!isCollapsed()) {
-      <div 
+    @if (!pinned() && !isCollapsed()) {
+      <div
         (click)="closeSidebar()"
         class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden transition-opacity">
       </div>
     }
 
     <!-- Sidebar Container -->
-    <aside 
-      [class.translate-x-full]="isCollapsed()"
-      class="fixed lg:static top-0 right-0 z-50 h-screen w-72 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none border-l border-slate-800">
+    <aside
+      [class.translate-x-full]="!pinned() && isCollapsed()"
+      [class]="pinned()
+        ? 'static shrink-0 h-screen w-64 lg:w-72 bg-slate-900 text-white flex flex-col border-l border-slate-800'
+        : 'fixed lg:static top-0 right-0 z-50 h-screen w-72 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none border-l border-slate-800'">
       
       <!-- Brand Header -->
       <div class="h-20 flex items-center justify-between px-6 border-b border-slate-800/80 bg-slate-950/40">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary-700 via-primary-600 to-sky-400 p-0.5 flex items-center justify-center shadow-lg shadow-primary-900/40">
-            <div class="w-full h-full bg-slate-950/30 rounded-[14px] flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-              </svg>
-            </div>
-          </div>
+          <img
+            [ngSrc]="school.logoUrl"
+            width="48"
+            height="48"
+            priority
+            [alt]="'شعار ' + school.fullName"
+            class="shrink-0 rounded-full ring-2 ring-white/15 shadow-lg shadow-primary-900/40" />
           <div class="flex flex-col">
-            <span class="font-bold text-base tracking-tight text-white leading-tight">مدرسة الشهيد أحمد إبراهيم</span>
-            <span class="text-[11px] text-primary-400 font-medium">الرسمية المتميزة لغات</span>
+            <span class="font-bold text-sm tracking-tight text-white leading-tight">{{ school.name }}</span>
+            <span class="text-[11px] text-primary-400 font-medium">{{ school.type }} - {{ school.category }}</span>
           </div>
         </div>
 
         <!-- Mobile Close Button -->
-        <button 
+        @if (!pinned()) {
+        <button
           (click)="closeSidebar()"
           type="button" 
           class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
@@ -56,27 +61,34 @@ interface NavItem {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+        }
       </div>
 
       <!-- User Role Pill Indicator -->
       <div class="px-6 py-3 bg-slate-950/20 border-b border-slate-800/40 flex items-center justify-between text-xs">
         <span class="text-slate-400">بوابة الدخول:</span>
         <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary-950 text-primary-300 border border-primary-800/60">
-          {{ getRoleTitle() }}
+          {{ roleTitle() }}
         </span>
       </div>
 
       <!-- Navigation Links -->
       <nav class="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 scrollbar-thin">
-        @for (item of filteredNavItems(); track item.route) {
-          <a 
-            [routerLink]="item.route"
-            routerLinkActive="bg-primary-700 text-white shadow-lg shadow-primary-950/40 font-semibold"
-            [routerLinkActiveOptions]="{ exact: item.route.includes('/dashboard') }"
+        @for (item of visibleNavItems(); track item.route) {
+          <a
+            [routerLink]="basePath() + item.route"
+            routerLinkActive
+            #rla="routerLinkActive"
+            [attr.aria-current]="rla.isActive ? 'page' : null"
+            [class]="rla.isActive
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/40 font-bold ring-1 ring-primary-400/40 border-r-4 border-sky-300'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/70 font-medium border-r-4 border-transparent'"
             (click)="onNavigate()"
-            class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/70 transition-all text-sm font-medium">
+            class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all text-sm">
             <div class="flex items-center gap-3">
-              <span class="w-5 h-5 flex items-center justify-center text-slate-400 group-hover:text-primary-300 transition-colors" [innerHTML]="item.icon"></span>
+              <span
+                [class]="rla.isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary-300'"
+                class="w-5 h-5 flex items-center justify-center transition-colors" [innerHTML]="item.icon"></span>
               <span>{{ item.label }}</span>
             </div>
             @if (item.badge) {
@@ -108,10 +120,30 @@ interface NavItem {
   `
 })
 export class SidebarComponent {
-  readonly authService = inject(AuthService);
+  private readonly authService = inject(AuthService);
+
+  readonly school = SCHOOL_INFO;
 
   readonly role = input<UserRole>('ADMIN');
   readonly isCollapsed = model<boolean>(false);
+  // Pinned: always visible, no toggle/backdrop (used by the admin layout)
+  readonly pinned = input<boolean>(false);
+
+  private readonly activeRole = computed<UserRole>(() => this.role() || this.authService.userRole() || 'ADMIN');
+
+  // Each layout mounts its children under its own prefix (/admin, /teacher, /student),
+  // so links must target that prefix for routerLinkActive to match the current URL.
+  readonly basePath = computed(() => {
+    switch (this.activeRole()) {
+      case 'TEACHER':
+        return '/teacher';
+      case 'STUDENT':
+      case 'PARENT':
+        return '/student';
+      default:
+        return '/admin';
+    }
+  });
 
   readonly allNavItems: NavItem[] = [
     {
@@ -171,6 +203,18 @@ export class SidebarComponent {
       roles: ['ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT']
     },
     {
+      label: 'إحصائية حضور وغياب الطلاب',
+      route: '/attendance-stats',
+      icon: `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>`,
+      roles: ['ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      label: 'دفتر حضور وغياب المعلمين',
+      route: '/teacher-attendance',
+      icon: `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253M15 10l1.5 1.5L19 9"/></svg>`,
+      roles: ['ADMIN', 'SUPER_ADMIN']
+    },
+    {
       label: 'النتائج وكشوف الدرجات',
       route: '/grades',
       icon: `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>`,
@@ -184,14 +228,13 @@ export class SidebarComponent {
     }
   ];
 
-  filteredNavItems(): NavItem[] {
-    const activeRole = this.role() || this.authService.userRole() || 'ADMIN';
-    return this.allNavItems.filter(item => item.roles.includes(activeRole));
-  }
+  // Computed once per role change instead of being re-evaluated on every change detection
+  readonly visibleNavItems = computed<NavItem[]>(() =>
+    this.allNavItems.filter(item => item.roles.includes(this.activeRole()))
+  );
 
-  getRoleTitle(): string {
-    const r = this.role() || this.authService.userRole();
-    switch (r) {
+  readonly roleTitle = computed(() => {
+    switch (this.activeRole()) {
       case 'ADMIN':
       case 'SUPER_ADMIN':
         return 'إدارة النظام والكنترول';
@@ -204,7 +247,7 @@ export class SidebarComponent {
       default:
         return 'نظام المدرسة';
     }
-  }
+  });
 
   closeSidebar(): void {
     this.isCollapsed.set(true);
@@ -212,7 +255,7 @@ export class SidebarComponent {
 
   onNavigate(): void {
     // Auto-close on mobile upon navigation
-    if (window.innerWidth < 1024) {
+    if (!this.pinned() && window.innerWidth < 1024) {
       this.closeSidebar();
     }
   }

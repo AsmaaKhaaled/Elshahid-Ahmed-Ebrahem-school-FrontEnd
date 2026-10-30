@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 
 interface SubjectItem {
   id: string;
@@ -14,6 +14,7 @@ interface SubjectItem {
 @Component({
   selector: 'app-subjects',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -86,7 +87,7 @@ export class SubjectsComponent {
       nameArabic: 'اللغة الإنجليزية الرفيعة',
       nameEnglish: 'Advanced English (High Level)',
       code: 'ENG-101',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       weeklyHours: 6,
       type: 'منهج لغات متقدم',
       totalMarks: 100
@@ -96,7 +97,7 @@ export class SubjectsComponent {
       nameArabic: 'الرياضيات باللغة الإنجليزية',
       nameEnglish: 'Pure & Applied Mathematics',
       code: 'MTH-101',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       weeklyHours: 5,
       type: 'منهج لغات متقدم',
       totalMarks: 100
@@ -106,7 +107,7 @@ export class SubjectsComponent {
       nameArabic: 'الكيمياء والفيزياء (لغات)',
       nameEnglish: 'Integrated Sciences & Chemistry',
       code: 'SCI-101',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       weeklyHours: 5,
       type: 'منهج لغات متقدم',
       totalMarks: 100
@@ -116,7 +117,7 @@ export class SubjectsComponent {
       nameArabic: 'اللغة العربية والخط والإملاء',
       nameEnglish: 'Arabic Language & Literature',
       code: 'ARB-101',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       weeklyHours: 4,
       type: 'منهج وزاري موحد',
       totalMarks: 80
@@ -126,7 +127,7 @@ export class SubjectsComponent {
       nameArabic: 'اللغة الفرنسية (لغة أجنبية ثانية)',
       nameEnglish: 'French Language (Deuxième Langue)',
       code: 'FRN-101',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       weeklyHours: 3,
       type: 'لغة أجنبية ثانية',
       totalMarks: 40
@@ -136,7 +137,7 @@ export class SubjectsComponent {
       nameArabic: 'تكنولوجيا المعلومات والبرمجة',
       nameEnglish: 'Computer Science & AI Basics',
       code: 'ICT-101',
-      gradeLevel: 'الصف الأول الثانوي',
+      gradeLevel: 'الصف الأول الإعدادي',
       weeklyHours: 2,
       type: 'منهج وزاري موحد',
       totalMarks: 40

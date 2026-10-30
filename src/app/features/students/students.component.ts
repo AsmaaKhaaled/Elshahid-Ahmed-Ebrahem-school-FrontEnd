@@ -1,5 +1,8 @@
-import { Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { GRADE_LEVELS } from '../../core/constants/school.constants';
 
 interface Student {
   id: string;
@@ -17,7 +20,8 @@ interface Student {
 @Component({
   selector: 'app-students',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, MatFormFieldModule, MatSelectModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
       <!-- Page Title & Header Actions -->
@@ -77,7 +81,7 @@ interface Student {
             type="text" 
             [(ngModel)]="searchQuery" 
             placeholder="البحث باسم الطالب، كود القيد، أو الرقم القومي..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-600"
+            class="w-full h-10 pl-10 pr-4 rounded-[10px] border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-600"
           />
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,31 +91,26 @@ interface Student {
         </div>
 
         <!-- Grade Selector -->
-        <div class="w-full md:w-52">
-          <select 
-            [(ngModel)]="selectedGrade"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20">
-            <option value="ALL">جميع المراحل الدراسية</option>
-            <option value="الصف الأول الإعدادي">الصف الأول الإعدادي</option>
-            <option value="الصف الثاني الإعدادي">الصف الثاني الإعدادي</option>
-            <option value="الصف الثالث الإعدادي">الصف الثالث الإعدادي</option>
-            <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
-            <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
-            <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
-          </select>
-        </div>
+        <mat-form-field class="w-full md:w-56">
+          <mat-label>الصف الدراسي</mat-label>
+          <mat-select [(value)]="selectedGrade">
+            <mat-option value="ALL">جميع الصفوف الدراسية</mat-option>
+            @for (grade of grades; track grade.id) {
+              <mat-option [value]="grade.label">{{ grade.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-        <!-- Class Filter -->
-        <div class="w-full md:w-44">
-          <select 
-            [(ngModel)]="selectedStatus"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20">
-            <option value="ALL">كل الحالات</option>
-            <option value="منتظم">منتظم</option>
-            <option value="موقوف">موقوف</option>
-            <option value="منقول">منقول</option>
-          </select>
-        </div>
+        <!-- Status Filter -->
+        <mat-form-field class="w-full md:w-44">
+          <mat-label>حالة القيد</mat-label>
+          <mat-select [(value)]="selectedStatus">
+            <mat-option value="ALL">كل الحالات</mat-option>
+            @for (status of studentStatuses; track status) {
+              <mat-option [value]="status">{{ status }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
       </div>
 
       <!-- Students Records Table -->
@@ -219,23 +218,23 @@ interface Student {
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">المرحلة الدراسية</label>
-                  <select class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
-                    <option>الصف الأول الثانوي</option>
-                    <option>الصف الثاني الثانوي</option>
-                    <option>الصف الثالث الثانوي</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">الفصل</label>
-                  <select class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
-                    <option>1/1 لغات</option>
-                    <option>1/2 لغات</option>
-                    <option>1/3 متفوقين</option>
-                  </select>
-                </div>
+              <div class="grid grid-cols-2 gap-3 pt-1">
+                <mat-form-field class="w-full">
+                  <mat-label>الصف الدراسي</mat-label>
+                  <mat-select [(value)]="newStudentGradeId">
+                    @for (grade of grades; track grade.id) {
+                      <mat-option [value]="grade.id">{{ grade.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field class="w-full">
+                  <mat-label>الفصل</mat-label>
+                  <mat-select [(value)]="newStudentSection">
+                    @for (section of newStudentSections(); track section) {
+                      <mat-option [value]="section">فصل {{ section }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
               </div>
 
               <div>
@@ -260,14 +259,24 @@ export class StudentsComponent {
   readonly selectedStatus = signal<string>('ALL');
   readonly showAddModal = signal<boolean>(false);
 
+  readonly grades = GRADE_LEVELS;
+  readonly studentStatuses: Student['status'][] = ['منتظم', 'موقوف', 'منقول'];
+
+  readonly newStudentGradeId = signal<string>(GRADE_LEVELS[0].id);
+  readonly newStudentSections = computed(() =>
+    GRADE_LEVELS.find(grade => grade.id === this.newStudentGradeId())?.sections ?? []
+  );
+  // Resets to the first section of the newly selected grade whenever the grade changes
+  readonly newStudentSection = linkedSignal(() => this.newStudentSections()[0]);
+
   readonly students = signal<Student[]>([
     {
       id: '1',
       code: 'STD-2026-001',
       nationalId: '31001011234567',
       name: 'أحمد ياسين محمد إبراهيم',
-      gradeLevel: 'الصف الأول الثانوي',
-      className: '1/3 متفوقين',
+      gradeLevel: 'الصف الأول الإعدادي',
+      className: '1/3',
       guardianName: 'المهندس / ياسين محمد',
       guardianPhone: '01001234567',
       status: 'منتظم',
@@ -277,9 +286,9 @@ export class StudentsComponent {
       id: '2',
       code: 'STD-2026-002',
       nationalId: '31002021234568',
-      name: 'مريم شريف عبد المنعم',
-      gradeLevel: 'الصف الأول الثانوي',
-      className: '1/1 لغات',
+      name: 'مازن شريف عبد المنعم',
+      gradeLevel: 'الصف الأول الإعدادي',
+      className: '1/1',
       guardianName: 'دكتور / شريف عبد المنعم',
       guardianPhone: '01112345678',
       status: 'منتظم',
@@ -290,8 +299,8 @@ export class StudentsComponent {
       code: 'STD-2026-003',
       nationalId: '31003031234569',
       name: 'كريم خالد مصطفى السعيد',
-      gradeLevel: 'الصف الثاني الثانوي',
-      className: '2/1 علمي لغات',
+      gradeLevel: 'الصف الثاني الإعدادي',
+      className: '2/1',
       guardianName: 'أ/ خالد مصطفى',
       guardianPhone: '01223456789',
       status: 'منتظم',
@@ -301,9 +310,9 @@ export class StudentsComponent {
       id: '4',
       code: 'STD-2026-004',
       nationalId: '31004041234570',
-      name: 'نوران حسام حسن رضوان',
+      name: 'نور الدين حسام حسن رضوان',
       gradeLevel: 'الصف الثالث الإعدادي',
-      className: '3/2 لغات',
+      className: '3/2',
       guardianName: 'المحامي / حسام حسن',
       guardianPhone: '01556789012',
       status: 'منتظم',
@@ -314,8 +323,8 @@ export class StudentsComponent {
       code: 'STD-2026-005',
       nationalId: '31005051234571',
       name: 'عمر طارق عبد الله خليل',
-      gradeLevel: 'الصف الأول الثانوي',
-      className: '1/2 لغات',
+      gradeLevel: 'الصف الثالث الإعدادي',
+      className: '3/3',
       guardianName: 'أ/ طارق عبد الله',
       guardianPhone: '01099887766',
       status: 'منتظم',

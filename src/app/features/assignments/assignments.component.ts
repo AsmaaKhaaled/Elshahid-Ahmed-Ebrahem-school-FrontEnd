@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 
 interface Assignment {
@@ -15,6 +15,7 @@ interface Assignment {
 @Component({
   selector: 'app-assignments',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ArabicDatePipe],
   template: `
     <div class="space-y-6">
@@ -90,7 +91,7 @@ export class AssignmentsComponent {
       id: 'as-1',
       title: 'Problem Set #4: Calculus & Vectors',
       subject: 'Pure Mathematics',
-      className: 'الصف الثاني الثانوي (2/1)',
+      className: 'الصف الثاني الإعدادي (2/1)',
       dueDate: new Date(Date.now() + 86400000 * 2).toISOString(),
       totalSubmissions: 28,
       totalStudents: 32,
@@ -100,7 +101,7 @@ export class AssignmentsComponent {
       id: 'as-2',
       title: 'Essay: The Impact of Artificial Intelligence',
       subject: 'Advanced English',
-      className: 'الصف الأول الثانوي (1/3)',
+      className: 'الصف الأول الإعدادي (1/3)',
       dueDate: new Date(Date.now() + 86400000 * 4).toISOString(),
       totalSubmissions: 20,
       totalStudents: 30,
@@ -110,7 +111,7 @@ export class AssignmentsComponent {
       id: 'as-3',
       title: 'تقرير التجارب المعملية: قياس سرعة التفاعل',
       subject: 'الكيمياء (لغات)',
-      className: 'الصف الأول الثانوي (1/1)',
+      className: 'الصف الأول الإعدادي (1/1)',
       dueDate: new Date(Date.now() - 86400000).toISOString(),
       totalSubmissions: 31,
       totalStudents: 32,

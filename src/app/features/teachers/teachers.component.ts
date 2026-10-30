@@ -1,5 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 
 interface Teacher {
   id: string;
@@ -16,7 +18,8 @@ interface Teacher {
 @Component({
   selector: 'app-teachers',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, MatFormFieldModule, MatSelectModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -42,7 +45,7 @@ interface Teacher {
             type="text" 
             [(ngModel)]="searchQuery" 
             placeholder="البحث باسم المعلم، التخصص، أو رقم الهاتف..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            class="w-full h-10 pl-10 pr-4 rounded-[10px] border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           />
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,18 +54,15 @@ interface Teacher {
           </span>
         </div>
 
-        <div class="w-full md:w-60">
-          <select 
-            [(ngModel)]="selectedDepartment"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20">
-            <option value="ALL">جميع الأقسام والتخصصات</option>
-            <option value="اللغة الإنجليزية">قسم اللغة الإنجليزية</option>
-            <option value="الرياضيات">قسم الرياضيات (Math)</option>
-            <option value="العلوم التجريبية">قسم العلوم (Science)</option>
-            <option value="اللغة العربية">قسم اللغة العربية</option>
-            <option value="الدراسات الاجتماعية">قسم الدراسات الاجتماعية</option>
-          </select>
-        </div>
+        <mat-form-field class="w-full md:w-60">
+          <mat-label>القسم / التخصص</mat-label>
+          <mat-select [(value)]="selectedDepartment">
+            <mat-option value="ALL">جميع الأقسام والتخصصات</mat-option>
+            @for (department of departments; track department.value) {
+              <mat-option [value]="department.value">{{ department.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
       </div>
 
       <!-- Teachers Grid -->
@@ -129,11 +129,19 @@ export class TeachersComponent {
   readonly searchQuery = signal<string>('');
   readonly selectedDepartment = signal<string>('ALL');
 
+  readonly departments = [
+    { value: 'اللغة العربية', label: 'قسم اللغة العربية' },
+    { value: 'اللغة الإنجليزية', label: 'قسم اللغة الإنجليزية' },
+    { value: 'الرياضيات', label: 'قسم الرياضيات' },
+    { value: 'العلوم', label: 'قسم العلوم' },
+    { value: 'الدراسات الاجتماعية', label: 'قسم الدراسات الاجتماعية' }
+  ];
+
   readonly teachers = signal<Teacher[]>([
     {
       id: '1',
       name: 'أ. د. محمود عبد العزيز الشناوي',
-      title: 'كبير معلمين - مدير التعليم الثانوي',
+      title: 'كبير معلمين - رئيس قسم الرياضيات',
       specialization: 'الرياضيات',
       email: 'm.shinawy@school.edu.eg',
       phone: '01012340001',

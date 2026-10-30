@@ -1,0 +1,139 @@
+// =====================================================================
+// Angular Material theme
+// ---------------------------------------------------------------------
+// Scope: Material is used ONLY for form controls (form-field, input,
+// select, datepicker...) and dialogs. All other UI (layout, cards,
+// tables, buttons, badges) is built with Tailwind.
+//
+// `mat.theme` only declares CSS variables (--mat-sys-*), so it never
+// restyles Tailwind elements. The overrides below tune the components
+// to match the Tailwind design tokens (slate / primary-blue, Cairo).
+// =====================================================================
+@use '@angular/material' as mat;
+
+// Tailwind palette references (kept in one place for readability)
+$slate-200: #e2e8f0;
+$slate-300: #cbd5e1;
+$slate-400: #94a3b8;
+$slate-500: #64748b;
+$slate-700: #334155;
+$primary-50: #eff6ff;
+$primary-600: #2563eb;
+$primary-700: #1d4ed8;
+
+html {
+  color-scheme: light;
+
+  @include mat.theme((
+    color: (
+      primary: mat.$blue-palette,
+      tertiary: mat.$orange-palette,
+      theme-type: light,
+    ),
+    typography: (
+      plain-family: 'Cairo, sans-serif',
+      brand-family: 'Cairo, sans-serif',
+      bold-weight: 700,
+      medium-weight: 600,
+      regular-weight: 400,
+    ),
+    density: 0,
+  ));
+
+  // ----- Form field (compact 40px outlined field) -----
+  @include mat.form-field-overrides((
+    container-height: 40px,
+    container-vertical-padding: 8px,
+    container-text-size: 13px,
+    container-text-weight: 600,
+    outlined-container-shape: 10px,
+    outlined-outline-width: 1px,
+    outlined-focus-outline-width: 1.5px,
+    outlined-outline-color: $slate-200,
+    outlined-hover-outline-color: $slate-300,
+    outlined-focus-outline-color: $primary-600,
+    outlined-input-text-color: $slate-700,
+    outlined-label-text-size: 13px,
+    outlined-label-text-color: $slate-400,
+    outlined-hover-label-text-color: $slate-500,
+    outlined-focus-label-text-color: $primary-700,
+  ));
+
+  // ----- Select trigger + panel -----
+  @include mat.select-overrides((
+    panel-background-color: #ffffff,
+    enabled-trigger-text-color: $slate-700,
+    placeholder-text-color: $slate-400,
+    enabled-arrow-color: $slate-400,
+    focused-arrow-color: $primary-600,
+    trigger-text-size: 13px,
+    trigger-text-weight: 600,
+    container-elevation-shadow: (0 10px 24px -6px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.06)),
+  ));
+
+  // ----- Options inside the panel -----
+  @include mat.option-overrides((
+    label-text-size: 13px,
+    label-text-weight: 500,
+    label-text-color: $slate-700,
+    hover-state-layer-color: #f8fafc,
+    focus-state-layer-color: #f8fafc,
+    selected-state-layer-color: $primary-50,
+    selected-state-label-text-color: $primary-700,
+  ));
+
+  @include mat.optgroup-overrides((
+    label-text-size: 11px,
+    label-text-weight: 700,
+    label-text-color: $slate-400,
+  ));
+}
+
+// White surface so fields look the same on gray pages and white cards
+.mat-mdc-form-field .mat-mdc-text-field-wrapper {
+  background-color: #ffffff;
+  border-radius: 10px;
+}
+
+// Floating label sits neatly on the border of the compact field
+.mat-mdc-form-field .mdc-floating-label--float-above {
+  font-size: 12px !important;
+}
+
+// Tailwind preflight gives every element "border-style: solid", which draws
+// a stray vertical line inside the outlined notch of Material form fields.
+.mdc-notched-outline__notch {
+  border-left-style: none !important;
+  border-right-style: none !important;
+}
+
+// Dropdown overlay panel.
+// MAT_SELECT_CONFIG.overlayPanelClass is set on the overlay *pane*,
+// so the panel itself is targeted as a descendant.
+.app-select-panel .mat-mdc-select-panel {
+  margin-top: 4px;
+  padding: 4px !important;
+  border-radius: 12px !important;
+  border: 1px solid $slate-200;
+  max-height: 280px;
+
+  .mat-mdc-option {
+    min-height: 36px;
+    padding-inline: 12px;
+    border-radius: 8px;
+
+    &.mdc-list-item--selected .mdc-list-item__primary-text {
+      font-weight: 700;
+    }
+  }
+
+  .mat-mdc-optgroup-label {
+    min-height: 30px;
+    padding-inline: 12px;
+  }
+
+  // Slim scrollbar inside the panel
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+}

@@ -1,22 +1,27 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserRole } from '../../../core/models/user.model';
+import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, NgOptimizedImage],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="bg-white/95 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl space-y-6 text-slate-800">
       <!-- Title & Header -->
       <div class="text-center space-y-1.5">
-        <div class="w-16 h-16 mx-auto mb-2 rounded-2xl bg-gradient-to-tr from-primary-800 to-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary-900/30">
-          <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-        </div>
+        <img
+          [ngSrc]="school.logoUrl"
+          width="88"
+          height="88"
+          priority
+          [alt]="'شعار ' + school.fullName"
+          class="mx-auto mb-2 rounded-full shadow-lg shadow-primary-900/20" />
         <h2 class="text-2xl font-black text-slate-900">تسجيل الدخول للنظام</h2>
         <p class="text-xs text-slate-500">أدخل الرقم القومي أو البريد الإلكتروني وكلمة المرور للمتابعة</p>
       </div>
@@ -162,8 +167,9 @@ import { UserRole } from '../../../core/models/user.model';
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  readonly school = SCHOOL_INFO;
 
   readonly isLoading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
@@ -177,11 +183,8 @@ export class LoginComponent {
   });
 
   constructor() {
-    this.route.queryParams.subscribe(params => {
-      if (params['sessionExpired']) {
-        this.sessionExpired.set(true);
-      }
-    });
+    // Read once from the snapshot: no long-lived subscription to clean up
+    this.sessionExpired.set(this.route.snapshot.queryParamMap.has('sessionExpired'));
   }
 
   identifierInvalid(): boolean {
@@ -229,12 +232,12 @@ export class LoginComponent {
         ADMIN: {
           id: 'adm-001',
           nationalId: '28001011234567',
-          fullName: 'أ. د. محمود عبد العزيز الشناوي',
+          fullName: SCHOOL_INFO.principal,
           email: 'admin@school.edu.eg',
           role: 'ADMIN',
           mustChangePassword: false,
           status: 'ACTIVE',
-          schoolName: 'مدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات',
+          schoolName: SCHOOL_INFO.fullName,
           createdAt: new Date().toISOString()
         },
         SUPER_ADMIN: {
@@ -245,7 +248,7 @@ export class LoginComponent {
           role: 'SUPER_ADMIN',
           mustChangePassword: false,
           status: 'ACTIVE',
-          schoolName: 'مدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات',
+          schoolName: SCHOOL_INFO.fullName,
           createdAt: new Date().toISOString()
         },
         TEACHER: {
@@ -256,7 +259,7 @@ export class LoginComponent {
           role: 'TEACHER',
           mustChangePassword: false,
           status: 'ACTIVE',
-          schoolName: 'مدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات',
+          schoolName: SCHOOL_INFO.fullName,
           subjects: ['اللغة الإنجليزية', 'العلوم'],
           createdAt: new Date().toISOString()
         },
@@ -268,9 +271,9 @@ export class LoginComponent {
           role: 'STUDENT',
           mustChangePassword: false,
           status: 'ACTIVE',
-          gradeLevel: 'الصف الأول الثانوي (لغات)',
-          className: '1/3 متفوقين',
-          schoolName: 'مدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات',
+          gradeLevel: 'الصف الأول الإعدادي',
+          className: '1/3',
+          schoolName: SCHOOL_INFO.fullName,
           createdAt: new Date().toISOString()
         },
         PARENT: {
@@ -281,7 +284,7 @@ export class LoginComponent {
           role: 'PARENT',
           mustChangePassword: false,
           status: 'ACTIVE',
-          schoolName: 'مدرسة الشهيد أحمد إبراهيم الرسمية المتميزة لغات',
+          schoolName: SCHOOL_INFO.fullName,
           createdAt: new Date().toISOString()
         }
       };

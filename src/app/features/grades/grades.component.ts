@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
 
 interface GradeItem {
   subject: string;
@@ -12,6 +12,7 @@ interface GradeItem {
 @Component({
   selector: 'app-grades',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -41,7 +42,7 @@ interface GradeItem {
             <div>
               <span class="text-xs text-slate-400 font-semibold">شهادة بيان درجات الطالب</span>
               <h3 class="text-xl font-black text-slate-800">أحمد ياسين محمد إبراهيم</h3>
-              <p class="text-xs text-slate-500 mt-0.5">الصف الأول الثانوي (لغات) - فصل 1/3 متفوقين | كود: STD-2026-001</p>
+              <p class="text-xs text-slate-500 mt-0.5">الصف الأول الإعدادي - فصل 1/3 | كود: STD-2026-001</p>
             </div>
           </div>
 
