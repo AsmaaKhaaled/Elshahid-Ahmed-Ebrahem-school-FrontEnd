@@ -100,6 +100,76 @@ export class AuthService {
     return current.role === roles;
   }
 
+  quickLoginAs(role: UserRole, customUser?: Partial<User>): void {
+    const demoUsers: Record<UserRole, User> = {
+      ADMIN: {
+        id: 'adm-001',
+        nationalId: '28001011234567',
+        fullName: 'أ. د. محمود عبد العزيز الشناوي',
+        email: 'admin@alshaheed.edu.eg',
+        role: 'ADMIN',
+        mustChangePassword: false,
+        status: 'ACTIVE',
+        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
+        createdAt: new Date().toISOString()
+      },
+      SUPER_ADMIN: {
+        id: 'sup-001',
+        nationalId: '27501011234567',
+        fullName: 'إدارة تكنولوجيا التعليم والكنترول',
+        email: 'superadmin@alshaheed.edu.eg',
+        role: 'SUPER_ADMIN',
+        mustChangePassword: false,
+        status: 'ACTIVE',
+        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
+        createdAt: new Date().toISOString()
+      },
+      TEACHER: {
+        id: 'tch-2001',
+        nationalId: '28904151234567',
+        fullName: 'أ. طارق عبد الحميد',
+        email: 'tarek.teacher@alshaheed.edu.eg',
+        role: 'TEACHER',
+        mustChangePassword: false,
+        status: 'ACTIVE',
+        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
+        subjects: ['العلوم العامة', 'مسؤول معمل العلوم'],
+        createdAt: new Date().toISOString()
+      },
+      STUDENT: {
+        id: 'stu-1001',
+        nationalId: '31001011234567',
+        fullName: 'عمر أحمد محمود',
+        email: 'omar.ahmed@alshaheed.edu.eg',
+        role: 'STUDENT',
+        mustChangePassword: false,
+        status: 'ACTIVE',
+        gradeLevel: 'الصف الثاني الإعدادي',
+        className: 'فصل 2/3',
+        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
+        createdAt: new Date().toISOString()
+      },
+      PARENT: {
+        id: 'prn-001',
+        nationalId: '27001011234567',
+        fullName: 'السيد / أحمد محمود',
+        email: 'ahmed.parent@alshaheed.edu.eg',
+        role: 'PARENT',
+        mustChangePassword: false,
+        status: 'ACTIVE',
+        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
+        createdAt: new Date().toISOString()
+      }
+    };
+
+    const user: User = { ...demoUsers[role], ...customUser };
+    const mockToken = `header.${btoa(JSON.stringify({ sub: user.id, role: user.role, exp: Math.floor(Date.now() / 1000) + 86400 }))}.signature`;
+    this.tokenService.setTokens(mockToken);
+    this.currentUser.set(user);
+    this.storeUser(user);
+    this.navigateToRoleDashboard(user.role);
+  }
+
   navigateToRoleDashboard(role: UserRole): void {
     switch (role) {
       case 'ADMIN':

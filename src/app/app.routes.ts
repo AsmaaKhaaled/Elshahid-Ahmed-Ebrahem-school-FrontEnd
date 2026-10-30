@@ -4,6 +4,17 @@ import { roleGuard } from './core/guards/role.guard';
 import { passwordChangeGuard } from './core/guards/password-change.guard';
 
 export const routes: Routes = [
+  // Home Page
+  {
+    path: '',
+    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
+    pathMatch: 'full'
+  },
+  {
+    path: 'home',
+    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent)
+  },
+
   // Authentication Routes
   {
     path: 'auth',
@@ -95,9 +106,6 @@ export const routes: Routes = [
   { path: 'grades', redirectTo: 'admin/grades', pathMatch: 'full' },
   { path: 'announcements', redirectTo: 'admin/announcements', pathMatch: 'full' },
 
-  // Default redirect
-  { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
-
   // Wildcard fallback
-  { path: '**', redirectTo: 'auth/login' }
+  { path: '**', redirectTo: '' }
 ];
