@@ -1,0 +1,50 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate
+    class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-full overflow-y-auto p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div>
+        <h3 class="font-black text-slate-800 text-lg">{{ schedule() ? 'تعديل بيانات جدول الامتحانات' : 'إنشاء جدول امتحانات' }}</h3>
+        <p class="text-xs text-slate-500 mt-0.5">{{ termLabel() }}</p>
+      </div>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <div class="space-y-4 pt-1">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <mat-form-field class="w-full">
+          <mat-label>نوع التقييم</mat-label>
+          <mat-select name="type" required [(ngModel)]="draft.type">
+            @for (type of types; track type) {
+              <mat-option [value]="type">{{ type }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field class="w-full">
+          <mat-label>الصف الدراسي</mat-label>
+          <mat-select name="gradeId" required [(ngModel)]="draft.gradeId">
+            @for (grade of grades; track grade.id) {
+              <mat-option [value]="grade.id">{{ grade.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field class="w-full">
+        <mat-label>عنوان الجدول</mat-label>
+        <input matInput name="title" required [(ngModel)]="draft.title" placeholder="مثال: تقييم شهر نوفمبر" />
+        <mat-error>عنوان الجدول مطلوب</mat-error>
+      </mat-form-field>
+    </div>
+
+    <p class="text-[11px] text-slate-400">
+      الجدول بيتحفظ كمسودة. بعد ما تدرج المواد اضغط "نشر الجدول" عشان يظهر للمعلمين والطلاب.
+    </p>
+
+    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+      <button type="submit" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
+        {{ schedule() ? 'حفظ التعديلات' : 'إنشاء الجدول' }}
+      </button>
+    </div>
+  </form>
+</div>

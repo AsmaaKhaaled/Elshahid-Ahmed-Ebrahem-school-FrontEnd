@@ -1,3 +1,5 @@
+import { AdminPermission } from '../admin/admin-permissions';
+
 export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT' | 'SUPER_ADMIN';
 
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING_ACTIVATION';
@@ -18,6 +20,8 @@ export interface User {
   gradeLevel?: string;
   className?: string;
   subjects?: string[];
+  // Admin sections an ADMIN may open (granted by the SUPER_ADMIN). SUPER_ADMIN ignores it - full access.
+  permissions?: AdminPermission[];
   lastLoginAt?: string;
   createdAt: string;
   updatedAt?: string;

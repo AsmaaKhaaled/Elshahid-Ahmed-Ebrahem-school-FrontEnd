@@ -1,0 +1,75 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate
+    class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-full overflow-y-auto p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div>
+        <h3 class="font-black text-slate-800 text-lg">{{ entry() ? 'تعديل مادة الامتحان' : 'إدراج مادة امتحان' }}</h3>
+        <p class="text-xs text-slate-500 mt-0.5">{{ schedule().title }}</p>
+      </div>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <div class="space-y-4 pt-1">
+      <mat-form-field class="w-full">
+        <mat-label>المادة</mat-label>
+        <mat-select name="subject" required [(ngModel)]="draft.subject">
+          @for (subject of subjects; track subject) {
+            <mat-option [value]="subject">{{ subject }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>اختر المادة</mat-error>
+      </mat-form-field>
+
+      <div class="grid grid-cols-2 gap-3">
+        <mat-form-field class="w-full">
+          <mat-label>تاريخ الامتحان</mat-label>
+          <input matInput type="date" name="date" required [(ngModel)]="draft.date" />
+          <mat-error>التاريخ مطلوب</mat-error>
+        </mat-form-field>
+        <mat-form-field class="w-full">
+          <mat-label>وقت البداية</mat-label>
+          <input matInput type="time" name="startTime" required [(ngModel)]="draft.startTime" />
+          <mat-error>الوقت مطلوب</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <mat-form-field class="w-full">
+          <mat-label>مدة الامتحان</mat-label>
+          <input matInput type="number" name="duration" required min="15" max="240" [(ngModel)]="draft.durationMinutes" />
+          <span matTextSuffix class="text-[11px] text-slate-400 whitespace-nowrap">دقيقة</span>
+          <mat-error>من 15 إلى 240 دقيقة</mat-error>
+        </mat-form-field>
+        <mat-form-field class="w-full">
+          <mat-label>الدرجة النهائية</mat-label>
+          <input matInput type="number" name="totalMarks" required min="1" max="200" [(ngModel)]="draft.totalMarks" />
+          <span matTextSuffix class="text-[11px] text-slate-400 whitespace-nowrap">درجة</span>
+          <mat-error>من 1 إلى 200</mat-error>
+        </mat-form-field>
+      </div>
+
+      @if (draft.startTime && draft.durationMinutes) {
+        <p class="text-xs text-slate-500">
+          الامتحان من <strong class="text-slate-700">{{ formatTime(draft.startTime) }}</strong>
+          إلى <strong class="text-slate-700">{{ formatTime(addMinutes(draft.startTime, draft.durationMinutes)) }}</strong>
+        </p>
+      }
+
+      <mat-form-field class="w-full">
+        <mat-label>ملاحظات (اختياري)</mat-label>
+        <textarea matInput name="notes" rows="2" [(ngModel)]="draft.notes" placeholder="مثال: مسموح باستخدام الآلة الحاسبة"></textarea>
+      </mat-form-field>
+    </div>
+
+    @if (error()) {
+      <p class="text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-100 rounded-xl p-3">{{ error() }}</p>
+    }
+
+    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+      <button type="submit" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
+        {{ entry() ? 'حفظ التعديلات' : 'إدراج المادة' }}
+      </button>
+    </div>
+  </form>
+</div>

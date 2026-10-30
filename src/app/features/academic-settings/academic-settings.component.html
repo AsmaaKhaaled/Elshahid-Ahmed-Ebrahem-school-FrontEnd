@@ -1,0 +1,148 @@
+<div class="space-y-6">
+  <div>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">العام والفصل الدراسي</h2>
+    <p class="text-xs text-slate-500 mt-1">
+      إنهاء الفصل الحالي وبدء الفصل التالي، وإضافة الفصول والسنوات الجديدة. أي تغيير هنا بيتطبق على النظام كله.
+    </p>
+  </div>
+
+  <!-- Current term -->
+  @let reminder = calendar.endReminder();
+  <div class="bg-white rounded-2xl p-6 shadow-soft border flex flex-col md:flex-row md:items-center justify-between gap-4"
+    [class]="!reminder ? 'border-slate-100' : reminder.kind === 'overdue' ? 'border-rose-300' : 'border-amber-300'">
+    <div>
+      <span class="text-xs text-slate-500 block">الفصل الدراسي الحالي</span>
+      <span class="text-2xl font-black text-slate-800 mt-1 block">{{ current().label }}</span>
+      <span class="text-xs text-slate-500 mt-1 block">
+        العام الدراسي {{ current().year }}
+        @if (current().startedAt) {
+          · بدأ في {{ current().startedAt | arabicDate:'dateOnly' }}
+        }
+      </span>
+      @if (current().plannedEndDate) {
+        <span class="text-xs mt-1 block font-semibold"
+          [class]="!reminder ? 'text-slate-600' : reminder.kind === 'overdue' ? 'text-rose-600' : 'text-amber-700'">
+          الانتهاء المتوقع: {{ current().plannedEndDate | arabicDate:'dateOnly' }}
+          @if (reminder?.kind === 'overdue') {
+            — انتهى الموعد، أنهِ الفصل لما تخلص المدرسة كل متعلقاته
+          } @else if (daysLeft() !== null) {
+            — {{ daysLeft() === 0 ? 'ينتهي النهارده' : 'متبقي ' + daysText(daysLeft()!) }}
+          }
+        </span>
+      } @else {
+        <span class="text-xs mt-1 block font-semibold text-amber-700">
+          لم يتم تحديد تاريخ الانتهاء المتوقع — حدده من الجدول تحت عشان النظام ينبهك قبل نهاية الفصل
+        </span>
+      }
+    </div>
+    @if (!confirming()) {
+      <button (click)="confirming.set(true)" type="button"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 transition-all">
+        إنهاء الفصل الحالي وبدء {{ next().label }}
+      </button>
+    }
+  </div>
+
+  <!-- Confirmation -->
+  @if (confirming()) {
+    <div class="bg-rose-50 border border-rose-200 rounded-2xl p-5 space-y-3">
+      <h3 class="font-bold text-rose-900 text-sm">
+        تأكيد إنهاء {{ current().label }} وبدء {{ next().label }}
+      </h3>
+      <ul class="text-xs text-rose-900/90 space-y-1.5 list-disc pr-5">
+        <li>
+          هيتسجل النهارده ({{ todayDate | arabicDate:'dateOnly' }}) كتاريخ انتهاء {{ current().label }}
+          وتاريخ بداية {{ next().label }}.
+        </li>
+        <li class="font-bold">الخطوة دي نهائية: الفصل المنتهي مش هينفع يرجع فصل حالي تاني.</li>
+        <li>كل صفحات النظام هتعرض بيانات {{ next().label }}، والجداول الأسبوعية وجداول الامتحانات هتبدأ فاضية (تقدر تنسخ جدول المعلم من الفصل السابق).</li>
+        @if (next().year !== current().year) {
+          <li>ده عام دراسي جديد ({{ next().year }}): رواد الفصول محتاجين يتعيّنوا من جديد من صفحة الفصول الدراسية.</li>
+        }
+        <li>بيانات الفصول المنتهية بتفضل محفوظة وتقدر تتصفحها في أي وقت.</li>
+      </ul>
+      <div class="flex items-center gap-2 pt-1">
+        <button (click)="confirmNextTerm()" type="button"
+          class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs">
+          نعم، إنهاء الفصل الحالي
+        </button>
+        <button (click)="confirming.set(false)" type="button"
+          class="px-4 py-2 rounded-xl hover:bg-rose-100 text-rose-900 font-bold text-xs">
+          تراجع
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Terms list -->
+  <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h3 class="font-bold text-slate-800 text-base">سجل السنوات والفصول الدراسية</h3>
+        <p class="text-xs text-slate-500 mt-0.5">ضيف الفصل أو العام الجديد قبل بدايته عشان تجهز جداوله مسبقاً</p>
+      </div>
+      <button (click)="calendar.addNextTerm()" type="button"
+        class="px-4 py-2 rounded-xl border border-primary-200 bg-primary-50 hover:bg-primary-100 text-primary-800 font-bold text-xs transition-colors">
+        + {{ addLabel() }}
+      </button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-sm">
+        <thead class="bg-slate-50 text-xs text-slate-500 font-bold">
+          <tr>
+            <th class="py-3.5 px-4">الفصل الدراسي</th>
+            <th class="py-3.5 px-4">العام الدراسي</th>
+            <th class="py-3.5 px-4">تاريخ البداية</th>
+            <th class="py-3.5 px-4">الانتهاء المتوقع</th>
+            <th class="py-3.5 px-4">تاريخ الانتهاء الفعلي</th>
+            <th class="py-3.5 px-4 text-center">الحالة</th>
+            <th class="py-3.5 px-4 text-center">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          @for (term of termsNewestFirst(); track term.id) {
+            @let status = calendar.termStatus(term);
+            <tr [class]="status === 'current' ? 'bg-emerald-50/40' : 'hover:bg-slate-50/80'">
+              <td class="py-3 px-4 font-bold text-slate-800">{{ term.term === 1 ? 'الفصل الدراسي الأول' : 'الفصل الدراسي الثاني' }}</td>
+              <td class="py-3 px-4">{{ term.year }}</td>
+              <td class="py-3 px-4 whitespace-nowrap">{{ term.startedAt ? (term.startedAt | arabicDate:'medium') : '—' }}</td>
+              <td class="py-3 px-4 whitespace-nowrap">
+                @if (status === 'past') {
+                  {{ term.plannedEndDate ? (term.plannedEndDate | arabicDate:'medium') : '—' }}
+                } @else {
+                  <!-- Editable: the ministry sometimes moves the dates -->
+                  <input type="date" [value]="term.plannedEndDate ?? ''" [min]="term.startedAt ?? ''"
+                    (change)="calendar.setPlannedEndDate(term.id, $any($event.target).value)"
+                    class="h-9 px-2 rounded-lg border border-slate-200 bg-white text-[13px] font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+                }
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap">
+                @if (term.endedAt) {
+                  {{ term.endedAt | arabicDate:'medium' }}
+                } @else if (status === 'current') {
+                  <span class="text-emerald-700 text-xs font-semibold">جارٍ حالياً</span>
+                } @else {
+                  —
+                }
+              </td>
+              <td class="py-3 px-4 text-center">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" [class]="statusStyles[status]">{{ statusLabels[status] }}</span>
+              </td>
+              <td class="py-3 px-4 text-center">
+                @if (calendar.canRemove(term)) {
+                  <button (click)="calendar.removeTerm(term.id)" type="button"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50">
+                    حذف
+                  </button>
+                } @else {
+                  <span class="text-slate-300">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,136 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">المسؤولون والصلاحيات</h2>
+      <p class="text-xs text-slate-500 mt-1">إضافة مسؤولين للنظام وتحديد الأقسام المسموح لكل منهم بإدارتها</p>
+    </div>
+
+    <button
+      (click)="openForm(null)"
+      type="button"
+      class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>إضافة مسؤول جديد</span>
+    </button>
+  </div>
+
+  @if (notice(); as message) {
+    <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between gap-3" role="status">
+      <span>{{ message }}</span>
+      <button (click)="notice.set(null)" type="button" class="text-emerald-600 hover:text-emerald-800 font-bold" aria-label="إغلاق">✕</button>
+    </div>
+  }
+
+  <!-- Stats -->
+  <div class="grid grid-cols-3 gap-4">
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+      <span class="text-xs text-slate-500 block">إجمالي الحسابات</span>
+      <span class="text-xl font-black text-slate-800 mt-1 block">{{ accounts().length }}</span>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-soft">
+      <span class="text-xs text-emerald-600 block">حسابات مفعلة</span>
+      <span class="text-xl font-black text-emerald-700 mt-1 block">{{ activeCount() }}</span>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border border-rose-100 shadow-soft">
+      <span class="text-xs text-rose-600 block">حسابات موقوفة</span>
+      <span class="text-xl font-black text-rose-700 mt-1 block">{{ suspendedCount() }}</span>
+    </div>
+  </div>
+
+  <!-- Accounts table -->
+  <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-sm">
+        <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500">
+          <tr>
+            <th class="py-3.5 px-4">المسؤول</th>
+            <th class="py-3.5 px-4">الرقم القومي</th>
+            <th class="py-3.5 px-4">الصلاحيات</th>
+            <th class="py-3.5 px-4 text-center">الحالة</th>
+            <th class="py-3.5 px-4 text-center">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          @for (account of accounts(); track account.id) {
+            @let isSuperAdmin = account.role === 'SUPER_ADMIN';
+            <tr class="hover:bg-slate-50/80 transition-colors" [class.opacity-60]="account.status === 'SUSPENDED'">
+              <td class="py-3.5 px-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center text-xs font-bold"
+                    [class]="isSuperAdmin ? 'bg-amber-100 text-amber-800' : 'bg-primary-100 text-primary-800'">
+                    {{ account.fullName.replace('أ. ', '').slice(0, 1) }}
+                  </div>
+                  <div class="min-w-0">
+                    <span class="font-bold text-slate-800 block truncate">{{ account.fullName }}</span>
+                    <span class="text-[11px] text-slate-500 block truncate">{{ account.jobTitle }}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3.5 px-4 font-mono text-xs text-slate-500" dir="ltr">{{ maskNationalId(account.nationalId) }}</td>
+              <td class="py-3.5 px-4">
+                @if (isSuperAdmin) {
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-100">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    المسؤول الرئيسي - كل الصلاحيات
+                  </span>
+                } @else {
+                  <div class="flex flex-wrap gap-1.5 max-w-md">
+                    @for (permission of account.permissions.slice(0, visiblePermissions); track permission) {
+                      <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium whitespace-nowrap">
+                        {{ permissionLabel(permission) }}
+                      </span>
+                    }
+                    @if (account.permissions.length > visiblePermissions) {
+                      <span class="px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 text-[11px] font-bold"
+                        [title]="account.permissions.slice(visiblePermissions).map(permissionLabel).join('، ')">
+                        +{{ account.permissions.length - visiblePermissions }}
+                      </span>
+                    }
+                  </div>
+                }
+              </td>
+              <td class="py-3.5 px-4 text-center">
+                <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                  [class]="account.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
+                  {{ account.status === 'ACTIVE' ? 'مفعل' : 'موقوف' }}
+                </span>
+              </td>
+              <td class="py-3.5 px-4">
+                @if (!isSuperAdmin) {
+                  <div class="flex items-center justify-center gap-1">
+                    <button (click)="openForm(account)" type="button"
+                      class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary-700 hover:bg-primary-50">
+                      تعديل
+                    </button>
+                    <button (click)="toggleStatus(account)" type="button"
+                      class="px-2.5 py-1.5 rounded-lg text-xs font-bold"
+                      [class]="account.status === 'ACTIVE' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-700 hover:bg-emerald-50'">
+                      {{ account.status === 'ACTIVE' ? 'إيقاف' : 'تفعيل' }}
+                    </button>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="text-[11px] text-slate-400">
+    المسؤول الموقوف مش بيقدر يسجل دخول لحد ما تفعّله تاني. تعديل الصلاحيات بيتطبق من أول تسجيل دخول للمسؤول بعد الحفظ.
+  </p>
+
+  @if (showForm()) {
+    <app-admin-form-dialog
+      [admin]="editingAdmin()"
+      [takenNationalIds]="takenNationalIds()"
+      (saved)="saveAdmin($event)"
+      (deleted)="deleteAdmin($event)"
+      (closed)="showForm.set(false)" />
+  }
+</div>

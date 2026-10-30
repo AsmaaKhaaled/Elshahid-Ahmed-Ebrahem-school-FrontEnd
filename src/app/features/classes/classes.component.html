@@ -1,0 +1,124 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">إدارة الفصول الدراسية</h2>
+      <p class="text-xs text-slate-500 mt-1">توزيع الفصول، الكثافات الطلابية، وتعيين رواد الفصول</p>
+      <span class="inline-block mt-2 px-2.5 py-1 rounded-lg bg-primary-50 text-primary-800 text-[11px] font-bold">
+        العام الدراسي {{ year() }}
+      </span>
+    </div>
+
+    <!-- Classes are fixed by GRADE_LEVELS for now, so creating a class is not available yet -->
+    <button
+      type="button"
+      disabled
+      title="هذه الخاصية غير متاحة حالياً"
+      class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs flex items-center gap-2 cursor-not-allowed">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>إنشاء فصل دراسي جديد</span>
+    </button>
+  </div>
+
+  <!-- Grade Filter -->
+  <div class="flex flex-wrap gap-2">
+    @for (tab of gradeTabs; track tab.id) {
+      <button
+        type="button"
+        (click)="selectedTab.set(tab.id)"
+        [class]="selectedTab() === tab.id ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+        class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Classes Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    @for (cls of filteredClasses(); track cls.id) {
+      @let advisor = advisorStates()[cls.id];
+      @let density = cls.enrolledStudents / capacity;
+      <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100/80 hover:shadow-md transition-all space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-[11px] font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full inline-block mb-1">
+              {{ cls.gradeLevel }}
+            </span>
+            <h3 class="text-lg font-black text-slate-800">فصل {{ cls.section }}</h3>
+          </div>
+
+          <span class="text-emerald-700 bg-emerald-50 font-bold px-2 py-0.5 rounded-md text-[11px]">
+            {{ cls.shift }}
+          </span>
+        </div>
+
+        <!-- Capacity Progress -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs text-slate-600">
+            <span>الكثافة الطلابية:</span>
+            <span class="font-bold text-slate-800">{{ cls.enrolledStudents }} / {{ capacity }} طالب</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-500"
+              [class]="density > 1 ? 'bg-rose-500' : density > 0.9 ? 'bg-amber-500' : 'bg-emerald-500'"
+              [style.width.%]="density > 1 ? 100 : density * 100">
+            </div>
+          </div>
+          @if (density > 1) {
+            <p class="text-[11px] text-rose-600 font-semibold">الفصل متجاوز الحد الأقصى للكثافة</p>
+          }
+        </div>
+
+        <!-- Class advisor -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3 text-xs text-slate-600">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-7 h-7 shrink-0 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px]">
+              رائد
+            </div>
+            <div class="min-w-0">
+              <span class="block text-[10px] text-slate-400">رائد الفصل:</span>
+              @switch (advisor.kind) {
+                @case ('active') {
+                  <span class="block font-bold text-slate-800 truncate">{{ displayName(advisor.teacher) }}</span>
+                  <span class="block text-[10px] text-slate-400">منذ {{ advisor.since | arabicDate }}</span>
+                }
+                @case ('on-leave') {
+                  <span class="block font-bold text-slate-800 truncate">{{ displayName(advisor.teacher) }}</span>
+                  <span class="block text-[10px] text-amber-600 font-semibold">{{ advisor.teacher.status }} — يُفضل تعيين بديل</span>
+                }
+                @case ('removed') {
+                  <span class="block font-bold text-rose-600">الرائد لم يعد ضمن هيئة التدريس</span>
+                }
+                @case ('unassigned') {
+                  <span class="block font-bold text-amber-600">لم يُعيَّن رائد لعام {{ year() }}</span>
+                  @if (advisor.previous) {
+                    <span class="block text-[10px] text-slate-400 truncate">العام الماضي: {{ displayName(advisor.previous) }}</span>
+                  }
+                }
+              }
+            </div>
+          </div>
+
+          @if (canManage()) {
+            <button (click)="advisorClass.set(cls)" type="button"
+              class="shrink-0 px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors"
+              [class]="advisor.kind === 'active' ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-100' : 'bg-primary-800 text-white hover:bg-primary-900'">
+              {{ advisor.kind === 'active' || advisor.kind === 'on-leave' ? 'تغيير' : 'تعيين رائد' }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (advisorClass(); as cls) {
+    <app-class-advisor-dialog
+      [schoolClass]="cls"
+      [teachers]="teachers()"
+      [advisorsElsewhere]="advisorsElsewhere(cls.id)"
+      (saved)="assignAdvisor(cls.id, $event)"
+      (closed)="advisorClass.set(null)" />
+  }
+</div>

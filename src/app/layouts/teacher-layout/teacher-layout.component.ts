@@ -10,25 +10,8 @@ import { provideMaterialDefaults } from '../../shared/material/material-defaults
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, NavbarComponent, SidebarComponent],
   providers: [provideMaterialDefaults()],
-  template: `
-    <div class="flex h-screen overflow-hidden bg-slate-50 font-cairo">
-      <app-sidebar 
-        [role]="'TEACHER'" 
-        [(isCollapsed)]="isSidebarCollapsed">
-      </app-sidebar>
-
-      <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <app-navbar 
-          [title]="'بوابة المعلم - إدارة الفصول والمناهج'" 
-          (toggleSidebar)="toggleSidebar()">
-        </app-navbar>
-
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6">
-          <router-outlet></router-outlet>
-        </main>
-      </div>
-    </div>
-  `
+  templateUrl: './teacher-layout.component.html',
+  styleUrl: './teacher-layout.component.css'
 })
 export class TeacherLayoutComponent {
   readonly isSidebarCollapsed = signal<boolean>(false);

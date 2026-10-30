@@ -1,0 +1,179 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">الواجبات والتكليفات المدرسية</h2>
+      <p class="text-xs text-slate-500 mt-1">
+        {{ isAdmin() ? 'متابعة الواجبات التي ينشرها المعلمون ونسب تسليم الطلاب' : 'متابعة تسليمات الواجبات، تقييم الحلول، وإرفاق بنوك الأسئلة' }}
+      </p>
+    </div>
+
+    <!-- Publishing assignments is a teacher's job; admins only monitor -->
+    @if (!isAdmin()) {
+      <button
+        type="button"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>إضافة واجب دراسي جديد</span>
+      </button>
+    }
+  </div>
+
+  @if (isAdmin()) {
+    <!-- Summary stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-slate-500 block">إجمالي الواجبات المنشورة</span>
+        <span class="text-xl font-black text-slate-800 mt-1 block">{{ stats().total }}</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-slate-500 block">واجبات نشطة الآن</span>
+        <span class="text-xl font-black text-emerald-600 mt-1 block">{{ stats().active }}</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-slate-500 block">متوسط نسبة التسليم</span>
+        <span class="text-xl font-black text-primary-700 mt-1 block">{{ stats().avgRate }}%</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-slate-500 block">نسبة تسليم منخفضة (&lt; {{ lowRatePercent }}%)</span>
+        <span class="text-xl font-black text-amber-600 mt-1 block">{{ stats().lowRate }}</span>
+      </div>
+    </div>
+
+    <!-- Per-teacher follow-up -->
+    <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">متابعة نشاط المعلمين في الواجبات</h3>
+        <p class="text-xs text-slate-500 mt-0.5">عدد الواجبات المنشورة لكل معلم ومتوسط تسليم طلابه</p>
+      </div>
+      <div class="overflow-x-auto max-h-96">
+        <table class="w-full text-right text-sm">
+          <thead class="bg-slate-50 text-xs text-slate-500 font-bold sticky top-0">
+            <tr>
+              <th class="py-3.5 px-4">المعلم</th>
+              <th class="py-3.5 px-4 text-center">الواجبات المنشورة</th>
+              <th class="py-3.5 px-4 text-center">متوسط التسليم</th>
+              <th class="py-3.5 px-4">آخر واجب</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (row of teacherSummary(); track row.teacher.id) {
+              <tr class="hover:bg-slate-50/80">
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-800 block">{{ displayName(row.teacher) }}</span>
+                  <span class="text-xs text-slate-400">{{ row.teacher.specialization }}</span>
+                </td>
+                <td class="py-3 px-4 text-center font-bold">{{ row.count }}</td>
+                <td class="py-3 px-4 text-center">
+                  @if (row.count) {
+                    <span class="px-2.5 py-0.5 rounded-full font-bold text-xs"
+                      [class]="row.avgRate < lowRatePercent ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'">
+                      {{ row.avgRate }}%
+                    </span>
+                  } @else {
+                    <span class="text-slate-300">—</span>
+                  }
+                </td>
+                <td class="py-3 px-4 text-xs">
+                  @if (row.lastPublishedAt) {
+                    {{ row.lastPublishedAt | timeAgo }}
+                  } @else {
+                    <span class="text-amber-600 font-semibold">لم ينشر أي واجب</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col md:flex-row md:items-center gap-4">
+      <mat-form-field class="w-full md:w-72">
+        <mat-label>المعلم</mat-label>
+        <mat-select [value]="selectedTeacherId()" (valueChange)="selectedTeacherId.set($event)">
+          <mat-option value="ALL">جميع المعلمين</mat-option>
+          @for (teacher of teachers(); track teacher.id) {
+            <mat-option [value]="teacher.id">{{ displayName(teacher) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="flex flex-wrap gap-2">
+        @for (tab of statusTabs; track tab.id) {
+          <button type="button" (click)="selectedStatus.set(tab.id)"
+            [class]="selectedStatus() === tab.id ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Assignment Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    @for (item of filteredAssignments(); track item.id) {
+      @let status = statusOf(item);
+      @let rate = rateOf(item);
+      <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 flex flex-col justify-between hover:border-primary-200 transition-all space-y-4">
+        <div>
+          <div class="flex items-start justify-between gap-2">
+            <span class="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full">
+              {{ item.subject }}
+            </span>
+            <span
+              [class]="status === 'نشط ومتاح' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+              class="text-xs font-bold px-2 py-0.5 rounded-md">
+              {{ status }}
+            </span>
+          </div>
+
+          <h3 class="text-lg font-bold text-slate-800 mt-2 leading-snug">{{ item.title }}</h3>
+          <p class="text-sm text-slate-500 mt-1">الفصل المستهدف: <strong class="text-slate-700">فصل {{ item.section }}</strong></p>
+          <p class="text-sm text-slate-500 mt-0.5">
+            نشره: <strong class="text-slate-700">{{ teacherName(item.teacherId) }}</strong>
+            <span class="text-slate-400 text-xs"> · {{ item.publishedAt | timeAgo }}</span>
+          </p>
+          @if (item.attachments) {
+            <p class="text-xs text-slate-400 mt-0.5">📎 {{ item.attachments }} مرفق</p>
+          }
+
+          <!-- Submission Rate -->
+          <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+            <div class="flex justify-between text-sm text-slate-600">
+              <span>نسبة التسليم:</span>
+              <span class="font-bold text-slate-800">{{ item.totalSubmissions }} من {{ item.totalStudents }} طالب</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                [class]="rate < lowRate ? 'bg-amber-500' : 'bg-primary-600'"
+                [style.width.%]="rate * 100">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-sm">
+          <div>
+            <span class="text-slate-400 block text-xs">آخر موعد للتسليم:</span>
+            <span class="font-semibold text-slate-700">{{ item.dueDate | arabicDate:'short' }}</span>
+          </div>
+
+          @if (!isAdmin()) {
+            <button type="button" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 text-xs font-bold transition-colors">
+              مراجعة التسليمات
+            </button>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="col-span-full text-center py-8 text-slate-400 text-sm">
+        لا توجد واجبات تطابق الاختيارات الحالية.
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,185 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">إدارة الاختبارات والتقييمات</h2>
+      <p class="text-xs text-slate-500 mt-1">جداول التقييمات الشهرية وامتحانات نصف الترم وآخر العام لكل صف دراسي</p>
+    </div>
+
+    @if (isAdmin()) {
+      <button (click)="scheduleDialog.set({ schedule: null })" type="button"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>إنشاء جدول امتحانات</span>
+      </button>
+    }
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col lg:flex-row lg:items-center gap-4">
+    <mat-form-field class="w-full lg:w-72">
+      <mat-label>الفصل الدراسي</mat-label>
+      <mat-select [value]="selectedTermId()" (valueChange)="selectedTermId.set($event)">
+        @for (term of calendar.terms(); track term.id) {
+          <mat-option [value]="term.id">{{ term.label }}{{ term.id === calendar.currentTermId() ? ' (الحالي)' : '' }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="w-full lg:w-56">
+      <mat-label>الصف الدراسي</mat-label>
+      <mat-select [value]="selectedGradeId()" (valueChange)="selectedGradeId.set($event)">
+        <mat-option value="ALL">جميع الصفوف</mat-option>
+        @for (grade of grades; track grade.id) {
+          <mat-option [value]="grade.id">{{ grade.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="flex flex-wrap gap-2">
+      <button type="button" (click)="selectedType.set('ALL')"
+        [class]="selectedType() === 'ALL' ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+        class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">الكل</button>
+      @for (type of types; track type) {
+        <button type="button" (click)="selectedType.set(type)"
+          [class]="selectedType() === type ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">{{ type }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- Exam timetables -->
+  @for (schedule of visibleSchedules(); track schedule.id) {
+    @let range = dateRange(schedule);
+    <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full" [class]="typeStyles[schedule.type]">{{ schedule.type }}</span>
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700">{{ gradeLabel(schedule.gradeId) }}</span>
+            @if (isAdmin()) {
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                [class]="schedule.published ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">
+                {{ schedule.published ? 'منشور' : 'مسودة' }}
+              </span>
+            }
+          </div>
+          <h3 class="font-bold text-slate-800 text-lg mt-2">{{ schedule.title }}</h3>
+          <p class="text-xs text-slate-500 mt-0.5">
+            {{ schedule.entries.length }} مادة
+            @if (range) {
+              · من {{ range.from | arabicDate:'medium' }} إلى {{ range.to | arabicDate:'medium' }}
+            }
+          </p>
+        </div>
+
+        @if (isAdmin()) {
+          <div class="flex flex-wrap items-center gap-2">
+            <button (click)="entryDialog.set({ scheduleId: schedule.id, entry: null })" type="button"
+              class="px-3.5 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs transition-colors">
+              + إدراج مادة امتحان
+            </button>
+            <button (click)="scheduleDialog.set({ schedule })" type="button"
+              class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors">
+              تعديل بيانات الجدول
+            </button>
+            <button (click)="togglePublished(schedule)" type="button" [disabled]="!schedule.published && !schedule.entries.length"
+              [title]="!schedule.published && !schedule.entries.length ? 'أدرج مادة واحدة على الأقل قبل النشر' : ''"
+              class="px-3.5 py-2 rounded-xl font-bold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              [class]="schedule.published ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'">
+              {{ schedule.published ? 'إلغاء النشر' : 'نشر الجدول' }}
+            </button>
+            @if (confirmingDeleteId() === schedule.id) {
+              <span class="flex items-center gap-1 text-xs">
+                <button (click)="deleteSchedule(schedule.id)" type="button" class="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">تأكيد الحذف</button>
+                <button (click)="confirmingDeleteId.set(null)" type="button" class="px-3 py-2 rounded-xl hover:bg-slate-100 text-slate-600 font-bold">تراجع</button>
+              </span>
+            } @else {
+              <button (click)="confirmingDeleteId.set(schedule.id)" type="button"
+                class="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs transition-colors">
+                حذف الجدول
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-sm">
+          <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500">
+            <tr>
+              <th class="py-3.5 px-4">اليوم والتاريخ</th>
+              <th class="py-3.5 px-4">المادة</th>
+              <th class="py-3.5 px-4">التوقيت</th>
+              <th class="py-3.5 px-4 text-center">المدة</th>
+              <th class="py-3.5 px-4 text-center">الدرجة النهائية</th>
+              <th class="py-3.5 px-4">ملاحظات</th>
+              @if (isAdmin()) {
+                <th class="py-3.5 px-4 text-center">الإجراءات</th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (entry of sortedEntries(schedule); track entry.id) {
+              <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="py-3.5 px-4 font-semibold">{{ entry.date | arabicDate:'dateOnly' }}</td>
+                <td class="py-3.5 px-4 font-bold text-primary-800">{{ entry.subject }}</td>
+                <td class="py-3.5 px-4 whitespace-nowrap">{{ formatTime(entry.startTime) }} - {{ formatTime(addMinutes(entry.startTime, entry.durationMinutes)) }}</td>
+                <td class="py-3.5 px-4 text-center whitespace-nowrap">{{ entry.durationMinutes }} دقيقة</td>
+                <td class="py-3.5 px-4 text-center">
+                  <span class="bg-slate-100 text-slate-800 font-bold px-2.5 py-0.5 rounded-full text-xs">{{ entry.totalMarks }}</span>
+                </td>
+                <td class="py-3.5 px-4 text-xs text-slate-500">{{ entry.notes || '—' }}</td>
+                @if (isAdmin()) {
+                  <td class="py-3.5 px-4">
+                    <div class="flex items-center justify-center gap-1">
+                      <button (click)="entryDialog.set({ scheduleId: schedule.id, entry })" type="button" title="تعديل"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button (click)="store.deleteEntry(schedule.id, entry.id)" type="button" title="حذف"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="text-center py-8 text-slate-400 text-sm">
+                  لم تُدرج أي مواد بعد{{ isAdmin() ? ' — اضغط "إدراج مادة امتحان"' : '' }}.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @empty {
+    <div class="bg-white rounded-2xl shadow-soft border border-slate-100 text-center py-12 text-slate-400 text-sm">
+      لا توجد جداول امتحانات لـ{{ selectedTermLabel() }} تطابق الاختيارات الحالية.
+    </div>
+  }
+
+  @if (scheduleDialog(); as dialog) {
+    <app-exam-schedule-dialog
+      [schedule]="dialog.schedule"
+      [termLabel]="selectedTermLabel()"
+      (saved)="saveSchedule(dialog.schedule, $event)"
+      (closed)="scheduleDialog.set(null)" />
+  }
+
+  @if (entryDialogSchedule(); as schedule) {
+    <app-exam-entry-dialog
+      [schedule]="schedule"
+      [entry]="entryDialog()!.entry"
+      (saved)="saveEntry(schedule.id, $event)"
+      (closed)="entryDialog.set(null)" />
+  }
+</div>

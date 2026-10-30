@@ -72,9 +72,10 @@ html {
   ));
 
   // ----- Options inside the panel -----
+  // Same size & weight as the field text so inputs, dropdowns and check lists match
   @include mat.option-overrides((
     label-text-size: 13px,
-    label-text-weight: 500,
+    label-text-weight: 600,
     label-text-color: $slate-700,
     hover-state-layer-color: #f8fafc,
     focus-state-layer-color: #f8fafc,
@@ -98,6 +99,27 @@ html {
 // Floating label sits neatly on the border of the compact field
 .mat-mdc-form-field .mdc-floating-label--float-above {
   font-size: 12px !important;
+}
+
+// Required-field asterisk in red, matching the rest of the forms
+.mat-mdc-form-field-required-marker {
+  color: #f43f5e;
+}
+
+// Inputs, dropdowns and options all use Cairo at the same size / weight
+.mat-mdc-form-field,
+.mat-mdc-form-field input,
+.mat-mdc-form-field textarea,
+.mat-mdc-select,
+.mat-mdc-option,
+.mat-mdc-form-field-error,
+.mat-mdc-form-field-hint {
+  font-family: 'Cairo', sans-serif !important;
+}
+
+.mat-mdc-form-field-error {
+  font-size: 11px;
+  font-weight: 600;
 }
 
 // Tailwind preflight gives every element "border-style: solid", which draws

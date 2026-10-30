@@ -1,0 +1,8 @@
+@if (photoUrl()) {
+  <img [src]="photoUrl()" [alt]="name()" loading="lazy" decoding="async" class="w-full h-full object-cover" />
+} @else {
+  <span class="w-full h-full flex items-center justify-center font-black text-lg"
+    [class]="kind() === 'TEACHER' ? 'bg-primary-100 text-primary-800' : 'bg-amber-100 text-amber-800'">
+    {{ initial() }}
+  </span>
+}

@@ -1,0 +1,102 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate
+    class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">{{ teacher() ? 'تعديل بيانات المعلم' : 'إضافة معلم جديد' }}</h3>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-3 gap-y-4 pt-1">
+      <mat-form-field class="w-full sm:col-span-4">
+        <mat-label>الاسم رباعي</mat-label>
+        <span matTextPrefix class="text-slate-500 ml-1">{{ honorific }}</span>
+        <input matInput name="name" required [(ngModel)]="draft.name" placeholder="مثال: شريف فؤاد عبد الهادي" />
+        <mat-hint>اللقب ({{ honorific }}) بيتضاف تلقائياً قبل الاسم</mat-hint>
+        <mat-error>اسم المعلم مطلوب</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>الرقم القومي (14 رقم)</mat-label>
+        <input matInput name="nationalId" required pattern="\d{14}" inputmode="numeric" maxlength="14"
+          [(ngModel)]="draft.nationalId" placeholder="28501011234567" />
+        <mat-error>الرقم القومي يجب أن يكون 14 رقماً</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>رقم الهاتف</mat-label>
+        <input matInput type="tel" name="phone" required pattern="01[0125]\d{8}" maxlength="11"
+          [(ngModel)]="draft.phone" placeholder="01012345678" />
+        <mat-error>أدخل رقم موبايل مصري صحيح (11 رقم)</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>المسمى الوظيفي</mat-label>
+        <input matInput name="title" required [(ngModel)]="draft.title" placeholder="مثال: معلم أول رياضيات" />
+        <mat-error>المسمى الوظيفي مطلوب</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>القسم / التخصص</mat-label>
+        <mat-select name="specialization" required [(ngModel)]="draft.specialization">
+          @for (department of departments; track department.value) {
+            <mat-option [value]="department.value">{{ department.label }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>اختر القسم</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>الحالة الوظيفية</mat-label>
+        <mat-select name="status" required [(ngModel)]="draft.status">
+          @for (status of statuses; track status) {
+            <mat-option [value]="status">{{ status }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>المواد التي يدرّسها</mat-label>
+        <mat-select name="subjects" required multiple [(ngModel)]="draft.subjects">
+          @for (subject of subjects; track subject) {
+            <mat-option [value]="subject">{{ subject }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>اختر مادة واحدة على الأقل</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>البريد الإلكتروني (اختياري)</mat-label>
+        <input matInput type="email" name="email" email dir="ltr" [(ngModel)]="draft.email" placeholder="name@school.edu.eg" />
+        <mat-error>صيغة البريد غير صحيحة</mat-error>
+      </mat-form-field>
+    </div>
+
+    <p class="text-[11px] text-slate-400">النصاب الأسبوعي وعدد الفصول المسندة بيتحسبوا تلقائياً من مجموع الحصص في الجدول الأسبوعي للمعلم.</p>
+
+    @if (confirmingDelete()) {
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span>سيتم حذف المعلم وجداوله الأسبوعية نهائياً. هل أنت متأكد؟</span>
+        <div class="flex items-center gap-2">
+          <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
+          <button (click)="deleted.emit(draft.id)" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>
+        </div>
+      </div>
+    }
+
+    <div class="pt-4 flex items-center justify-between gap-3 border-t border-slate-100">
+      <div>
+        @if (teacher() && !confirmingDelete()) {
+          <button (click)="confirmingDelete.set(true)" type="button" class="px-4 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs">
+            حذف المعلم
+          </button>
+        }
+      </div>
+      <div class="flex items-center gap-3">
+        <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+        <button type="submit" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
+          {{ teacher() ? 'حفظ التعديلات' : 'إضافة المعلم' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

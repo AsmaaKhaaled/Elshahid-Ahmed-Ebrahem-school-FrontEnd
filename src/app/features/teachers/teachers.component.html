@@ -1,0 +1,143 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">هيئة التدريس والمشرفين الأكاديميين</h2>
+      <p class="text-xs text-slate-500 mt-1">توزيع النصاب الأسبوعي، التخصصات، والمتابعة الإدارية للكادر التعليمي</p>
+      <span class="inline-block mt-2 px-2.5 py-1 rounded-lg bg-primary-50 text-primary-800 text-[11px] font-bold">
+        {{ currentTerm().label }}
+      </span>
+    </div>
+
+    <button
+      (click)="openForm(null)"
+      type="button"
+      class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>إضافة معلم جديد</span>
+    </button>
+  </div>
+
+  <!-- Search & Department Filter -->
+  <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col md:flex-row items-center gap-4">
+    <div class="relative flex-1 w-full">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="البحث باسم المعلم، التخصص، أو رقم الهاتف..."
+        class="w-full h-10 pl-10 pr-4 rounded-[10px] border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+      />
+      <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </span>
+    </div>
+
+    <mat-form-field class="w-full md:w-60">
+      <mat-label>القسم / التخصص</mat-label>
+      <mat-select [(value)]="selectedDepartment">
+        <mat-option value="ALL">جميع الأقسام والتخصصات</mat-option>
+        @for (department of departments; track department.value) {
+          <mat-option [value]="department.value">{{ department.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Teachers Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    @for (teacher of filteredTeachers(); track teacher.id) {
+      @let load = currentTermLoad()[teacher.id];
+      <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 hover:border-primary-200 transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-tr from-primary-800 to-primary-600 text-white font-bold flex items-center justify-center text-sm shadow-md shadow-primary-900/10">
+                {{ teacher.name.slice(0, 1) }}
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-bold text-slate-800 text-[13px] leading-tight truncate" [title]="displayName(teacher)">{{ displayName(teacher) }}</h3>
+                <p class="text-[11px] text-primary-700 font-semibold mt-0.5 truncate" [title]="teacher.title">{{ teacher.title }}</p>
+              </div>
+            </div>
+
+            <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap"
+              [class]="teacher.status === 'على رأس العمل' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
+              {{ teacher.status }}
+            </span>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-100 space-y-2 text-xs">
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-slate-400">التخصص الأكاديمي:</span>
+              <span class="font-semibold">{{ teacher.specialization }}</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-slate-400">الفصول المسندة:</span>
+              <span class="font-semibold text-primary-700">{{ load?.sections ?? 0 }} فصول</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-slate-400">النصاب الأسبوعي:</span>
+              <span class="font-semibold text-primary-700">{{ load?.periods ?? 0 }} حصة</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-slate-400">آخر ظهور على المنصة:</span>
+              @if (lastSeen()[teacher.id]; as seen) {
+                <span class="font-semibold" [class]="isOnline(seen) ? 'text-emerald-600' : 'text-slate-700'">
+                  {{ isOnline(seen) ? 'متصل الآن' : (seen | timeAgo) }}
+                </span>
+              } @else {
+                <span class="text-slate-400">لم يسجل دخول بعد</span>
+              }
+            </div>
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-slate-400">رقم الهاتف:</span>
+              <span class="font-mono text-slate-700 dir-ltr">{{ teacher.phone }}</span>
+            </div>
+          </div>
+
+          <!-- Subjects Tags -->
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            @for (sub of teacher.subjects; track sub) {
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">
+                {{ sub }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+          <button (click)="scheduleTeacher.set(teacher)" type="button" class="text-xs font-bold text-primary-700 hover:text-primary-900">
+            عرض الجدول الأسبوعي ←
+          </button>
+          <button (click)="openForm(teacher)" type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+            تعديل البيانات
+          </button>
+        </div>
+      </div>
+    } @empty {
+      <div class="col-span-full text-center py-8 text-slate-400 text-xs">
+        لا يوجد معلمون يطابقون شروط البحث الحالية.
+      </div>
+    }
+  </div>
+
+  @if (showForm()) {
+    <app-teacher-form-dialog
+      [teacher]="editingTeacher()"
+      (saved)="saveTeacher($event)"
+      (deleted)="deleteTeacher($event)"
+      (closed)="showForm.set(false)" />
+  }
+
+  @if (scheduleTeacher(); as teacher) {
+    <app-teacher-schedule-dialog
+      [teacher]="teacher"
+      [teachers]="teachers()"
+      [schedules]="schedules()"
+      (saved)="saveSchedule(teacher.id, $event.termId, $event.schedule)"
+      (closed)="scheduleTeacher.set(null)" />
+  }
+</div>

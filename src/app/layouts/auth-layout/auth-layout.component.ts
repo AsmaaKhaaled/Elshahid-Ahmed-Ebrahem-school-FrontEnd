@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
 
 @Component({
@@ -8,49 +9,11 @@ import { SCHOOL_INFO } from '../../core/constants/school.constants';
   standalone: true,
   imports: [RouterOutlet, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-primary-950 to-slate-900 text-slate-100 flex flex-col justify-between relative overflow-hidden font-cairo">
-      <!-- Background Ambient Glow & Patterns -->
-      <div class="absolute -top-40 -right-40 w-96 h-96 bg-primary-600/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-600/15 rounded-full blur-3xl pointer-events-none"></div>
-
-      <!-- Header with School Identity -->
-      <header class="p-6 md:p-8 flex items-center justify-between relative z-10">
-        <div class="flex items-center gap-3">
-          <img
-            [ngSrc]="school.logoUrl"
-            width="52"
-            height="52"
-            priority
-            [alt]="'شعار ' + school.fullName"
-            class="rounded-full ring-2 ring-white/20 shadow-lg shadow-primary-900/50" />
-          <div>
-            <h1 class="text-lg md:text-xl font-black text-white tracking-tight">{{ school.name }}</h1>
-            <p class="text-xs text-primary-300 font-medium">{{ school.type }} - نظام الإدارة المدرسية الموحد</p>
-          </div>
-        </div>
-
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-slate-300">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>العام الدراسي 2026 / 2027</span>
-        </div>
-      </header>
-
-      <!-- Main Form Container -->
-      <main class="flex-1 flex items-center justify-center p-4 sm:p-6 relative z-10 my-4">
-        <div class="w-full max-w-md">
-          <router-outlet></router-outlet>
-        </div>
-      </main>
-
-      <!-- Footer -->
-      <footer class="p-6 text-center text-xs text-slate-400 relative z-10 border-t border-white/5">
-        <p>جميع الحقوق محفوظة © {{ currentYear }} ل{{ school.fullName }} - وزارة التربية والتعليم</p>
-      </footer>
-    </div>
-  `
+  templateUrl: './auth-layout.component.html',
+  styleUrl: './auth-layout.component.css'
 })
 export class AuthLayoutComponent {
   readonly school = SCHOOL_INFO;
+  readonly academicYear = inject(AcademicCalendarStore).currentYear;
   readonly currentYear = new Date().getFullYear();
 }

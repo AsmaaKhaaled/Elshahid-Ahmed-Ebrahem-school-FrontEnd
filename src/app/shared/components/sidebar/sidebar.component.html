@@ -1,0 +1,122 @@
+<!-- Mobile Backdrop -->
+@if (!pinned() && !isCollapsed()) {
+  <div
+    (click)="closeSidebar()"
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden transition-opacity">
+  </div>
+}
+
+<!-- Sidebar Container -->
+<aside
+  [class.translate-x-full]="!pinned() && isCollapsed()"
+  [class]="pinned()
+    ? 'static shrink-0 h-screen w-64 lg:w-72 bg-slate-900 text-white flex flex-col border-l border-slate-800'
+    : 'fixed lg:static top-0 right-0 z-50 h-screen w-72 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none border-l border-slate-800'">
+
+  <!-- Brand Header -->
+  <div class="h-20 flex items-center justify-between px-6 border-b border-slate-800/80 bg-slate-950/40">
+    <div class="flex items-center gap-3">
+      <img
+        [ngSrc]="school.logoUrl"
+        width="48"
+        height="48"
+        priority
+        [alt]="'شعار ' + school.fullName"
+        class="shrink-0 rounded-full ring-2 ring-white/15 shadow-lg shadow-primary-900/40" />
+      <div class="flex flex-col">
+        <span class="font-bold text-sm tracking-tight text-white leading-tight">{{ school.name }}</span>
+        <span class="text-[11px] text-primary-400 font-medium">{{ school.type }} - {{ school.category }}</span>
+      </div>
+    </div>
+
+    <!-- Mobile Close Button -->
+    @if (!pinned()) {
+    <button
+      (click)="closeSidebar()"
+      type="button"
+      class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    }
+  </div>
+
+  <!-- User Role Pill Indicator -->
+  <div class="px-6 py-3 bg-slate-950/20 border-b border-slate-800/40 flex items-center justify-between text-xs">
+    <span class="text-slate-400">بوابة الدخول:</span>
+    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary-950 text-primary-300 border border-primary-800/60">
+      {{ roleTitle() }}
+    </span>
+  </div>
+
+  <!-- Navigation Links -->
+  <nav class="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 scrollbar-thin">
+    @for (item of visibleNavItems(); track item.route) {
+      @if (isDisabled(item)) {
+        <div
+          aria-disabled="true"
+          title="هذا القسم غير متاح حالياً"
+          class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-500 border-r-4 border-transparent cursor-not-allowed opacity-60">
+          <div class="flex items-center gap-3">
+            <span class="w-5 h-5 flex items-center justify-center text-slate-600">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                @for (d of item.iconPaths; track $index) {
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="d" />
+                }
+              </svg>
+            </span>
+            <span>{{ item.label }}</span>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400">قريباً</span>
+        </div>
+      } @else {
+      <a
+        [routerLink]="basePath() + item.route"
+        routerLinkActive
+        #rla="routerLinkActive"
+        [attr.aria-current]="rla.isActive ? 'page' : null"
+        [class]="rla.isActive
+          ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/40 font-bold ring-1 ring-primary-400/40 border-r-4 border-sky-300'
+          : 'text-slate-300 hover:text-white hover:bg-slate-800/70 font-medium border-r-4 border-transparent'"
+        (click)="onNavigate()"
+        class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all text-sm">
+        <div class="flex items-center gap-3">
+          <span
+            [class]="rla.isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary-300'"
+            class="w-5 h-5 flex items-center justify-center transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              @for (d of item.iconPaths; track $index) {
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="d" />
+              }
+            </svg>
+          </span>
+          <span>{{ item.label }}</span>
+        </div>
+        @if (item.badge) {
+          <span [class]="item.badgeColor || 'bg-slate-800 text-slate-300'" class="text-[10px] px-2 py-0.5 rounded-full font-bold">
+            {{ item.badge }}
+          </span>
+        }
+      </a>
+      }
+    }
+  </nav>
+
+  <!-- Sidebar Footer -->
+  <div class="p-4 border-t border-slate-800/80 bg-slate-950/40 space-y-2">
+    <div class="flex items-center justify-between px-2 text-[11px] text-slate-400">
+      <span>نظام الإدارة المدرسية</span>
+      <span class="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">v1.0.0</span>
+    </div>
+    <button
+      (click)="logout()"
+      type="button"
+      class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-rose-300 hover:text-rose-200 hover:bg-rose-950/30 border border-rose-900/20 text-xs font-semibold transition-colors">
+      <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      </svg>
+      <span>تسجيل الخروج</span>
+    </button>
+  </div>
+</aside>

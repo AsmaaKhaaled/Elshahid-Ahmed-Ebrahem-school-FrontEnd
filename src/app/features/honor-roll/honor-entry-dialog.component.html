@@ -1,0 +1,106 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate
+    class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-full overflow-y-auto p-6 space-y-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">
+        {{ entry() ? 'تعديل' : 'إضافة' }} {{ isTeacher ? 'معلم متميز' : 'طالب متفوق' }} في لوحة الشرف
+      </h3>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600" aria-label="إغلاق">✕</button>
+    </div>
+
+    <!-- Photo -->
+    <div class="flex items-center gap-4">
+      <app-honor-avatar class="w-20 h-20 ring-4 ring-slate-100" [name]="draft.name" [photoUrl]="photoUrl()" [kind]="draft.kind" />
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2">
+          <label class="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-800 hover:bg-primary-100 text-xs font-bold cursor-pointer transition-colors">
+            {{ processingPhoto() ? 'جاري تجهيز الصورة...' : (photoUrl() ? 'تغيير الصورة' : 'رفع صورة') }}
+            <input type="file" class="sr-only" [accept]="acceptedTypes" (change)="onPhotoSelected($event)" [disabled]="processingPhoto()" />
+          </label>
+          @if (photoUrl()) {
+            <button type="button" (click)="setPhoto('')" class="px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 text-xs font-bold">
+              حذف الصورة
+            </button>
+          }
+        </div>
+        @if (photoError(); as error) {
+          <p class="text-[11px] text-rose-600 font-medium">{{ error }}</p>
+        } @else {
+          <p class="text-[11px] text-slate-400">صورة شخصية واضحة (JPG / PNG / WEBP) - بتتقص وتتصغر تلقائياً</p>
+        }
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-y-4">
+      <mat-form-field class="w-full">
+        <mat-label>{{ isTeacher ? 'اسم المعلم' : 'اسم الطالب' }}</mat-label>
+        @if (isTeacher) {
+          <span matTextPrefix class="text-slate-500 ml-1">{{ honorific }}</span>
+        }
+        <input matInput name="name" required maxlength="60" [(ngModel)]="draft.name"
+          [placeholder]="isTeacher ? 'مثال: طارق عبد الحميد' : 'مثال: يوسف أحمد عبد الله'" />
+        <mat-error>الاسم مطلوب</mat-error>
+      </mat-form-field>
+
+      @if (isTeacher) {
+        <mat-form-field class="w-full">
+          <mat-label>المادة</mat-label>
+          <mat-select name="subject" required [(ngModel)]="draft.subject">
+            @for (subject of subjects; track subject) {
+              <mat-option [value]="subject">{{ subject }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>اختر المادة</mat-error>
+        </mat-form-field>
+      } @else {
+        <mat-form-field class="w-full">
+          <mat-label>الفصل</mat-label>
+          <mat-select name="section" required [(ngModel)]="draft.section">
+            @for (grade of grades; track grade.id) {
+              <mat-optgroup [label]="grade.label">
+                @for (section of grade.sections; track section) {
+                  <mat-option [value]="section">فصل {{ section }}</mat-option>
+                }
+              </mat-optgroup>
+            }
+          </mat-select>
+          <mat-error>اختر الفصل</mat-error>
+        </mat-form-field>
+      }
+
+      <mat-form-field class="w-full">
+        <mat-label>سبب التكريم (اختياري)</mat-label>
+        <input matInput name="achievement" maxlength="80" [(ngModel)]="draft.achievement"
+          [placeholder]="isTeacher ? 'مثال: المعلم المثالي على مستوى الإدارة' : 'مثال: الأول على الصف الثالث الإعدادي'" />
+        <mat-hint align="end">{{ draft.achievement.length }} / 80</mat-hint>
+      </mat-form-field>
+    </div>
+
+    @if (confirmingDelete()) {
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span>هيتشال من لوحة الشرف ومن الصفحة الرئيسية. متأكد؟</span>
+        <div class="flex items-center gap-2">
+          <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
+          <button (click)="deleted.emit(draft.id)" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>
+        </div>
+      </div>
+    }
+
+    <div class="pt-4 flex items-center justify-between gap-3 border-t border-slate-100">
+      <div>
+        @if (entry() && !confirmingDelete()) {
+          <button (click)="confirmingDelete.set(true)" type="button" class="px-4 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs">
+            حذف من اللوحة
+          </button>
+        }
+      </div>
+      <div class="flex items-center gap-3">
+        <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+        <button type="submit" [disabled]="processingPhoto()"
+          class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-50">
+          {{ entry() ? 'حفظ التعديلات' : 'إضافة للوحة الشرف' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

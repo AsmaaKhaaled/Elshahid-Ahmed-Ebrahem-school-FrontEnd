@@ -1,0 +1,133 @@
+<div class="space-y-6">
+  <div>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">نشاط المستخدمين على المنصة</h2>
+    <p class="text-xs text-slate-500 mt-1">مين متصل دلوقتي، آخر ظهور لكل معلم وطالب، وكل ما يتم رفعه على المنصة</p>
+  </div>
+
+  <!-- Teachers / Students tabs -->
+  <div class="flex flex-wrap gap-2">
+    @for (tab of tabs; track tab.id) {
+      <button type="button" (click)="selectTab(tab.id)"
+        [class]="activeTab() === tab.id ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+        class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Summary -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+      <span class="text-xs text-slate-500 block">إجمالي {{ activeTab() === 'teacher' ? 'المعلمين' : 'الطلاب' }}</span>
+      <span class="text-xl font-black text-slate-800 mt-1 block">{{ summary().total }}</span>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+      <span class="text-xs text-slate-500 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> متصل الآن
+      </span>
+      <span class="text-xl font-black text-emerald-600 mt-1 block">{{ summary().online }}</span>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+      <span class="text-xs text-slate-500 block">نشط اليوم</span>
+      <span class="text-xl font-black text-primary-700 mt-1 block">{{ summary().today }}</span>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+      <span class="text-xs text-slate-500 block">غير نشط (+7 أيام أو لم يدخل)</span>
+      <span class="text-xl font-black text-rose-600 mt-1 block">{{ summary().inactive }}</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Presence table -->
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center gap-3">
+        <input type="text" [(ngModel)]="searchQuery" placeholder="البحث بالاسم..."
+          class="flex-1 h-10 px-4 rounded-[10px] border border-slate-200 text-[13px] font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+        <div class="flex gap-2">
+          @for (filter of presenceFilters; track filter.id) {
+            <button type="button" (click)="presenceFilter.set(filter.id)"
+              [class]="presenceFilter() === filter.id ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+              class="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors">
+              {{ filter.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-bold">
+            <tr>
+              <th class="py-3 px-4">{{ activeTab() === 'teacher' ? 'المعلم' : 'الطالب' }}</th>
+              <th class="py-3 px-4">الحالة</th>
+              <th class="py-3 px-4">آخر ظهور</th>
+              <th class="py-3 px-4">آخر نشاط</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (row of filteredRows(); track row.id) {
+              @let style = presenceStyles[row.presence];
+              <tr class="hover:bg-slate-50/80">
+                <td class="py-2.5 px-4">
+                  <span class="font-bold text-slate-800 block">{{ row.name }}</span>
+                  <span class="text-[10px] text-slate-400">{{ row.info }}</span>
+                </td>
+                <td class="py-2.5 px-4 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1.5 font-semibold" [class]="style.text">
+                    <span class="w-2 h-2 rounded-full" [class]="style.dot"></span>
+                    {{ presenceLabels[row.presence] }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-4 whitespace-nowrap" [title]="row.lastSeen ? (row.lastSeen | arabicDate:'full') : ''">
+                  {{ row.lastSeen ? (row.lastSeen | timeAgo) : '—' }}
+                </td>
+                <td class="py-2.5 px-4">
+                  @if (row.lastEvent; as event) {
+                    <span class="block font-semibold text-slate-700">{{ event.action }}</span>
+                    <span class="block text-[10px] text-slate-400">{{ event.at | timeAgo }}</span>
+                  } @else {
+                    <span class="text-slate-300">لا يوجد</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="text-center py-8 text-slate-400">لا توجد نتائج.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Uploads feed -->
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-sm">
+          {{ activeTab() === 'teacher' ? 'آخر ما رفعه المعلمون' : 'آخر تسليمات الطلاب' }}
+        </h3>
+        <span class="text-[11px] text-slate-400">{{ feed().length }} نشاط</span>
+      </div>
+
+      <ul class="space-y-3 max-h-[520px] overflow-y-auto">
+        @for (event of feed(); track event.id) {
+          <li class="flex items-start gap-3">
+            <span class="w-8 h-8 shrink-0 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-sm">
+              {{ kindIcons[event.kind] }}
+            </span>
+            <div class="min-w-0">
+              <p class="text-xs text-slate-700">
+                <span class="font-bold text-slate-800">{{ event.actorName }}</span>
+                {{ event.action }}
+              </p>
+              <p class="text-[11px] text-slate-500 truncate" [title]="event.detail">{{ event.detail }}</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">{{ event.at | timeAgo }}</p>
+            </div>
+          </li>
+        } @empty {
+          <li class="text-center py-6 text-slate-400 text-xs">لا يوجد نشاط بعد.</li>
+        }
+      </ul>
+    </div>
+  </div>
+</div>

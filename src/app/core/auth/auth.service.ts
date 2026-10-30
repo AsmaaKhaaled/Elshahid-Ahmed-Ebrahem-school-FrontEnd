@@ -1,10 +1,20 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed, isDevMode } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { TokenService } from './token.service';
+import { mockAdminLogin, mockForgotPassword } from './dev-auth.mock';
+import { ADMIN_PERMISSIONS, AdminRouteAccess, SUPER_ADMIN_ONLY } from '../admin/admin-permissions';
 import { User, UserRole } from '../models/user.model';
-import { AuthResponse, LoginCredentials, SetInitialPasswordRequest } from '../models/auth-response.model';
+import { AdminLoginCredentials, AuthResponse, LoginCredentials, SetInitialPasswordRequest } from '../models/auth-response.model';
+
+export const ADMIN_ROLES: UserRole[] = ['ADMIN', 'SUPER_ADMIN'];
+
+export class NotAdminAccountError extends Error {
+  constructor() {
+    super('NOT_ADMIN_ACCOUNT');
+  }
+}
 
 @Injectable({
   providedIn: 'root'
@@ -26,6 +36,7 @@ export class AuthService {
   readonly userRole = computed<UserRole | null>(() => this.currentUser()?.role ?? null);
   readonly mustChangePassword = computed(() => this.currentUser()?.mustChangePassword ?? false);
   readonly userName = computed(() => this.currentUser()?.fullName ?? 'المستخدم');
+  readonly isSuperAdmin = computed(() => this.userRole() === 'SUPER_ADMIN');
 
   constructor() {
     // If token exists but no user in memory, try parsing from token payload or storage
@@ -61,6 +72,34 @@ export class AuthService {
         return throwError(() => err);
       })
     );
+  }
+
+  /**
+   * Login for the school administration page (/auth/admin).
+   * Accounts that aren't admins are rejected with NotAdminAccountError, even with valid credentials,
+   * and no session is stored for them.
+   */
+  adminLogin(credentials: AdminLoginCredentials): Observable<AuthResponse> {
+    const request$ = isDevMode()
+      ? mockAdminLogin(credentials)
+      : this.api.post<AuthResponse>('auth/admin/login', credentials);
+
+    return request$.pipe(
+      tap(res => {
+        if (!ADMIN_ROLES.includes(res.user.role)) {
+          throw new NotAdminAccountError();
+        }
+        this.tokenService.setTokens(res.accessToken, res.refreshToken);
+        this.currentUser.set(res.user);
+        this.storeUser(res.user);
+        this.navigateToRoleDashboard(res.user.role);
+      })
+    );
+  }
+
+  // Always resolves the same way whether or not the email exists, so accounts can't be discovered
+  requestAdminPasswordReset(email: string): Observable<void> {
+    return isDevMode() ? mockForgotPassword() : this.api.post<void>('auth/admin/forgot-password', { email });
   }
 
   setInitialPassword(req: SetInitialPasswordRequest): Observable<{ success: boolean; message: string }> {
@@ -100,6 +139,18 @@ export class AuthService {
     return current.role === roles;
   }
 
+  /**
+   * Whether the signed-in user may open an admin section.
+   * SUPER_ADMIN: everything. ADMIN: only the sections granted to them. Others: nothing.
+   * Reads signals, so it can be used inside computed().
+   */
+  canAccessAdminSection(access: AdminRouteAccess): boolean {
+    const user = this.currentUser();
+    if (user?.role === 'SUPER_ADMIN') return true;
+    if (user?.role !== 'ADMIN' || access === SUPER_ADMIN_ONLY) return false;
+    return user.permissions?.includes(access) ?? false;
+  }
+
   quickLoginAs(role: UserRole, customUser?: Partial<User>): void {
     const demoUsers: Record<UserRole, User> = {
       ADMIN: {
@@ -108,6 +159,7 @@ export class AuthService {
         fullName: 'أ. د. محمود عبد العزيز الشناوي',
         email: 'admin@alshaheed.edu.eg',
         role: 'ADMIN',
+        permissions: ADMIN_PERMISSIONS.map(p => p.key),
         mustChangePassword: false,
         status: 'ACTIVE',
         schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',

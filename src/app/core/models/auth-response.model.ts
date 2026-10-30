@@ -14,6 +14,12 @@ export interface LoginCredentials {
   rememberMe?: boolean;
 }
 
+// School administration login (separate page, no "remember me")
+export interface AdminLoginCredentials {
+  identifier: string; // National ID (14 digits) or email
+  password: string;
+}
+
 export interface SetInitialPasswordRequest {
   currentPassword?: string;
   newPassword: string;

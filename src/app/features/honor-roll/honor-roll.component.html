@@ -1,0 +1,82 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">لوحة الشرف</h2>
+      <p class="text-xs text-slate-500 mt-1">
+        المعلمون المتميزون والطلاب المتفوقون - بيظهروا للزوار في
+        <a routerLink="/" class="font-bold text-primary-700 hover:text-primary-900">الصفحة الرئيسية ←</a>
+      </p>
+    </div>
+
+    <button
+      (click)="openDialog(null)"
+      type="button"
+      class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>{{ selectedKind() === 'TEACHER' ? 'إضافة معلم متميز' : 'إضافة طالب متفوق' }}</span>
+    </button>
+  </div>
+
+  <!-- Teachers / Students tabs -->
+  <div class="inline-flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200" role="tablist">
+    @for (kind of kinds; track kind.id) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="selectedKind() === kind.id"
+        (click)="selectedKind.set(kind.id)"
+        [class]="selectedKind() === kind.id ? 'bg-primary-800 text-white shadow' : 'text-slate-600 hover:bg-slate-100'"
+        class="px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2">
+        {{ kind.label }}
+        <span class="px-1.5 py-0.5 rounded-md text-[10px]"
+          [class]="selectedKind() === kind.id ? 'bg-white/20' : 'bg-slate-100 text-slate-500'">
+          {{ counts()[kind.id] }}
+        </span>
+      </button>
+    }
+  </div>
+
+  <!-- Entries grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    @for (entry of visibleEntries(); track entry.id) {
+      <button
+        type="button"
+        (click)="openDialog(entry)"
+        class="group bg-white rounded-2xl p-4 shadow-soft border border-slate-100 hover:border-primary-200 hover:shadow-md transition-all flex flex-col items-center text-center">
+        <app-honor-avatar class="w-20 h-20 ring-4 ring-amber-50 mb-3" [name]="entry.name" [photoUrl]="entry.photoUrl" [kind]="entry.kind" />
+
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5"
+          [class]="entry.kind === 'TEACHER' ? 'bg-primary-50 text-primary-800' : 'bg-amber-50 text-amber-800'">
+          {{ entry.kind === 'TEACHER' ? entry.subject : 'فصل ' + entry.section }}
+        </span>
+
+        <h4 class="text-sm font-black text-slate-800 leading-tight">
+          {{ entry.kind === 'TEACHER' ? honorific + ' ' : '' }}{{ entry.name }}
+        </h4>
+        @if (entry.achievement) {
+          <p class="text-[11px] text-slate-500 mt-1 leading-snug line-clamp-2">{{ entry.achievement }}</p>
+        }
+
+        <span class="mt-3 text-[11px] font-bold text-slate-400 group-hover:text-primary-700 transition-colors">تعديل ←</span>
+      </button>
+    } @empty {
+      <div class="col-span-full bg-white rounded-2xl border border-dashed border-slate-200 py-12 text-center space-y-2">
+        <p class="text-sm font-bold text-slate-600">
+          لسه مفيش {{ selectedKind() === 'TEACHER' ? 'معلمين' : 'طلاب' }} في لوحة الشرف
+        </p>
+        <p class="text-xs text-slate-400">القسم ده بيختفي من الصفحة الرئيسية لحد ما تضيف أول اسم.</p>
+      </div>
+    }
+  </div>
+
+  @if (showDialog()) {
+    <app-honor-entry-dialog
+      [kind]="selectedKind()"
+      [entry]="editingEntry()"
+      (saved)="saveEntry($event)"
+      (deleted)="deleteEntry($event)"
+      (closed)="showDialog.set(false)" />
+  }
+</div>

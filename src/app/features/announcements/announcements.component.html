@@ -1,0 +1,107 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">لوحة الإعلانات والتعميمات الرسمية</h2>
+      <p class="text-xs text-slate-500 mt-1">البيانات الإدارية، مواعيد الفعاليات المدرسية والتعميمات العاجلة</p>
+    </div>
+
+    @if (isAdmin()) {
+      <button (click)="openForm(null)" type="button"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>نشر تعميم أو إعلان جديد</span>
+      </button>
+    }
+  </div>
+
+  <!-- Search & categories -->
+  <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+    <input type="text" [(ngModel)]="searchQuery" placeholder="البحث في عنوان أو نص الإعلان..."
+      class="w-full lg:w-80 h-10 px-4 rounded-[10px] border border-slate-200 bg-white text-[13px] font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+    <div class="flex flex-wrap gap-2">
+      @for (filter of filters(); track filter.id) {
+        <button type="button" (click)="selectedFilter.set(filter.id)"
+          [class]="selectedFilter() === filter.id ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+          {{ filter.id }} <span class="opacity-70">({{ filter.count }})</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Announcements List -->
+  <div class="space-y-4">
+    @for (item of filteredAnnouncements(); track item.id) {
+      @let expired = isExpired(item);
+      <div
+        class="bg-white rounded-2xl p-6 shadow-soft border border-slate-100 hover:shadow-md transition-shadow space-y-3"
+        [class]="item.pinned && !expired ? 'border-r-4 border-r-primary-700' : ''"
+        [class.opacity-60]="expired">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            @if (item.pinned && !expired) {
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">مثبت ★</span>
+            }
+            @if (expired) {
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">انتهى ظهوره</span>
+            }
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" [class]="categoryStyles[item.category]">{{ item.category }}</span>
+            <span class="text-xs text-slate-400">
+              موجّه إلى: <strong class="text-slate-600">{{ audienceLabel(item.audiences) }}</strong>
+            </span>
+          </div>
+
+          <span class="text-xs text-slate-400 font-medium" [title]="item.publishedAt | arabicDate:'full'">
+            {{ item.publishedAt | timeAgo }}
+          </span>
+        </div>
+
+        <h3 class="text-lg font-black text-slate-800">{{ item.title }}</h3>
+        <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ item.content }}</p>
+
+        @if (item.expiresAt && !expired && isAdmin()) {
+          <p class="text-xs text-slate-400">يظهر حتى {{ item.expiresAt | arabicDate:'dateOnly' }}</p>
+        }
+
+        <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+          <div class="flex flex-wrap items-center gap-4">
+            <span>صادر عن: <strong class="text-slate-700">{{ item.author }}</strong></span>
+            @if (item.attachment; as file) {
+              <a [href]="file.url" [download]="file.name" class="text-primary-700 hover:text-primary-900 font-bold">
+                📎 تحميل المرفق ({{ file.name }})
+              </a>
+            }
+          </div>
+
+          @if (isAdmin()) {
+            <div class="flex items-center gap-1">
+              <button (click)="openForm(item)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100">تعديل</button>
+              <button (click)="store.togglePinned(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-primary-700 hover:bg-primary-50">
+                {{ item.pinned ? 'إلغاء التثبيت' : 'تثبيت' }}
+              </button>
+              @if (confirmingDeleteId() === item.id) {
+                <button (click)="deleteAnnouncement(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold bg-rose-600 text-white hover:bg-rose-700">تأكيد الحذف</button>
+                <button (click)="confirmingDeleteId.set(null)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100">تراجع</button>
+              } @else {
+                <button (click)="confirmingDeleteId.set(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-rose-600 hover:bg-rose-50">حذف</button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="bg-white rounded-2xl shadow-soft border border-slate-100 text-center py-12 text-slate-400 text-sm">
+        لا توجد إعلانات تطابق الاختيارات الحالية.
+      </div>
+    }
+  </div>
+
+  @if (formOpen()) {
+    <app-announcement-form-dialog
+      [announcement]="editing()"
+      (saved)="saveAnnouncement($event)"
+      (closed)="formOpen.set(false)" />
+  }
+</div>

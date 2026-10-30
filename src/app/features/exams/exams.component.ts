@@ -1,123 +1,103 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
+import { AuthService } from '../../core/auth/auth.service';
+import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
+import { ExamEntryDialogComponent } from './exam-entry-dialog.component';
+import { ExamScheduleDetails, ExamScheduleDialogComponent } from './exam-schedule-dialog.component';
+import { EXAM_TYPES, ExamEntry, ExamSchedule, ExamType, ExamsStore, addMinutes, formatTime } from './exams.store';
 
-interface Exam {
-  id: string;
-  name: string;
-  subject: string;
-  gradeLevel: string;
-  date: string;
-  durationMinutes: number;
-  totalMarks: number;
-  hallNumber: string;
-  supervisor: string;
-}
+const TYPE_STYLES: Record<ExamType, string> = {
+  'تقييم شهري': 'bg-sky-50 text-sky-700',
+  'امتحان نصف الترم': 'bg-amber-50 text-amber-700',
+  'امتحان آخر العام': 'bg-rose-50 text-rose-700'
+};
 
 @Component({
   selector: 'app-exams',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ArabicDatePipe],
-  template: `
-    <div class="space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-2xl font-black text-slate-800 tracking-tight">إدارة الاختبارات والتقييمات</h2>
-          <p class="text-xs text-slate-500 mt-1">جداول الامتحانات الشهرية ونصف العام، توزيع لجان المراقبة، وأرقام الجلوس</p>
-        </div>
-
-        <button 
-          type="button" 
-          class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          <span>إدراج امتحان جديد</span>
-        </button>
-      </div>
-
-      <!-- Exams List -->
-      <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="font-bold text-slate-800 text-sm">جدول امتحانات الفصل الدراسي الحالي</h3>
-          <span class="text-xs text-primary-700 bg-primary-50 px-3 py-1 rounded-full font-bold">
-            امتحانات نصف العام 2026/2027
-          </span>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-right text-sm">
-            <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase">
-              <tr>
-                <th class="py-3.5 px-4">اسم الامتحان</th>
-                <th class="py-3.5 px-4">المادة</th>
-                <th class="py-3.5 px-4">المرحلة</th>
-                <th class="py-3.5 px-4">تاريخ الانعقاد</th>
-                <th class="py-3.5 px-4 text-center">المدة</th>
-                <th class="py-3.5 px-4 text-center">الدرجة الكلية</th>
-                <th class="py-3.5 px-4">اللجنة / القاعة</th>
-                <th class="py-3.5 px-4">رئيس اللجنة</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 text-slate-700">
-              @for (exam of exams(); track exam.id) {
-                <tr class="hover:bg-slate-50/80 transition-colors">
-                  <td class="py-3.5 px-4 font-bold text-slate-800">{{ exam.name }}</td>
-                  <td class="py-3.5 px-4 text-primary-700 font-semibold text-xs">{{ exam.subject }}</td>
-                  <td class="py-3.5 px-4 text-xs font-medium">{{ exam.gradeLevel }}</td>
-                  <td class="py-3.5 px-4 text-xs font-semibold">{{ exam.date | arabicDate:'full' }}</td>
-                  <td class="py-3.5 px-4 text-center text-xs font-mono font-bold">{{ exam.durationMinutes }} دقيقة</td>
-                  <td class="py-3.5 px-4 text-center">
-                    <span class="bg-slate-100 text-slate-800 font-mono font-bold px-2.5 py-0.5 rounded-full text-xs">
-                      {{ exam.totalMarks }}
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 text-xs font-semibold text-slate-600">{{ exam.hallNumber }}</td>
-                  <td class="py-3.5 px-4 text-xs font-medium">{{ exam.supervisor }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `
+  imports: [ArabicDatePipe, MatFormFieldModule, MatSelectModule, ExamScheduleDialogComponent, ExamEntryDialogComponent],
+  templateUrl: './exams.component.html',
+  styleUrl: './exams.component.css'
 })
 export class ExamsComponent {
-  readonly exams = signal<Exam[]>([
-    {
-      id: 'ex-1',
-      name: 'امتحان نصف العام - Advanced English',
-      subject: 'اللغة الإنجليزية الرفيعة',
-      gradeLevel: 'الصف الأول الإعدادي',
-      date: new Date(Date.now() + 86400000 * 5).toISOString(),
-      durationMinutes: 120,
-      totalMarks: 100,
-      hallNumber: 'مدرج الشهيد أحمد إبراهيم (أ)',
-      supervisor: 'أ/ نادية الشربيني'
-    },
-    {
-      id: 'ex-2',
-      name: 'امتحان نصف العام - Pure Mathematics',
-      subject: 'الرياضيات البحتة',
-      gradeLevel: 'الصف الأول الإعدادي',
-      date: new Date(Date.now() + 86400000 * 7).toISOString(),
-      durationMinutes: 120,
-      totalMarks: 100,
-      hallNumber: 'مدرج الشهيد أحمد إبراهيم (ب)',
-      supervisor: 'أ. د. محمود الشناوي'
-    },
-    {
-      id: 'ex-3',
-      name: 'امتحان نصف العام - Integrated Chemistry',
-      subject: 'الكيمياء لغات',
-      gradeLevel: 'الصف الأول الإعدادي',
-      date: new Date(Date.now() + 86400000 * 9).toISOString(),
-      durationMinutes: 90,
-      totalMarks: 80,
-      hallNumber: 'معمل الكيمياء الحديث',
-      supervisor: 'د/ شريف فؤاد'
-    }
-  ]);
-}
+  readonly store = inject(ExamsStore);
+  readonly calendar = inject(AcademicCalendarStore);
+  private readonly authService = inject(AuthService);
 
+  readonly types = EXAM_TYPES;
+  readonly grades = GRADE_LEVELS;
+  readonly typeStyles = TYPE_STYLES;
+  readonly formatTime = formatTime;
+  readonly addMinutes = addMinutes;
+
+  readonly isAdmin = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(this.authService.userRole() ?? ''));
+
+  // Follows the current term whenever the admin changes it
+  readonly selectedTermId = linkedSignal(() => this.calendar.currentTermId());
+  readonly selectedGradeId = signal('ALL');
+  readonly selectedType = signal<'ALL' | ExamType>('ALL');
+  readonly confirmingDeleteId = signal<string | null>(null);
+
+  readonly scheduleDialog = signal<{ schedule: ExamSchedule | null } | null>(null);
+  readonly entryDialog = signal<{ scheduleId: string; entry: ExamEntry | null } | null>(null);
+  readonly entryDialogSchedule = computed(() => {
+    const dialog = this.entryDialog();
+    return dialog ? this.store.schedules().find(s => s.id === dialog.scheduleId) ?? null : null;
+  });
+
+  readonly selectedTermLabel = computed(() =>
+    this.calendar.terms().find(term => term.id === this.selectedTermId())?.label ?? ''
+  );
+
+  // Teachers & students only see published timetables
+  readonly visibleSchedules = computed(() =>
+    this.store.schedules()
+      .filter(s =>
+        s.termId === this.selectedTermId() &&
+        (this.selectedGradeId() === 'ALL' || s.gradeId === this.selectedGradeId()) &&
+        (this.selectedType() === 'ALL' || s.type === this.selectedType()) &&
+        (this.isAdmin() || s.published)
+      )
+      .sort((a, b) => (this.dateRange(a)?.from ?? '9999').localeCompare(this.dateRange(b)?.from ?? '9999'))
+  );
+
+  gradeLabel(gradeId: string): string {
+    return GRADE_LEVELS.find(grade => grade.id === gradeId)?.label ?? '';
+  }
+
+  sortedEntries(schedule: ExamSchedule): ExamEntry[] {
+    return [...schedule.entries].sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+  }
+
+  dateRange(schedule: ExamSchedule): { from: string; to: string } | null {
+    const dates = schedule.entries.map(e => e.date).sort();
+    return dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null;
+  }
+
+  saveSchedule(existing: ExamSchedule | null, details: ExamScheduleDetails): void {
+    this.store.saveSchedule(
+      existing
+        ? { ...existing, ...details }
+        : { id: crypto.randomUUID(), termId: this.selectedTermId(), published: false, entries: [], ...details }
+    );
+    this.scheduleDialog.set(null);
+  }
+
+  saveEntry(scheduleId: string, entry: ExamEntry): void {
+    this.store.saveEntry(scheduleId, entry);
+    this.entryDialog.set(null);
+  }
+
+  togglePublished(schedule: ExamSchedule): void {
+    this.store.setPublished(schedule.id, !schedule.published);
+  }
+
+  deleteSchedule(scheduleId: string): void {
+    this.store.deleteSchedule(scheduleId);
+    this.confirmingDeleteId.set(null);
+  }
+}

@@ -10,28 +10,7 @@ import { provideMaterialDefaults } from '../../shared/material/material-defaults
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, NavbarComponent, SidebarComponent],
   providers: [provideMaterialDefaults()],
-  template: `
-    <div class="flex h-screen overflow-hidden bg-slate-50 font-cairo">
-      <!-- Fixed (pinned) sidebar - always visible in the admin panel -->
-      <app-sidebar
-        [role]="'ADMIN'"
-        [pinned]="true">
-      </app-sidebar>
-
-      <!-- Main Content Area -->
-      <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <!-- Top Navigation Bar -->
-        <app-navbar
-          [title]="'لوحة تحكم إدارة المدرسة والكنترول'"
-          [showSidebarToggle]="false">
-        </app-navbar>
-
-        <!-- Dynamic Feature Views -->
-        <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6">
-          <router-outlet></router-outlet>
-        </main>
-      </div>
-    </div>
-  `
+  templateUrl: './admin-layout.component.html',
+  styleUrl: './admin-layout.component.css'
 })
 export class AdminLayoutComponent {}
