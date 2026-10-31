@@ -69,5 +69,6 @@ export class TeachersComponent {
 
   saveSchedule(teacherId: string, termId: string, schedule: WeeklySchedule): void {
     this.store.saveSchedule(teacherId, termId, schedule);
+    this.scheduleTeacher.set(null);
   }
 }

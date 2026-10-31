@@ -12,6 +12,8 @@ export interface User {
   arabicName?: string;
   email?: string;
   phone?: string;
+  // Administration accounts only, e.g. "وكيل المدرسة لشؤون الطلاب"
+  jobTitle?: string;
   role: UserRole;
   avatarUrl?: string;
   status: UserStatus;

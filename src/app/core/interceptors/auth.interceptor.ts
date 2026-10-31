@@ -28,12 +28,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     });
   }
 
+  // A 401 from the login call itself means wrong credentials - the login page handles it
+  const isLoginRequest = req.url.includes('auth/login');
+
   return next(clonedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
-        // Clear session and redirect to login
+      if (error.status === 401 && !isLoginRequest) {
+        // Clear session and redirect to the matching login page
         tokenService.clearTokens();
-        router.navigate(['/auth/login'], {
+        const loginPage = router.url.startsWith('/admin') ? '/auth/admin' : '/auth/login';
+        router.navigate([loginPage], {
           queryParams: { sessionExpired: 'true' }
         });
       }

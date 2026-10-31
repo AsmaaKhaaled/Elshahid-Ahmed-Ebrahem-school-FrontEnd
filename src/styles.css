@@ -59,3 +59,13 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
+
+/* Dialog locked while its save / delete is in flight (SubmitLockDirective) */
+.submit-locked {
+  cursor: progress;
+}
+.submit-locked button,
+.submit-locked label,
+.submit-locked .mat-mdc-checkbox {
+  opacity: 0.6;
+}

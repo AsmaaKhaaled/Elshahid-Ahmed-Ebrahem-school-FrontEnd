@@ -5,6 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { EXAM_TYPES, ExamSchedule, ExamType } from './exams.store';
 
 export interface ExamScheduleDetails {
@@ -16,7 +17,7 @@ export interface ExamScheduleDetails {
 @Component({
   selector: 'app-exam-schedule-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './exam-schedule-dialog.component.html',
   styleUrl: './exam-schedule-dialog.component.css'
@@ -30,6 +31,8 @@ export class ExamScheduleDialogComponent implements OnInit {
 
   readonly types = EXAM_TYPES;
   readonly grades = GRADE_LEVELS;
+  // Locked from the click until the page closes the dialog
+  readonly lock = submitLock();
 
   draft: ExamScheduleDetails = { type: 'تقييم شهري', gradeId: GRADE_LEVELS[0].id, title: '' };
 
@@ -41,10 +44,11 @@ export class ExamScheduleDialogComponent implements OnInit {
   }
 
   save(form: NgForm): void {
+    if (this.lock.busy()) return;
     if (form.invalid) {
       form.control.markAllAsTouched();
       return;
     }
-    this.saved.emit({ ...this.draft, title: this.draft.title.trim() });
+    this.lock.run(() => this.saved.emit({ ...this.draft, title: this.draft.title.trim() }));
   }
 }

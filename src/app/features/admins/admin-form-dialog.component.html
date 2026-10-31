@@ -1,5 +1,5 @@
 <div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
-  <form #form="ngForm" (ngSubmit)="save(form)" novalidate
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()"
     class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-6 space-y-5">
     <div class="flex items-center justify-between pb-3 border-b border-slate-100">
       <div>
@@ -101,12 +101,18 @@
       }
     </div>
 
+    @if (serverError()) {
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700" role="alert">{{ serverError() }}</div>
+    }
+
     @if (confirmingDelete()) {
       <div class="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <span>سيتم حذف حساب المسؤول نهائياً ولن يستطيع الدخول مرة أخرى. هل أنت متأكد؟</span>
         <div class="flex items-center gap-2">
           <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
-          <button (click)="deleted.emit(draft.id)" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>
+          <button (click)="confirmDelete()" [disabled]="lock.busy()" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold disabled:opacity-50">
+            {{ lock.busy() ? 'جاري الحذف...' : 'نعم، احذف' }}
+          </button>
         </div>
       </div>
     }
@@ -121,8 +127,8 @@
       </div>
       <div class="flex items-center gap-3">
         <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
-        <button type="submit" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
-          {{ isEdit() ? 'حفظ التعديلات' : 'إضافة المسؤول' }}
+        <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+          {{ lock.busy() && !confirmingDelete() ? 'جاري الحفظ...' : isEdit() ? 'حفظ التعديلات' : 'إضافة المسؤول' }}
         </button>
       </div>
     </div>

@@ -122,15 +122,15 @@
             <p class="text-xs text-slate-500">{{ roleLabel() }}</p>
           </div>
 
-          <a
-            routerLink="/auth/set-initial-password"
-            (click)="isProfileMenuOpen.set(false)"
-            class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600 transition-colors">
+          <button
+            (click)="openAccountSettings()"
+            type="button"
+            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600 transition-colors text-right">
             <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>تغيير كلمة المرور</span>
-          </a>
+            <span>{{ isAdmin() ? 'بيانات الحساب' : 'تغيير كلمة المرور' }}</span>
+          </button>
 
           <button
             (click)="handleLogout()"
@@ -146,3 +146,15 @@
     </div>
   </div>
 </header>
+
+@if (isAccountSettingsOpen()) {
+  <app-account-settings-dialog (saved)="onAccountSaved($event)" (closed)="isAccountSettingsOpen.set(false)" />
+}
+
+@if (accountNotice(); as message) {
+  <div dir="rtl" role="status"
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] px-4 py-3 rounded-2xl bg-emerald-600 text-white text-xs font-bold shadow-elevated flex items-center gap-3">
+    <span>✓ {{ message }}</span>
+    <button (click)="accountNotice.set(null)" type="button" class="text-white/80 hover:text-white" aria-label="إغلاق">✕</button>
+  </div>
+}

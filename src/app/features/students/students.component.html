@@ -6,9 +6,9 @@
       <p class="text-xs text-slate-500 mt-1">سجلات الطلاب المقيدين، التوزيع على الفصول والمتابعة الأكاديمية</p>
     </div>
 
-    <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3">
       <button
-        (click)="toggleAddModal()"
+        (click)="openForm(null)"
         type="button"
         class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -18,33 +18,52 @@
       </button>
 
       <button
+        (click)="showImport.set(true)"
         type="button"
-        class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs border border-slate-200 transition-colors flex items-center gap-2">
+        class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-900/10 flex items-center gap-2 transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        <span>استيراد من Excel</span>
+      </button>
+
+      <button
+        (click)="exportExcel()"
+        [disabled]="exporting() || !filteredStudents().length"
+        type="button"
+        class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs border border-slate-200 transition-colors flex items-center gap-2 disabled:opacity-60">
         <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
-        <span>تصدير Excel</span>
+        <span>{{ exporting() ? 'جاري التصدير...' : 'تصدير Excel' }}</span>
       </button>
     </div>
   </div>
+
+  @if (notice()) {
+    <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-xs font-bold text-emerald-800 flex items-center justify-between gap-3" role="status">
+      <span>✓ {{ notice() }}</span>
+      <button (click)="notice.set(null)" type="button" class="text-emerald-600 hover:text-emerald-800">✕</button>
+    </div>
+  }
 
   <!-- Quick Metrics -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
       <span class="text-xs text-slate-500 block">إجمالي المقيدين</span>
-      <span class="text-xl font-black text-slate-800 mt-1 block">1,420</span>
+      <span class="text-xl font-black text-slate-800 mt-1 block">{{ metrics().total }}</span>
     </div>
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
       <span class="text-xs text-slate-500 block">الطلاب المنتظمون</span>
-      <span class="text-xl font-black text-emerald-600 mt-1 block">1,392</span>
+      <span class="text-xl font-black text-emerald-600 mt-1 block">{{ metrics().regular }}</span>
     </div>
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
-      <span class="text-xs text-slate-500 block">لوحة الشرف (متفوقون)</span>
-      <span class="text-xl font-black text-amber-600 mt-1 block">245</span>
+      <span class="text-xs text-slate-500 block">متفوقون (معدل 90% فأكثر)</span>
+      <span class="text-xl font-black text-amber-600 mt-1 block">{{ metrics().honor }}</span>
     </div>
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
-      <span class="text-xs text-slate-500 block">حالات متابعة خاصة</span>
-      <span class="text-xl font-black text-indigo-600 mt-1 block">28</span>
+      <span class="text-xs text-slate-500 block">موقوف / منقول</span>
+      <span class="text-xl font-black text-rose-600 mt-1 block">{{ metrics().inactive }}</span>
     </div>
   </div>
 
@@ -55,7 +74,7 @@
       <input
         type="text"
         [(ngModel)]="searchQuery"
-        placeholder="البحث باسم الطالب، كود القيد، أو الرقم القومي..."
+        placeholder="البحث باسم الطالب، كود القيد، الرقم القومي أو هاتف ولي الأمر..."
         class="w-full h-10 pl-10 pr-4 rounded-[10px] border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-600"
       />
       <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -71,10 +90,23 @@
       <mat-select [(value)]="selectedGrade">
         <mat-option value="ALL">جميع الصفوف الدراسية</mat-option>
         @for (grade of grades; track grade.id) {
-          <mat-option [value]="grade.label">{{ grade.label }}</mat-option>
+          <mat-option [value]="grade.id">{{ grade.label }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
+
+    <!-- Section Selector (once a grade is picked) -->
+    @if (gradeSections().length) {
+      <mat-form-field class="w-full md:w-36">
+        <mat-label>الفصل</mat-label>
+        <mat-select [(value)]="selectedSection">
+          <mat-option value="ALL">كل الفصول</mat-option>
+          @for (section of gradeSections(); track section) {
+            <mat-option [value]="section">فصل {{ section }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
 
     <!-- Status Filter -->
     <mat-form-field class="w-full md:w-44">
@@ -90,6 +122,9 @@
 
   <!-- Students Records Table -->
   <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+    <div class="px-4 py-2.5 border-b border-slate-100 text-xs text-slate-500">
+      عرض {{ filteredStudents().length }} من {{ students().length }} طالب
+    </div>
     <div class="overflow-x-auto">
       <table class="w-full text-right text-sm">
         <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase">
@@ -122,16 +157,20 @@
                 {{ student.code }}
               </td>
               <td class="py-3.5 px-4">
-                <span class="block font-medium text-xs text-slate-800">{{ student.gradeLevel }}</span>
+                <span class="block font-medium text-xs text-slate-800">{{ gradeLabel(student) }}</span>
                 <span class="block text-[11px] text-slate-500">{{ student.className }}</span>
               </td>
               <td class="py-3.5 px-4 text-xs font-medium">{{ student.guardianName }}</td>
               <td class="py-3.5 px-4 text-xs font-mono text-slate-600 dir-ltr text-right">{{ student.guardianPhone }}</td>
               <td class="py-3.5 px-4 text-center">
-                <span class="inline-block px-2.5 py-0.5 rounded-full font-bold text-xs"
-                  [class]="student.gpa >= 90 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'">
-                  {{ student.gpa }}%
-                </span>
+                @if (student.gpa === null) {
+                  <span class="text-xs text-slate-400">—</span>
+                } @else {
+                  <span class="inline-block px-2.5 py-0.5 rounded-full font-bold text-xs"
+                    [class]="student.gpa >= 90 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'">
+                    {{ student.gpa }}%
+                  </span>
+                }
               </td>
               <td class="py-3.5 px-4 text-center">
                 <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
@@ -141,13 +180,13 @@
               </td>
               <td class="py-3.5 px-4 text-center">
                 <div class="flex items-center justify-center gap-2">
-                  <button type="button" title="تفاصيل الطالب" class="p-1.5 rounded-lg text-slate-400 hover:text-primary-700 hover:bg-slate-100">
+                  <button (click)="viewingStudent.set(student)" type="button" title="تفاصيل الطالب" class="p-1.5 rounded-lg text-slate-400 hover:text-primary-700 hover:bg-slate-100">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   </button>
-                  <button type="button" title="تعديل" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100">
+                  <button (click)="openForm(student)" type="button" title="تعديل" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -167,62 +206,26 @@
     </div>
   </div>
 
-  <!-- Add Student Modal Dialog -->
-  @if (showAddModal()) {
-    <div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
-      <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-full overflow-y-auto p-6 space-y-4 animate-in fade-in zoom-in-95">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h3 class="font-black text-slate-800 text-lg">تسجيل طالب جديد بالمنظومة</h3>
-          <button (click)="toggleAddModal()" class="text-slate-400 hover:text-slate-600">✕</button>
-        </div>
+  @if (showForm()) {
+    <app-student-form-dialog
+      [student]="editingStudent()"
+      [existing]="students()"
+      (saved)="saveStudent($event)"
+      (deleted)="deleteStudent($event)"
+      (closed)="showForm.set(false)" />
+  }
 
-        <div class="space-y-4 pt-1">
-          <mat-form-field class="w-full">
-            <mat-label>الاسم رباعي (باللغة العربية)</mat-label>
-            <input matInput required placeholder="مثال: يوسف أحمد محمد مصطفى" />
-          </mat-form-field>
+  @if (viewingStudent(); as student) {
+    <app-student-details-dialog
+      [student]="student"
+      (edit)="openForm($event)"
+      (closed)="viewingStudent.set(null)" />
+  }
 
-          <div class="grid grid-cols-2 gap-3">
-            <mat-form-field class="w-full">
-              <mat-label>الرقم القومي لولي الأمر (14 رقم)</mat-label>
-              <input matInput required inputmode="numeric" maxlength="14" placeholder="27501011234567" />
-            </mat-form-field>
-            <mat-form-field class="w-full">
-              <mat-label>كود الطالب</mat-label>
-              <input matInput required placeholder="STD-2026-99" />
-            </mat-form-field>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <mat-form-field class="w-full">
-              <mat-label>الصف الدراسي</mat-label>
-              <mat-select required [(value)]="newStudentGradeId">
-                @for (grade of grades; track grade.id) {
-                  <mat-option [value]="grade.id">{{ grade.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field class="w-full">
-              <mat-label>الفصل</mat-label>
-              <mat-select required [(value)]="newStudentSection">
-                @for (section of newStudentSections(); track section) {
-                  <mat-option [value]="section">فصل {{ section }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <mat-form-field class="w-full">
-            <mat-label>هاتف ولي الأمر</mat-label>
-            <input matInput type="tel" required maxlength="11" placeholder="01012345678" />
-          </mat-form-field>
-        </div>
-
-        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-          <button (click)="toggleAddModal()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
-          <button (click)="toggleAddModal()" type="button" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">حفظ القيد</button>
-        </div>
-      </div>
-    </div>
+  @if (showImport()) {
+    <app-student-import-dialog
+      [existing]="students()"
+      (imported)="importStudents($event)"
+      (closed)="showImport.set(false)" />
   }
 </div>

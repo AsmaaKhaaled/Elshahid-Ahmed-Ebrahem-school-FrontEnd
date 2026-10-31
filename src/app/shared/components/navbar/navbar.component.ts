@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -7,13 +7,14 @@ import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
 import { TimeAgoPipe, arabicCount } from '../../pipes/time-ago.pipe';
 import { AnnouncementsStore, announcementsPath } from '../../../features/announcements/announcements.store';
+import { AccountSettingsDialogComponent } from '../account-settings-dialog/account-settings-dialog.component';
 
 const NAME_TITLES = new Set(['أ', 'د', 'م', 'الأستاذ', 'الأستاذة', 'الشيخ', 'المهندس', 'الدكتور']);
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, ArabicDatePipe, NgOptimizedImage, TimeAgoPipe],
+  imports: [RouterLink, ArabicDatePipe, NgOptimizedImage, TimeAgoPipe, AccountSettingsDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
@@ -46,6 +47,26 @@ export class NavbarComponent {
   readonly today = new Date();
   readonly isProfileMenuOpen = signal<boolean>(false);
   readonly isNotificationsOpen = signal<boolean>(false);
+  readonly isAccountSettingsOpen = signal<boolean>(false);
+  readonly accountNotice = signal<string | null>(null);
+  private noticeTimer?: ReturnType<typeof setTimeout>;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.noticeTimer));
+  }
+
+  openAccountSettings(): void {
+    this.isProfileMenuOpen.set(false);
+    this.isAccountSettingsOpen.set(true);
+  }
+
+  // The dialog saved a change: close it and confirm for a few seconds
+  onAccountSaved(message: string): void {
+    this.isAccountSettingsOpen.set(false);
+    clearTimeout(this.noticeTimer);
+    this.accountNotice.set(message);
+    this.noticeTimer = setTimeout(() => this.accountNotice.set(null), 4000);
+  }
 
   toggleProfileMenu(): void {
     this.isProfileMenuOpen.update(v => !v);

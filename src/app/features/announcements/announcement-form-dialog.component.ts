@@ -5,6 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { today } from '../../core/academic/academic-calendar.store';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { ANNOUNCEMENT_CATEGORIES, AUDIENCES, Announcement, AnnouncementCategory, Attachment } from './announcements.store';
 
 const MAX_ATTACHMENT_MB = 10;
@@ -12,7 +13,7 @@ const MAX_ATTACHMENT_MB = 10;
 @Component({
   selector: 'app-announcement-form-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './announcement-form-dialog.component.html',
   styleUrl: './announcement-form-dialog.component.css'
@@ -27,6 +28,8 @@ export class AnnouncementFormDialogComponent implements OnInit {
   readonly audiences = AUDIENCES;
   readonly minDate = today();
   readonly fileError = signal('');
+  // Locked from the click until the page closes the dialog
+  readonly lock = submitLock();
 
   draft: Omit<Announcement, 'expiresAt'> & { expiresAt: string } = {
     id: '',
@@ -68,19 +71,22 @@ export class AnnouncementFormDialogComponent implements OnInit {
   }
 
   save(form: NgForm): void {
+    if (this.lock.busy()) return;
     if (form.invalid) {
       form.control.markAllAsTouched();
       return;
     }
     const { expiresAt, ...rest } = this.draft;
-    this.saved.emit({
-      ...rest,
-      title: rest.title.trim(),
-      content: rest.content.trim(),
-      author: rest.author.trim(),
-      expiresAt: expiresAt || undefined,
-      id: rest.id || crypto.randomUUID(),
-      publishedAt: rest.publishedAt || new Date().toISOString()
-    });
+    this.lock.run(() =>
+      this.saved.emit({
+        ...rest,
+        title: rest.title.trim(),
+        content: rest.content.trim(),
+        author: rest.author.trim(),
+        expiresAt: expiresAt || undefined,
+        id: rest.id || crypto.randomUUID(),
+        publishedAt: rest.publishedAt || new Date().toISOString()
+      })
+    );
   }
 }

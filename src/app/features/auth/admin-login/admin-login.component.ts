@@ -1,11 +1,9 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, isDevMode, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ADMIN_ROLES, AuthService, NotAdminAccountError } from '../../../core/auth/auth.service';
-import { DEV_ADMIN_CREDENTIALS, DEV_SEEDED_ADMIN_PASSWORD, DEV_TEACHER_CREDENTIALS } from '../../../core/auth/dev-auth.mock';
-import { SEEDED_ADMINS } from '../../../core/admin/admin-accounts.seed';
 import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 
 export const MAX_ATTEMPTS = 5;
@@ -41,13 +39,9 @@ export class AdminLoginComponent {
   readonly school = SCHOOL_INFO;
   readonly maxAttempts = MAX_ATTEMPTS;
   readonly lockMinutes = LOCK_MINUTES;
-  // Demo credentials are only shown while developing
-  readonly isDev = isDevMode();
-  readonly devAdmin = DEV_ADMIN_CREDENTIALS;
-  readonly devStaffAdmin = { nationalId: SEEDED_ADMINS[0].nationalId, password: DEV_SEEDED_ADMIN_PASSWORD };
-  readonly devTeacher = DEV_TEACHER_CREDENTIALS;
 
-  readonly mode = signal<'login' | 'forgot' | 'forgot-sent'>('login');
+  // 'forgot' explains how admin passwords are reset (by the principal - there's no self-service reset yet)
+  readonly mode = signal<'login' | 'forgot'>('login');
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly showPassword = signal(false);
@@ -68,10 +62,6 @@ export class AdminLoginComponent {
   readonly loginForm = this.fb.nonNullable.group({
     identifier: ['', [Validators.required, Validators.pattern(NATIONAL_ID_OR_EMAIL)]],
     password: ['', [Validators.required]]
-  });
-
-  readonly forgotForm = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]]
   });
 
   constructor() {
@@ -121,33 +111,12 @@ export class AdminLoginComponent {
 
   openForgot(): void {
     this.errorMessage.set(null);
-    const identifier = this.loginForm.controls.identifier.value.trim();
-    this.forgotForm.setValue({ email: identifier.includes('@') ? identifier : '' });
     this.mode.set('forgot');
   }
 
   backToLogin(): void {
     this.errorMessage.set(null);
     this.mode.set('login');
-  }
-
-  submitForgot(): void {
-    if (this.forgotForm.invalid) {
-      this.forgotForm.markAllAsTouched();
-      return;
-    }
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
-    this.authService.requestAdminPasswordReset(this.forgotForm.getRawValue().email).subscribe({
-      next: () => {
-        this.isLoading.set(false);
-        this.mode.set('forgot-sent');
-      },
-      error: () => {
-        this.isLoading.set(false);
-        this.errorMessage.set('تعذر الاتصال بالخادم. حاول مرة أخرى بعد قليل.');
-      }
-    });
   }
 
   private handleLoginError(err: unknown): void {
@@ -173,7 +142,8 @@ export class AdminLoginComponent {
       return;
     }
 
-    if (status === 401 || status === 400) {
+    // 422 = the backend's validation rejected the identifier/password
+    if (status === 401 || status === 400 || status === 422) {
       const failures = this.lock().failures + 1;
       if (failures >= MAX_ATTEMPTS) {
         this.saveLock({ failures, lockedUntil: Date.now() + LOCK_MINUTES * 60000 });

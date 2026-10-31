@@ -5,12 +5,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { SCHOOL_SUBJECTS } from '../../core/constants/school.constants';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { ExamEntry, ExamSchedule, addMinutes, formatTime, minutesOf } from './exams.store';
 
 @Component({
   selector: 'app-exam-entry-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './exam-entry-dialog.component.html',
   styleUrl: './exam-entry-dialog.component.css'
@@ -26,6 +27,8 @@ export class ExamEntryDialogComponent implements OnInit {
   readonly formatTime = formatTime;
   readonly addMinutes = addMinutes;
   readonly error = signal('');
+  // Locked from the click until the page closes the dialog
+  readonly lock = submitLock();
 
   draft: ExamEntry = { id: '', subject: '', date: '', startTime: '09:00', durationMinutes: 60, totalMarks: 20, notes: '' };
 
@@ -37,6 +40,7 @@ export class ExamEntryDialogComponent implements OnInit {
   }
 
   save(form: NgForm): void {
+    if (this.lock.busy()) return;
     if (form.invalid) {
       form.control.markAllAsTouched();
       return;
@@ -62,6 +66,6 @@ export class ExamEntryDialogComponent implements OnInit {
       return;
     }
 
-    this.saved.emit({ ...this.draft, notes: this.draft.notes.trim(), id: this.draft.id || crypto.randomUUID() });
+    this.lock.run(() => this.saved.emit({ ...this.draft, notes: this.draft.notes.trim(), id: this.draft.id || crypto.randomUUID() }));
   }
 }

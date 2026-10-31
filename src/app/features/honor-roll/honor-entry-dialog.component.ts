@@ -5,6 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { GRADE_LEVELS, SCHOOL_SUBJECTS } from '../../core/constants/school.constants';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { ACCEPTED_PHOTO_TYPES, MAX_PHOTO_UPLOAD_MB, resizeImageToSquare } from '../../shared/utils/image-resize';
 import { TEACHER_HONORIFIC } from '../teachers/teacher.model';
 import { HonorEntry, HonorKind } from './honor-roll.model';
@@ -13,7 +14,7 @@ import { HonorAvatarComponent } from './honor-avatar.component';
 @Component({
   selector: 'app-honor-entry-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, HonorAvatarComponent],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective, HonorAvatarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './honor-entry-dialog.component.html',
   styleUrl: './honor-entry-dialog.component.css'
@@ -34,6 +35,8 @@ export class HonorEntryDialogComponent implements OnInit {
   readonly confirmingDelete = signal(false);
   readonly photoError = signal<string | null>(null);
   readonly processingPhoto = signal(false);
+  // Locked from the click until the page closes the dialog
+  readonly lock = submitLock();
   // Signal copy of the draft photo, so the OnPush preview updates after the async resize
   readonly photoUrl = signal('');
 
@@ -82,18 +85,25 @@ export class HonorEntryDialogComponent implements OnInit {
   }
 
   save(form: NgForm): void {
+    if (this.lock.busy()) return;
     if (form.invalid || this.processingPhoto()) {
       form.control.markAllAsTouched();
       return;
     }
-    this.saved.emit({
-      ...this.draft,
-      id: this.draft.id || crypto.randomUUID(),
-      name: this.draft.name.trim(),
-      achievement: this.draft.achievement.trim(),
-      // Only keep the field that belongs to this kind
-      subject: this.isTeacher ? this.draft.subject : '',
-      section: this.isTeacher ? '' : this.draft.section
-    });
+    this.lock.run(() =>
+      this.saved.emit({
+        ...this.draft,
+        id: this.draft.id || crypto.randomUUID(),
+        name: this.draft.name.trim(),
+        achievement: this.draft.achievement.trim(),
+        // Only keep the field that belongs to this kind
+        subject: this.isTeacher ? this.draft.subject : '',
+        section: this.isTeacher ? '' : this.draft.section
+      })
+    );
+  }
+
+  confirmDelete(): void {
+    this.lock.run(() => this.deleted.emit(this.draft.id));
   }
 }

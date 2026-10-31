@@ -4,12 +4,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { DAILY_PERIODS, GRADE_LEVELS, SCHOOL_DAYS } from '../../core/constants/school.constants';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { ScheduleSlot, Teacher, TermSchedules, WeeklySchedule, slotKey, teacherDisplayName } from './teacher.model';
 
 @Component({
   selector: 'app-teacher-schedule-dialog',
   standalone: true,
-  imports: [MatFormFieldModule, MatSelectModule, PortalToBodyDirective],
+  imports: [MatFormFieldModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './teacher-schedule-dialog.component.html',
   styleUrl: './teacher-schedule-dialog.component.css'
@@ -32,6 +33,8 @@ export class TeacherScheduleDialogComponent {
 
   readonly selectedTermId = signal(this.calendar.currentTermId());
   readonly editing = signal(false);
+  // Locked from the click until the page closes the dialog
+  readonly lock = submitLock();
 
   private readonly savedSchedule = computed<WeeklySchedule>(() =>
     this.schedules()[this.selectedTermId()]?.[this.teacher().id] ?? {}
@@ -92,7 +95,6 @@ export class TeacherScheduleDialogComponent {
     if (this.hasConflicts()) {
       return;
     }
-    this.saved.emit({ termId: this.selectedTermId(), schedule: this.draft() });
-    this.editing.set(false);
+    this.lock.run(() => this.saved.emit({ termId: this.selectedTermId(), schedule: this.draft() }));
   }
 }

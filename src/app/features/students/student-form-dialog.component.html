@@ -1,0 +1,104 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" (input)="duplicateError.set(null)" novalidate [appSubmitLock]="lock.busy()"
+    class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">{{ student() ? 'تعديل بيانات الطالب' : 'تسجيل طالب جديد بالمنظومة' }}</h3>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-4 pt-1">
+      <mat-form-field class="w-full sm:col-span-2">
+        <mat-label>الاسم رباعي (باللغة العربية)</mat-label>
+        <input matInput name="name" required [(ngModel)]="draft.name" placeholder="مثال: يوسف أحمد محمد مصطفى" />
+        <mat-error>اسم الطالب مطلوب</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>الرقم القومي للطالب (14 رقم)</mat-label>
+        <input matInput name="nationalId" required pattern="\d{14}" inputmode="numeric" maxlength="14"
+          [(ngModel)]="draft.nationalId" placeholder="31201011234567" />
+        <mat-error>الرقم القومي يجب أن يكون 14 رقماً</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>كود الطالب</mat-label>
+        <input matInput name="code" required dir="ltr" [(ngModel)]="draft.code" placeholder="STD-2026-099" />
+        @if (!student()) {
+          <mat-hint>اتولد تلقائياً - تقدر تغيّره</mat-hint>
+        }
+        <mat-error>كود الطالب مطلوب</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>الصف الدراسي</mat-label>
+        <mat-select name="gradeId" required [(ngModel)]="draft.gradeId" (ngModelChange)="onGradeChange()">
+          @for (grade of grades; track grade.id) {
+            <mat-option [value]="grade.id">{{ grade.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>الفصل</mat-label>
+        <mat-select name="className" required [(ngModel)]="draft.className">
+          @for (section of sections; track section) {
+            <mat-option [value]="section">فصل {{ section }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>اختر الفصل</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>اسم ولي الأمر</mat-label>
+        <input matInput name="guardianName" required [(ngModel)]="draft.guardianName" placeholder="مثال: أحمد محمد مصطفى" />
+        <mat-error>اسم ولي الأمر مطلوب</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>هاتف ولي الأمر</mat-label>
+        <input matInput type="tel" name="guardianPhone" required pattern="01[0125]\d{8}" maxlength="11" dir="ltr"
+          [(ngModel)]="draft.guardianPhone" placeholder="01012345678" />
+        <mat-error>أدخل رقم موبايل مصري صحيح (11 رقم)</mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>حالة القيد</mat-label>
+        <mat-select name="status" required [(ngModel)]="draft.status">
+          @for (status of statuses; track status) {
+            <mat-option [value]="status">{{ status }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (duplicateError()) {
+      <div class="p-3 rounded-xl bg-amber-50 border border-amber-100 text-xs font-semibold text-amber-800">{{ duplicateError() }}</div>
+    }
+
+    @if (confirmingDelete()) {
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span>سيتم حذف قيد الطالب نهائياً. هل أنت متأكد؟</span>
+        <div class="flex items-center gap-2">
+          <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
+          <button (click)="confirmDelete()" [disabled]="lock.busy()" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>
+        </div>
+      </div>
+    }
+
+    <div class="pt-4 flex items-center justify-between gap-3 border-t border-slate-100">
+      <div>
+        @if (student() && !confirmingDelete()) {
+          <button (click)="confirmingDelete.set(true)" type="button" class="px-4 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs">
+            حذف الطالب
+          </button>
+        }
+      </div>
+      <div class="flex items-center gap-3">
+        <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+        <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+          {{ student() ? 'حفظ التعديلات' : 'حفظ القيد' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

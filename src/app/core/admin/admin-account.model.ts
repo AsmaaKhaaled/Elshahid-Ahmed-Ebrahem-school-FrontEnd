@@ -1,5 +1,3 @@
-import { SCHOOL_INFO } from '../constants/school.constants';
-import { User } from '../models/user.model';
 import { AdminPermission } from './admin-permissions';
 
 export type AdminAccountRole = 'SUPER_ADMIN' | 'ADMIN';
@@ -19,21 +17,34 @@ export interface AdminAccount {
   createdAt: string;
 }
 
-// At least 8 characters with letters and digits
+// At least 8 characters with letters and digits (the backend enforces the same rule)
 export const ADMIN_PASSWORD_PATTERN = '(?=.*[A-Za-z])(?=.*\\d).{8,}';
 
-export function adminAccountToUser(account: AdminAccount): User {
+/** An admin as returned by GET/POST/PATCH /api/v1/admin/admins */
+export interface AdminAccountDto {
+  id: string;
+  fullName: string;
+  email: string | null;
+  nationalId: string | null;
+  role: AdminAccountRole;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  permissions: string[];
+  phone: string | null;
+  jobTitle: string | null;
+  createdAt: string;
+}
+
+export function adminAccountFromDto(dto: AdminAccountDto): AdminAccount {
   return {
-    id: account.id,
-    nationalId: account.nationalId,
-    fullName: account.fullName,
-    email: '',
-    phone: account.phone,
-    role: account.role,
-    permissions: account.role === 'ADMIN' ? account.permissions : undefined,
-    status: account.status,
-    mustChangePassword: false,
-    schoolName: SCHOOL_INFO.fullName,
-    createdAt: account.createdAt
+    id: dto.id,
+    fullName: dto.fullName,
+    nationalId: dto.nationalId ?? '',
+    jobTitle: dto.jobTitle ?? '',
+    phone: dto.phone ?? '',
+    role: dto.role,
+    permissions: dto.permissions as AdminPermission[],
+    // INACTIVE accounts can't sign in either - shown (and re-activated) like suspended ones
+    status: dto.status === 'ACTIVE' ? 'ACTIVE' : 'SUSPENDED',
+    createdAt: dto.createdAt
   };
 }

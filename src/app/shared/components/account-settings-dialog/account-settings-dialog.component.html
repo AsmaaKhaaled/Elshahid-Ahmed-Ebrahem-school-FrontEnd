@@ -1,0 +1,130 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-cairo">
+  <div [appSubmitLock]="lock.busy()" class="bg-white rounded-3xl shadow-2xl max-w-xl w-full max-h-full overflow-y-auto p-6 space-y-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">بيانات الحساب</h3>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600" aria-label="إغلاق">✕</button>
+    </div>
+
+    @if (canEditProfile()) {
+      <div class="flex gap-1 p-1 rounded-xl bg-slate-100 text-xs font-bold" role="tablist">
+        <button (click)="switchTab('profile')" type="button" role="tab" [attr.aria-selected]="tab() === 'profile'"
+          class="flex-1 py-2 rounded-lg transition-colors"
+          [class]="tab() === 'profile' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+          البيانات الشخصية
+        </button>
+        <button (click)="switchTab('password')" type="button" role="tab" [attr.aria-selected]="tab() === 'password'"
+          class="flex-1 py-2 rounded-lg transition-colors"
+          [class]="tab() === 'password' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+          كلمة المرور
+        </button>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700" role="alert">{{ error() }}</div>
+    }
+
+    @if (tab() === 'profile') {
+      <form #profileForm="ngForm" (ngSubmit)="saveProfile(profileForm)" novalidate class="space-y-4">
+        @if (loadingProfile()) {
+          <p class="text-[11px] text-slate-400">جاري تحميل أحدث البيانات...</p>
+        }
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-4">
+          <mat-form-field class="w-full sm:col-span-2">
+            <mat-label>الاسم بالكامل</mat-label>
+            <input matInput name="fullName" required minlength="3" [(ngModel)]="profile.fullName" />
+            <mat-error>الاسم مطلوب (3 أحرف على الأقل)</mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>الرقم القومي (14 رقم)</mat-label>
+            <input matInput name="nationalId" required pattern="\d{14}" inputmode="numeric" maxlength="14" dir="ltr"
+              [(ngModel)]="profile.nationalId" />
+            <mat-hint>ده اللي بتدخل بيه على لوحة الإدارة</mat-hint>
+            <mat-error>الرقم القومي يجب أن يكون 14 رقماً</mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>رقم الهاتف (اختياري)</mat-label>
+            <input matInput type="tel" name="phone" pattern="01[0125]\d{8}" maxlength="11" dir="ltr" [(ngModel)]="profile.phone" />
+            <mat-error>أدخل رقم موبايل مصري صحيح (11 رقم)</mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>المسمى الوظيفي (اختياري)</mat-label>
+            <input matInput name="jobTitle" [(ngModel)]="profile.jobTitle" placeholder="مثال: مدير المدرسة" />
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>البريد الإلكتروني (اختياري)</mat-label>
+            <input matInput type="email" name="email" email dir="ltr" [(ngModel)]="profile.email" />
+            <mat-error>صيغة البريد غير صحيحة</mat-error>
+          </mat-form-field>
+
+          @if (identifierChanged) {
+            <div class="sm:col-span-2 p-3 rounded-xl bg-amber-50 border border-amber-100 space-y-3">
+              <p class="text-[11px] text-amber-800 font-semibold">
+                بتغيّر بيانات الدخول (الرقم القومي أو البريد). للتأكيد، اكتب كلمة المرور الحالية.
+              </p>
+              <mat-form-field class="w-full">
+                <mat-label>كلمة المرور الحالية</mat-label>
+                <input matInput type="password" name="currentPassword" required autocomplete="current-password" dir="ltr"
+                  [(ngModel)]="profile.currentPassword" />
+                <mat-error>كلمة المرور الحالية مطلوبة لتغيير بيانات الدخول</mat-error>
+              </mat-form-field>
+            </div>
+          }
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+          <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إغلاق</button>
+          <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+            {{ lock.busy() ? 'جاري الحفظ...' : 'حفظ البيانات' }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <form #passwordForm="ngForm" (ngSubmit)="changePassword(passwordForm)" novalidate class="space-y-4">
+        <mat-form-field class="w-full">
+          <mat-label>كلمة المرور الحالية</mat-label>
+          <input matInput [type]="showPassword() ? 'text' : 'password'" name="currentPassword" required autocomplete="current-password" dir="ltr"
+            [(ngModel)]="passwords.currentPassword" />
+          <mat-error>كلمة المرور الحالية مطلوبة</mat-error>
+        </mat-form-field>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-4">
+          <mat-form-field class="w-full">
+            <mat-label>كلمة المرور الجديدة</mat-label>
+            <input matInput [type]="showPassword() ? 'text' : 'password'" name="newPassword" required autocomplete="new-password" dir="ltr"
+              [pattern]="passwordPattern" [(ngModel)]="passwords.newPassword" />
+            <mat-hint>8 أحرف على الأقل، فيها حروف وأرقام</mat-hint>
+            <mat-error>8 أحرف على الأقل، فيها حروف إنجليزية وأرقام</mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="w-full">
+            <mat-label>تأكيد كلمة المرور الجديدة</mat-label>
+            <input matInput [type]="showPassword() ? 'text' : 'password'" name="confirmPassword" required autocomplete="new-password" dir="ltr"
+              [(ngModel)]="passwords.confirmPassword" />
+            @if (passwordForm.hasError('mismatch', 'confirmPassword')) {
+              <mat-error>كلمتا المرور غير متطابقتين</mat-error>
+            } @else {
+              <mat-error>أعد كتابة كلمة المرور للتأكيد</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <button type="button" (click)="showPassword.set(!showPassword())" class="text-[11px] font-bold text-slate-500 hover:text-slate-700">
+          {{ showPassword() ? 'إخفاء كلمات المرور' : 'إظهار كلمات المرور' }}
+        </button>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+          <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إغلاق</button>
+          <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+            {{ lock.busy() ? 'جاري الحفظ...' : 'تغيير كلمة المرور' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</div>

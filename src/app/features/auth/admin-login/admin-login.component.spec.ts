@@ -1,19 +1,27 @@
-import { ComponentFixture, TestBed, discardPeriodicTasks, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { provideTestDefaults } from '../../../../testing/test-helpers';
 import { AuthService } from '../../../core/auth/auth.service';
-import { DEV_ADMIN_CREDENTIALS, DEV_SEEDED_ADMIN_PASSWORD, DEV_TEACHER_CREDENTIALS } from '../../../core/auth/dev-auth.mock';
-import { AdminAccountsStore } from '../../../core/admin/admin-accounts.store';
-import { SEEDED_ADMINS } from '../../../core/admin/admin-accounts.seed';
+import { TokenService } from '../../../core/auth/token.service';
 import { AdminLoginComponent, MAX_ATTEMPTS } from './admin-login.component';
 
-// The dev mock answers after 600ms
-const MOCK_DELAY = 600;
+const LOGIN_URL = 'http://localhost:5000/api/v1/auth/login';
+
+function loginResponse(role: string, extra: object = {}) {
+  return {
+    status: 'success',
+    requirePasswordChange: false,
+    token: 'jwt-token',
+    user: { id: 'u1', fullName: 'مستخدم', nationalId: '28001011234567', role, status: 'ACTIVE', permissions: [], ...extra }
+  };
+}
 
 describe('AdminLoginComponent', () => {
   let component: AdminLoginComponent;
   let fixture: ComponentFixture<AdminLoginComponent>;
   let authService: AuthService;
+  let http: HttpTestingController;
   let navigate: jasmine.Spy;
 
   beforeEach(async () => {
@@ -28,6 +36,7 @@ describe('AdminLoginComponent', () => {
 
     authService = TestBed.inject(AuthService);
     authService.currentUser.set(null);
+    http = TestBed.inject(HttpTestingController);
     navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
 
     fixture = TestBed.createComponent(AdminLoginComponent);
@@ -36,96 +45,99 @@ describe('AdminLoginComponent', () => {
   });
 
   afterEach(() => {
+    http.verify();
     fixture.destroy();
+    TestBed.inject(TokenService).clearTokens();
     localStorage.removeItem('sch_admin_login_lock');
+    localStorage.removeItem('sch_user_profile');
   });
 
-  function submit(identifier: string, password: string): void {
+  function submit(identifier: string, password: string) {
     component.loginForm.setValue({ identifier, password });
     component.onSubmit();
-    tick(MOCK_DELAY);
+    return http.expectOne(LOGIN_URL);
   }
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  function fail(identifier: string, status: number): void {
+    submit(identifier, 'whatever').flush({ message: 'x' }, { status, statusText: 'Error' });
+  }
+
+  it('signs the super admin in through the real login endpoint and opens the dashboard', () => {
+    const req = submit('28001011234567', 'Admin@2026');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ identifier: '28001011234567', password: 'Admin@2026' });
+    req.flush(loginResponse('SUPER_ADMIN'));
+
+    expect(authService.userRole()).toBe('SUPER_ADMIN');
+    expect(TestBed.inject(TokenService).getToken()).toBe('jwt-token');
+    expect(navigate).toHaveBeenCalledWith(['/admin/dashboard']);
   });
 
-  it('signs the super admin in with the national ID and opens the admin dashboard', fakeAsync(() => {
-    submit(DEV_ADMIN_CREDENTIALS.nationalId, DEV_ADMIN_CREDENTIALS.password);
-
-    expect(authService.userRole()).toBe('SUPER_ADMIN');
-    expect(navigate).toHaveBeenCalledWith(['/admin/dashboard']);
-    discardPeriodicTasks();
-  }));
-
-  it('still accepts the email as the identifier', fakeAsync(() => {
-    submit(DEV_ADMIN_CREDENTIALS.email, DEV_ADMIN_CREDENTIALS.password);
-
-    expect(authService.userRole()).toBe('SUPER_ADMIN');
-    discardPeriodicTasks();
-  }));
-
-  it('signs a limited admin in with only the sections granted to them', fakeAsync(() => {
-    const [admin] = SEEDED_ADMINS;
-    submit(admin.nationalId, DEV_SEEDED_ADMIN_PASSWORD);
+  it('signs a limited admin in with only the sections granted to them', () => {
+    submit('27805121234561', 'Staff@2026').flush(loginResponse('ADMIN', { permissions: ['students'] }));
 
     expect(authService.userRole()).toBe('ADMIN');
     expect(authService.canAccessAdminSection('students')).toBeTrue();
     expect(authService.canAccessAdminSection('honor-roll')).toBeFalse();
-    discardPeriodicTasks();
-  }));
+  });
 
-  it('refuses a suspended admin even with the right password', fakeAsync(() => {
-    const [admin] = SEEDED_ADMINS;
-    TestBed.inject(AdminAccountsStore).setStatus(admin.id, 'SUSPENDED');
-    submit(admin.nationalId, DEV_SEEDED_ADMIN_PASSWORD);
+  it('sends an admin with a temporary password to set a personal one', () => {
+    submit('27805121234561', 'Temp1234').flush({
+      status: 'success', requirePasswordChange: true, tempToken: 'temp', user: { id: 'u1', fullName: 'مسؤول', role: 'ADMIN' }
+    });
+
+    expect(navigate).toHaveBeenCalledWith(['/auth/set-initial-password']);
+    expect(TestBed.inject(TokenService).getToken()).toBeNull();
+  });
+
+  it('refuses a suspended admin even with the right password', () => {
+    fail('27805121234561', 403);
 
     expect(component.errorMessage()).toContain('تم إيقاف هذا الحساب');
     expect(authService.currentUser()).toBeNull();
+  });
 
-    TestBed.inject(AdminAccountsStore).setStatus(admin.id, 'ACTIVE');
-    discardPeriodicTasks();
-  }));
-
-  it('shows one generic message for wrong credentials and clears the password', fakeAsync(() => {
-    submit(DEV_ADMIN_CREDENTIALS.email, 'wrong-password');
+  it('shows one generic message for wrong credentials and clears the password', () => {
+    fail('admin@school.com', 401);
 
     expect(component.errorMessage()).toBe('بيانات الدخول أو كلمة المرور غير صحيحة.');
     expect(component.attemptsLeft()).toBe(MAX_ATTEMPTS - 1);
     expect(component.loginForm.controls.password.value).toBe('');
-    expect(authService.currentUser()).toBeNull();
-    discardPeriodicTasks();
-  }));
+    // Stays on the admin login page (the interceptor must not redirect a failed login)
+    expect(navigate).not.toHaveBeenCalled();
+  });
 
-  it('locks the form after too many failed attempts', fakeAsync(() => {
+  it('locks the form after too many failed attempts', () => {
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
-      submit('someone@school.edu.eg', 'wrong-password');
+      fail('someone@school.edu.eg', 401);
     }
-
     expect(component.isLocked()).toBeTrue();
 
-    // Further attempts are ignored while locked
-    submit(DEV_ADMIN_CREDENTIALS.email, DEV_ADMIN_CREDENTIALS.password);
-    expect(authService.currentUser()).toBeNull();
-    discardPeriodicTasks();
-  }));
+    // Further attempts are ignored while locked - no request is sent
+    component.loginForm.setValue({ identifier: '28001011234567', password: 'Admin@2026' });
+    component.onSubmit();
+    http.expectNone(LOGIN_URL);
+  });
 
-  it('rejects a valid account that is not an admin, without signing it in', fakeAsync(() => {
-    submit(DEV_TEACHER_CREDENTIALS.email, DEV_TEACHER_CREDENTIALS.password);
+  it('rejects a valid account that is not an admin, without signing it in', () => {
+    submit('28901222800962', 'Teacher@2026').flush(loginResponse('TEACHER'));
 
     expect(component.errorMessage()).toContain('ليس من حسابات إدارة المدرسة');
     expect(authService.currentUser()).toBeNull();
+    expect(TestBed.inject(TokenService).getToken()).toBeNull();
     expect(navigate).not.toHaveBeenCalled();
-    discardPeriodicTasks();
-  }));
+  });
 
-  it('confirms a password reset request without revealing whether the email exists', fakeAsync(() => {
+  it('reports a server that cannot be reached', () => {
+    fail('28001011234567', 0);
+    expect(component.errorMessage()).toContain('تعذر الاتصال بالخادم');
+  });
+
+  it('explains that the principal resets admin passwords', () => {
     component.openForgot();
-    component.forgotForm.setValue({ email: 'unknown@school.edu.eg' });
-    component.submitForgot();
-    tick(MOCK_DELAY);
+    fixture.detectChanges();
 
-    expect(component.mode()).toBe('forgot-sent');
-    discardPeriodicTasks();
-  }));
+    expect(component.mode()).toBe('forgot');
+    expect(fixture.nativeElement.textContent).toContain('مدير المدرسة');
+  });
 });

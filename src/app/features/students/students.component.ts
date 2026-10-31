@@ -1,28 +1,19 @@
-import { ChangeDetectionStrategy, Component, signal, computed, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, signal, computed, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { GRADE_LEVELS } from '../../core/constants/school.constants';
-import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
-
-interface Student {
-  id: string;
-  code: string;
-  nationalId: string;
-  name: string;
-  gradeLevel: string;
-  className: string;
-  guardianName: string;
-  guardianPhone: string;
-  status: 'منتظم' | 'موقوف' | 'منقول';
-  gpa: number;
-}
+import { StudentDetailsDialogComponent } from './student-details-dialog.component';
+import { exportStudents } from './student-excel';
+import { StudentFormDialogComponent } from './student-form-dialog.component';
+import { StudentImportDialogComponent } from './student-import-dialog.component';
+import { STUDENT_STATUSES, Student, gradeOf } from './student.model';
+import { StudentsStore } from './students.store';
 
 @Component({
   selector: 'app-students',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective],
+  imports: [FormsModule, MatFormFieldModule, MatSelectModule, StudentFormDialogComponent, StudentDetailsDialogComponent, StudentImportDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './students.component.html',
   styleUrl: './students.component.css'
@@ -31,96 +22,87 @@ export class StudentsComponent {
   readonly searchQuery = signal<string>('');
   readonly selectedGrade = signal<string>('ALL');
   readonly selectedStatus = signal<string>('ALL');
-  readonly showAddModal = signal<boolean>(false);
 
   readonly grades = GRADE_LEVELS;
-  readonly studentStatuses: Student['status'][] = ['منتظم', 'موقوف', 'منقول'];
+  readonly studentStatuses = STUDENT_STATUSES;
 
-  readonly newStudentGradeId = signal<string>(GRADE_LEVELS[0].id);
-  readonly newStudentSections = computed(() =>
-    GRADE_LEVELS.find(grade => grade.id === this.newStudentGradeId())?.sections ?? []
-  );
-  // Resets to the first section of the newly selected grade whenever the grade changes
-  readonly newStudentSection = linkedSignal(() => this.newStudentSections()[0]);
+  readonly gradeSections = computed(() => GRADE_LEVELS.find(grade => grade.id === this.selectedGrade())?.sections ?? []);
+  // Back to "all sections" whenever the grade filter changes
+  readonly selectedSection = linkedSignal<string, string>({ source: this.selectedGrade, computation: () => 'ALL' });
 
-  readonly students = signal<Student[]>([
-    {
-      id: '1',
-      code: 'STD-2026-001',
-      nationalId: '31001011234567',
-      name: 'أحمد ياسين محمد إبراهيم',
-      gradeLevel: 'الصف الأول الإعدادي',
-      className: '1/3',
-      guardianName: 'المهندس / ياسين محمد',
-      guardianPhone: '01001234567',
-      status: 'منتظم',
-      gpa: 98.4
-    },
-    {
-      id: '2',
-      code: 'STD-2026-002',
-      nationalId: '31002021234568',
-      name: 'مازن شريف عبد المنعم',
-      gradeLevel: 'الصف الأول الإعدادي',
-      className: '1/1',
-      guardianName: 'دكتور / شريف عبد المنعم',
-      guardianPhone: '01112345678',
-      status: 'منتظم',
-      gpa: 96.2
-    },
-    {
-      id: '3',
-      code: 'STD-2026-003',
-      nationalId: '31003031234569',
-      name: 'كريم خالد مصطفى السعيد',
-      gradeLevel: 'الصف الثاني الإعدادي',
-      className: '2/1',
-      guardianName: 'أ/ خالد مصطفى',
-      guardianPhone: '01223456789',
-      status: 'منتظم',
-      gpa: 91.5
-    },
-    {
-      id: '4',
-      code: 'STD-2026-004',
-      nationalId: '31004041234570',
-      name: 'نور الدين حسام حسن رضوان',
-      gradeLevel: 'الصف الثالث الإعدادي',
-      className: '3/2',
-      guardianName: 'المحامي / حسام حسن',
-      guardianPhone: '01556789012',
-      status: 'منتظم',
-      gpa: 94.0
-    },
-    {
-      id: '5',
-      code: 'STD-2026-005',
-      nationalId: '31005051234571',
-      name: 'عمر طارق عبد الله خليل',
-      gradeLevel: 'الصف الثالث الإعدادي',
-      className: '3/3',
-      guardianName: 'أ/ طارق عبد الله',
-      guardianPhone: '01099887766',
-      status: 'منتظم',
-      gpa: 87.8
-    }
-  ]);
+  private readonly store = inject(StudentsStore);
+  readonly students = this.store.students;
+  readonly metrics = this.store.metrics;
+
+  readonly showForm = signal(false);
+  readonly editingStudent = signal<Student | null>(null);
+  readonly viewingStudent = signal<Student | null>(null);
+  readonly showImport = signal(false);
+  readonly exporting = signal(false);
+  readonly notice = signal<string | null>(null);
+
+  private noticeTimer?: ReturnType<typeof setTimeout>;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.noticeTimer));
+  }
 
   readonly filteredStudents = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
     const grade = this.selectedGrade();
+    const section = this.selectedSection();
     const status = this.selectedStatus();
 
     return this.students().filter(s => {
-      const matchSearch = !q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.nationalId.includes(q);
-      const matchGrade = grade === 'ALL' || s.gradeLevel === grade;
+      const matchSearch = !q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.nationalId.includes(q) || s.guardianPhone.includes(q);
+      const matchGrade = grade === 'ALL' || s.gradeId === grade;
+      const matchSection = section === 'ALL' || s.className === section;
       const matchStatus = status === 'ALL' || s.status === status;
-      return matchSearch && matchGrade && matchStatus;
+      return matchSearch && matchGrade && matchSection && matchStatus;
     });
   });
 
-  toggleAddModal(): void {
-    this.showAddModal.update(v => !v);
+  gradeLabel(student: Student): string {
+    return gradeOf(student)?.label ?? '—';
+  }
+
+  openForm(student: Student | null): void {
+    this.viewingStudent.set(null);
+    this.editingStudent.set(student);
+    this.showForm.set(true);
+  }
+
+  saveStudent(student: Student): void {
+    const isNew = !this.editingStudent();
+    this.store.saveStudent(student);
+    this.showForm.set(false);
+    this.showNotice(isNew ? `تم تسجيل الطالب ${student.name}` : `تم حفظ تعديلات ${student.name}`);
+  }
+
+  deleteStudent(studentId: string): void {
+    this.store.deleteStudent(studentId);
+    this.showForm.set(false);
+    this.showNotice('تم حذف قيد الطالب');
+  }
+
+  importStudents(students: Student[]): void {
+    this.store.addStudents(students);
+    this.showImport.set(false);
+    this.showNotice(`تم تسجيل ${students.length} طالب من ملف Excel بنجاح`);
+  }
+
+  async exportExcel(): Promise<void> {
+    this.exporting.set(true);
+    try {
+      await exportStudents(this.filteredStudents());
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  private showNotice(message: string): void {
+    clearTimeout(this.noticeTimer);
+    this.notice.set(message);
+    this.noticeTimer = setTimeout(() => this.notice.set(null), 4000);
   }
 }
-

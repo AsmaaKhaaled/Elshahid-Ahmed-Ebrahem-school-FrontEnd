@@ -1,29 +1,21 @@
-import { Injectable, computed, isDevMode, signal } from '@angular/core';
-import { DEV_SUPER_ADMIN, removeDevAccount, upsertDevAccount } from '../auth/dev-auth.mock';
-import { AdminAccount, AdminAccountStatus, adminAccountToUser } from './admin-account.model';
-import { SEEDED_ADMINS } from './admin-accounts.seed';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, concatMap, map, of, tap } from 'rxjs';
+import { ApiService } from '../services/api.service';
+import { AdminAccount, AdminAccountDto, AdminAccountStatus, adminAccountFromDto } from './admin-account.model';
+
+interface AdminResponse {
+  data: { admin: AdminAccountDto };
+}
 
 /**
- * School administration accounts, managed by the SUPER_ADMIN only.
- * Passwords are never kept here: they're handed to the auth backend
- * (the dev auth mock while developing) when an account is created or reset.
+ * School administration accounts, managed by the SUPER_ADMIN only (backend: /api/v1/admin/admins).
+ * Passwords are never kept here: they're sent once to the backend, which hashes them.
  */
 @Injectable({ providedIn: 'root' })
 export class AdminAccountsStore {
-  readonly accounts = signal<AdminAccount[]>([
-    {
-      id: DEV_SUPER_ADMIN.id,
-      fullName: DEV_SUPER_ADMIN.fullName,
-      nationalId: DEV_SUPER_ADMIN.nationalId || '28001011234567',
-      jobTitle: 'مدير المدرسة',
-      phone: '',
-      role: 'SUPER_ADMIN',
-      permissions: [],
-      status: 'ACTIVE',
-      createdAt: DEV_SUPER_ADMIN.createdAt || new Date().toISOString()
-    },
-    ...SEEDED_ADMINS
-  ]);
+  private readonly api = inject(ApiService);
+
+  readonly accounts = signal<AdminAccount[]>([]);
 
   readonly activeCount = computed(() => this.accounts().filter(a => a.status === 'ACTIVE').length);
 
@@ -31,36 +23,59 @@ export class AdminAccountsStore {
     return this.accounts().some(a => a.nationalId === nationalId && a.id !== exceptId);
   }
 
-  /** Creates or updates an admin. A password is required on create and optional on update (= reset). */
-  saveAdmin(account: AdminAccount, password?: string): void {
-    if (account.role === 'SUPER_ADMIN') return;
-    this.accounts.update(list =>
-      list.some(a => a.id === account.id)
-        ? list.map(a => (a.id === account.id ? account : a))
-        : [...list, account]
+  /** Loads all accounts (the super admin first). */
+  load(): Observable<AdminAccount[]> {
+    return this.api.get<{ data: { admins: AdminAccountDto[] } }>('admin/admins').pipe(
+      map(res => res.data.admins.map(adminAccountFromDto)),
+      tap(accounts => this.accounts.set(accounts))
     );
-    this.syncLoginAccount(account, password);
   }
 
-  setStatus(accountId: string, status: AdminAccountStatus): void {
-    const account = this.accounts().find(a => a.id === accountId);
-    if (account && account.role !== 'SUPER_ADMIN') {
-      this.saveAdmin({ ...account, status });
-    }
+  /** Creates an admin (password required). */
+  createAdmin(account: AdminAccount, password: string): Observable<AdminAccount> {
+    return this.api.post<AdminResponse>('admin/admins', { ...this.profileBody(account), permissions: account.permissions, password }).pipe(
+      map(res => adminAccountFromDto(res.data.admin)),
+      tap(created => this.accounts.update(list => [...list, created]))
+    );
   }
 
-  deleteAdmin(accountId: string): void {
-    if (this.accounts().find(a => a.id === accountId)?.role === 'SUPER_ADMIN') return;
-    this.accounts.update(list => list.filter(a => a.id !== accountId));
-    if (isDevMode()) {
-      removeDevAccount(accountId);
-    }
+  /** Saves profile & permissions of an existing admin, and resets the password when one is given. */
+  updateAdmin(account: AdminAccount, password?: string): Observable<AdminAccount> {
+    const id = encodeURIComponent(account.id);
+    return this.api.patch<AdminResponse>(`admin/admins/${id}`, this.profileBody(account)).pipe(
+      concatMap(() => this.api.patch<AdminResponse>(`admin/admins/${id}/permissions`, { permissions: account.permissions })),
+      concatMap(res => (password
+        ? this.api.patch(`admin/admins/${id}/reset-password`, { newPassword: password }).pipe(map(() => res))
+        : of(res))),
+      map(res => adminAccountFromDto(res.data.admin)),
+      tap(updated => this.replace(updated))
+    );
   }
 
-  // TODO(backend): replace with POST/PUT /admins (the backend hashes the password)
-  private syncLoginAccount(account: AdminAccount, password?: string): void {
-    if (isDevMode()) {
-      upsertDevAccount(adminAccountToUser(account), password);
-    }
+  setStatus(accountId: string, status: AdminAccountStatus): Observable<AdminAccount> {
+    return this.api.patch<AdminResponse>(`admin/admins/${encodeURIComponent(accountId)}/status`, { status }).pipe(
+      map(res => adminAccountFromDto(res.data.admin)),
+      tap(updated => this.replace(updated))
+    );
+  }
+
+  deleteAdmin(accountId: string): Observable<void> {
+    return this.api.delete<unknown>(`admin/admins/${encodeURIComponent(accountId)}`).pipe(
+      map(() => undefined),
+      tap(() => this.accounts.update(list => list.filter(a => a.id !== accountId)))
+    );
+  }
+
+  private profileBody(account: AdminAccount) {
+    return {
+      fullName: account.fullName,
+      nationalId: account.nationalId,
+      jobTitle: account.jobTitle,
+      phone: account.phone
+    };
+  }
+
+  private replace(updated: AdminAccount): void {
+    this.accounts.update(list => list.map(a => (a.id === updated.id ? updated : a)));
   }
 }

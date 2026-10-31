@@ -5,12 +5,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { SCHOOL_SUBJECTS, TEACHING_DEPARTMENTS } from '../../core/constants/school.constants';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { TEACHER_HONORIFIC, TEACHER_STATUSES, Teacher } from './teacher.model';
 
 @Component({
   selector: 'app-teacher-form-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './teacher-form-dialog.component.html',
   styleUrl: './teacher-form-dialog.component.css'
@@ -27,6 +28,8 @@ export class TeacherFormDialogComponent implements OnInit {
   readonly subjects = SCHOOL_SUBJECTS;
   readonly statuses = TEACHER_STATUSES;
   readonly confirmingDelete = signal(false);
+  // Locked from the click until the page closes the dialog
+  readonly lock = submitLock();
 
   draft: Teacher = {
     id: '',
@@ -48,10 +51,15 @@ export class TeacherFormDialogComponent implements OnInit {
   }
 
   save(form: NgForm): void {
+    if (this.lock.busy()) return;
     if (form.invalid) {
       form.control.markAllAsTouched();
       return;
     }
-    this.saved.emit({ ...this.draft, name: this.draft.name.trim(), id: this.draft.id || crypto.randomUUID() });
+    this.lock.run(() => this.saved.emit({ ...this.draft, name: this.draft.name.trim(), id: this.draft.id || crypto.randomUUID() }));
+  }
+
+  confirmDelete(): void {
+    this.lock.run(() => this.deleted.emit(this.draft.id));
   }
 }
