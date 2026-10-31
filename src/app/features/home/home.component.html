@@ -762,42 +762,39 @@
         </div>
 
         <!-- Student Info Strip -->
-        <div class="bg-slate-50 px-6 py-2 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+        <div class="bg-slate-50 px-6 py-2.5 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
           <span class="font-bold text-slate-700">حساب الطالب الموحد المعتمد</span>
-          <span class="flex items-center gap-1 text-emerald-600 font-semibold">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          <button 
+            type="button" 
+            (click)="fillStudentDemo()" 
+            class="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200 transition-colors font-medium">
+            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            <span>بيئة اختبارات آمنة</span>
-          </span>
+            <span>تجربة: STU-2026-001</span>
+          </button>
         </div>
 
         <!-- Student Form -->
         <div class="p-6 space-y-4">
-          <!-- Email Input -->
-          <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-slate-700">البريد الإلكتروني المدرسي للطالب</label>
-            <div class="relative">
-              <input
-                type="email"
-                [(ngModel)]="studentEmail"
-                placeholder="omar.ahmed@alshaheed.edu.eg"
-                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-portal-teal/20 focus:border-portal-teal"
-              />
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-mono text-xs">
-                &#64;
-              </span>
+          <!-- Error Alert -->
+          @if (studentErrorMessage()) {
+            <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-start gap-2 animate-in fade-in">
+              <svg class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{{ studentErrorMessage() }}</span>
             </div>
-          </div>
+          }
 
           <!-- Student Code Input -->
           <div class="space-y-1.5">
-            <label class="block text-xs font-bold text-slate-700">كود الطالب المدرسي</label>
+            <label class="block text-xs font-bold text-slate-700">كود الطالب المدرسي (المعرّف الأكاديمي)</label>
             <div class="relative">
               <input
                 type="text"
                 [(ngModel)]="studentCode"
-                placeholder="STU-1001"
+                placeholder="مثال: STU-2026-001"
                 class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-portal-teal/20 focus:border-portal-teal"
               />
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -808,6 +805,34 @@
             </div>
           </div>
 
+          <!-- Student Password Input -->
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700">كلمة المرور المدرسية</label>
+            <div class="relative">
+              <input
+                [type]="studentShowPassword() ? 'text' : 'password'"
+                [(ngModel)]="studentPassword"
+                placeholder="••••••••••••"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-portal-teal/20 focus:border-portal-teal"
+              />
+              <button
+                type="button"
+                (click)="studentShowPassword.set(!studentShowPassword())"
+                class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 hover:text-slate-600">
+                @if (studentShowPassword()) {
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                }
+              </button>
+            </div>
+          </div>
+
           <!-- Auxiliary Checkbox & Help -->
           <div class="flex items-center justify-between text-xs pt-1">
             <label class="flex items-center gap-2 cursor-pointer text-slate-600 select-none">
@@ -815,16 +840,25 @@
               <span>تذكر بيانات الدخول</span>
             </label>
             <a href="javascript:void(0)" class="text-portal-teal hover:underline font-semibold text-[11px]">
-              استرجاع كود الطالب أو مساعدة الدخول
+              مساعدة الدخول والدعم الفني
             </a>
           </div>
 
           <!-- Submit Button -->
           <button
             (click)="submitStudentLogin()"
+            [disabled]="studentIsLoading()"
             type="button"
-            class="w-full py-3.5 px-4 rounded-xl bg-portal-teal hover:bg-portal-tealDark text-white font-bold text-sm shadow-md shadow-portal-teal/20 transition-all flex items-center justify-center gap-2 mt-2">
-            <span>تسجيل الدخول إلى بوابة الطالب [→</span>
+            class="w-full py-3.5 px-4 rounded-xl bg-portal-teal hover:bg-portal-tealDark disabled:opacity-60 text-white font-bold text-sm shadow-md shadow-portal-teal/20 transition-all flex items-center justify-center gap-2 mt-2">
+            @if (studentIsLoading()) {
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>جاري التحقق والدخول...</span>
+            } @else {
+              <span>تسجيل الدخول إلى بوابة الطالب [→</span>
+            }
           </button>
         </div>
 
@@ -861,13 +895,31 @@
         </div>
 
         <!-- Teacher Info Strip -->
-        <div class="bg-slate-50 px-6 py-2 border-b border-slate-200/80 flex items-center justify-between text-[11px] text-slate-600">
+        <div class="bg-slate-50 px-6 py-2.5 border-b border-slate-200/80 flex items-center justify-between text-[11px] text-slate-600">
           <span class="font-bold text-slate-800">بوابة الخدمات والتحضير والرصد المعتمدة</span>
-          <span class="font-mono text-primary-700 font-bold">كود المدرس الافتراضي: 2001-TCH</span>
+          <button 
+            type="button" 
+            (click)="fillTeacherDemo()" 
+            class="inline-flex items-center gap-1 text-primary-800 hover:text-primary-950 bg-primary-50 hover:bg-primary-100 px-2.5 py-0.5 rounded-full border border-primary-200 transition-colors font-medium">
+            <svg class="w-3.5 h-3.5 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>تجربة: أ/ نشوه (28901222800962)</span>
+          </button>
         </div>
 
         <!-- Teacher Form -->
         <div class="p-6 space-y-4">
+          <!-- Error Alert -->
+          @if (teacherErrorMessage()) {
+            <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-start gap-2 animate-in fade-in">
+              <svg class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{{ teacherErrorMessage() }}</span>
+            </div>
+          }
+
           <!-- National ID Input -->
           <div class="space-y-1.5">
             <label class="block text-xs font-bold text-slate-700">الرقم القومي للمعلم (14 رقماً)</label>
@@ -875,7 +927,7 @@
               <input
                 type="text"
                 [(ngModel)]="teacherNationalId"
-                placeholder="28904151234567"
+                placeholder="28901222800962"
                 class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-portal-navy/20 focus:border-portal-navy"
               />
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -928,9 +980,18 @@
           <!-- Submit Button -->
           <button
             (click)="submitTeacherLogin()"
+            [disabled]="teacherIsLoading()"
             type="button"
-            class="w-full py-3.5 px-4 rounded-xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-sm shadow-md shadow-portal-navy/20 transition-all flex items-center justify-center gap-2 mt-2">
-            <span>تسجيل الدخول إلى بوابة المعلم [→</span>
+            class="w-full py-3.5 px-4 rounded-xl bg-portal-navy hover:bg-portal-navyDark disabled:opacity-60 text-white font-bold text-sm shadow-md shadow-portal-navy/20 transition-all flex items-center justify-center gap-2 mt-2">
+            @if (teacherIsLoading()) {
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>جاري التحقق والدخول...</span>
+            } @else {
+              <span>تسجيل الدخول إلى بوابة المعلم [→</span>
+            }
           </button>
 
           <!-- Footer Auxiliary for School Leadership -->

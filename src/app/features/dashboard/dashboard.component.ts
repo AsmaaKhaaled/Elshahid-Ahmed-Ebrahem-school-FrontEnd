@@ -4,6 +4,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
 import { TermEndAlertComponent } from '../../shared/components/term-end-alert/term-end-alert.component';
+import { TeacherAssignedClass } from '../../core/models/user.model';
 
 interface StatMetric {
   title: string;
@@ -37,6 +38,41 @@ export class DashboardComponent {
   readonly authService = inject(AuthService);
   readonly school = SCHOOL_INFO;
   readonly today = new Date();
+
+  readonly isTeacher = computed(() => this.authService.userRole() === 'TEACHER');
+  readonly isSuperAdmin = computed(() => this.authService.isSuperAdmin());
+  readonly isAdmin = computed(() => this.authService.isAdmin());
+  readonly teacherProfile = computed(() => this.authService.teacherProfile());
+
+  readonly teacherClasses = computed<TeacherAssignedClass[]>(() => {
+    const profile = this.teacherProfile();
+    if (profile?.classes && profile.classes.length > 0) {
+      return profile.classes;
+    }
+    return [
+      {
+        id: 'class_id_1',
+        name: '3/2',
+        displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/2',
+        gradeLevel: '3rd Preparatory',
+        roomNumber: '302'
+      },
+      {
+        id: 'class_id_2',
+        name: '3/3',
+        displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/3',
+        gradeLevel: '3rd Preparatory',
+        roomNumber: '303'
+      },
+      {
+        id: 'class_id_3',
+        name: '3/4',
+        displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/4',
+        gradeLevel: '3rd Preparatory',
+        roomNumber: '304'
+      }
+    ];
+  });
 
   readonly stats = signal<StatMetric[]>([
     {

@@ -7,8 +7,8 @@ import { Observable } from 'rxjs';
 })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  // Default to relative or environment variable endpoint
-  private readonly baseUrl = '/api/v1';
+  // Base URL for Backend API
+  private readonly baseUrl = 'http://localhost:5000/api/v1';
 
   get<T>(endpoint: string, params?: Record<string, string | number | boolean | readonly (string | number | boolean)[]>): Observable<T> {
     let httpParams = new HttpParams();

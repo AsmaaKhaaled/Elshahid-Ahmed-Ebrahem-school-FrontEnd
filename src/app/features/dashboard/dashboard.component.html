@@ -1,6 +1,8 @@
 <div class="space-y-6">
   <!-- Term ending reminder (admins only) -->
-  <app-term-end-alert />
+  @if (!isTeacher()) {
+    <app-term-end-alert />
+  }
 
   <!-- Welcome Banner -->
   <div class="relative overflow-hidden rounded-3xl bg-gradient-to-l from-primary-950 via-primary-900 to-slate-900 text-white p-6 md:p-8 shadow-card border border-primary-800/40">
@@ -8,34 +10,68 @@
       <div class="space-y-2 max-w-2xl">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-primary-200 border border-white/10">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>نظام المتابعة الأكاديمية اللحظية</span>
+          @if (isTeacher()) {
+            <span>بوابة السادة أعضاء هيئة التدريس المعتمدة</span>
+          } @else {
+            <span>نظام المتابعة الأكاديمية اللحظية</span>
+          }
         </div>
         <h2 class="text-2xl md:text-3xl font-black tracking-tight">
-          مرحباً بك مجدداً، {{ authService.userName() }}
+          @if (isTeacher()) {
+            مرحباً بك أستاذة / {{ authService.userName() }}
+          } @else {
+            مرحباً بك مجدداً، {{ authService.userName() }}
+          }
         </h2>
-        <p class="text-sm text-slate-300 leading-relaxed">
-          تتابع الآن المؤشرات الأكاديمية وسير العملية التعليمية ب{{ school.fullName }} ({{ school.category }}). جميع الأنظمة تعمل بكفاءة.
-        </p>
-        <p class="text-xs text-primary-200 font-semibold">
-          مدير المدرسة: {{ school.principal }}
-        </p>
+        @if (isTeacher()) {
+          <p class="text-sm text-slate-300 leading-relaxed">
+            معلم مادة <strong class="text-white font-bold">{{ teacherProfile()?.specialization || 'الرياضيات' }}</strong> • كود المعلم: <span class="font-mono text-emerald-300 font-bold">{{ teacherProfile()?.teacherCode || 'TCH-001' }}</span> • ب{{ school.fullName }}.
+          </p>
+          <p class="text-xs text-primary-200 font-semibold">
+            تم تخصيص عدد {{ teacherClasses().length }} فصول دراسية لجدولك الأكاديمي للفصل الدراسي الحالي.
+          </p>
+        } @else {
+          <p class="text-sm text-slate-300 leading-relaxed">
+            تتابع الآن المؤشرات الأكاديمية وسير العملية التعليمية ب{{ school.fullName }} ({{ school.category }}). جميع الأنظمة تعمل بكفاءة.
+          </p>
+          <p class="text-xs text-primary-200 font-semibold">
+            مدير المدرسة: {{ school.principal }}
+          </p>
+        }
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <a
-          routerLink="/attendance-stats"
-          class="px-4 py-2.5 rounded-xl bg-white text-primary-900 hover:bg-primary-50 font-bold text-xs shadow-md transition-all flex items-center gap-2">
-          <svg class="w-4 h-4 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <span>إحصائيات حضور اليوم</span>
-        </a>
+        @if (isTeacher()) {
+          <a
+            routerLink="/teacher/grades"
+            class="px-4 py-2.5 rounded-xl bg-white text-primary-900 hover:bg-primary-50 font-bold text-xs shadow-md transition-all flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>رصد درجات أعمال السنة</span>
+          </a>
 
-        <a
-          routerLink="/announcements" [queryParams]="{ new: 1 }"
-          class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all flex items-center gap-2">
-          <span>إرسال تعميم جديد</span>
-        </a>
+          <a
+            routerLink="/teacher/attendance"
+            class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all flex items-center gap-2">
+            <span>تسجيل غياب الحصص</span>
+          </a>
+        } @else {
+          <a
+            routerLink="/attendance-stats"
+            class="px-4 py-2.5 rounded-xl bg-white text-primary-900 hover:bg-primary-50 font-bold text-xs shadow-md transition-all flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>إحصائيات حضور اليوم</span>
+          </a>
+
+          <a
+            routerLink="/announcements" [queryParams]="{ new: 1 }"
+            class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all flex items-center gap-2">
+            <span>إرسال تعميم جديد</span>
+          </a>
+        }
       </div>
     </div>
 
@@ -45,31 +81,175 @@
   </div>
 
   <!-- KPI Metrics Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-    @for (stat of stats(); track stat.title) {
+  @if (isTeacher()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+      <!-- 1. Assigned Classes -->
       <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-500">{{ stat.title }}</span>
-          <div [class]="stat.iconBg + ' ' + stat.iconColor" class="w-10 h-10 rounded-xl flex items-center justify-center p-2">
-            <span class="w-6 h-6 flex items-center justify-center">
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                @for (d of stat.iconPaths; track $index) {
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="d" />
-                }
-              </svg>
-            </span>
+          <span class="text-xs font-bold text-slate-500">الفصول المسندة للتدريس</span>
+          <div class="bg-blue-50 text-primary-700 w-10 h-10 rounded-xl flex items-center justify-center p-2">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
           </div>
         </div>
-
         <div class="mt-4 flex items-baseline justify-between">
-          <span class="text-2xl font-black text-slate-800">{{ stat.value }}</span>
-          <span [class]="stat.isPositive ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'" class="text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            @if (stat.isPositive) { ↑ } @else { ↓ } {{ stat.change }}
+          <span class="text-2xl font-black text-slate-800">{{ teacherClasses().length }} فصول</span>
+          <span class="text-emerald-600 bg-emerald-50 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            ✓ 3 فصول إعدادي
           </span>
         </div>
       </div>
-    }
-  </div>
+
+      <!-- 2. Specialization -->
+      <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500">التخصص والمادة المعتمدة</span>
+          <div class="bg-indigo-50 text-indigo-700 w-10 h-10 rounded-xl flex items-center justify-center p-2">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-slate-800">{{ teacherProfile()?.specialization || 'رياضيات' }}</span>
+          <span class="text-primary-700 bg-primary-50 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            معلم أول
+          </span>
+        </div>
+      </div>
+
+      <!-- 3. Teacher Code -->
+      <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500">كود المعلم بالمنظومة</span>
+          <div class="bg-emerald-50 text-emerald-700 w-10 h-10 rounded-xl flex items-center justify-center p-2">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-slate-800 font-mono">{{ teacherProfile()?.teacherCode || 'TCH-001' }}</span>
+          <span class="text-emerald-700 bg-emerald-50 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            كود معتمد
+          </span>
+        </div>
+      </div>
+
+      <!-- 4. Account Status -->
+      <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-500">حالة الاعتماد والكنترول</span>
+          <div class="bg-amber-50 text-amber-700 w-10 h-10 rounded-xl flex items-center justify-center p-2">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-slate-800">نشط ومعتمد</span>
+          <span class="text-emerald-600 bg-emerald-50 text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            ✓ الفصل الدراسي 2
+          </span>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Exact Original Admin KPI Metrics Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+      @for (stat of stats(); track stat.title) {
+        <div class="bg-white p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500">{{ stat.title }}</span>
+            <div [class]="stat.iconBg + ' ' + stat.iconColor" class="w-10 h-10 rounded-xl flex items-center justify-center p-2">
+              <span class="w-6 h-6 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  @for (d of stat.iconPaths; track $index) {
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="d" />
+                  }
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-baseline justify-between">
+            <span class="text-2xl font-black text-slate-800">{{ stat.value }}</span>
+            <span [class]="stat.isPositive ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'" class="text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              @if (stat.isPositive) { ↑ } @else { ↓ } {{ stat.change }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Teacher Specific: Assigned Classes Showcase -->
+  @if (isTeacher()) {
+    <div class="bg-white rounded-3xl p-6 md:p-7 shadow-soft border border-slate-200/90 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-portal-navy text-white flex items-center justify-center shadow-md shadow-portal-navy/20 shrink-0">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-black text-slate-900 text-base md:text-lg">الفصول المسندة لجدول التدريس</h3>
+            <p class="text-xs text-slate-500 mt-0.5">
+              الفصول الدراسية المعتمدة لتدريس مادة {{ teacherProfile()?.specialization || 'الرياضيات' }} للأستاذة / {{ authService.userName() }}
+            </p>
+          </div>
+        </div>
+
+        <span class="text-xs font-bold text-primary-800 bg-primary-50 px-3.5 py-1.5 rounded-full border border-primary-200 w-fit">
+          {{ teacherClasses().length }} فصول مخصصة
+        </span>
+      </div>
+
+      <!-- Classes Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+        @for (cls of teacherClasses(); track cls.id) {
+          <div class="bg-gradient-to-br from-slate-50 via-white to-slate-50 p-5 rounded-2xl border border-slate-200/90 hover:border-portal-navy/40 hover:shadow-md transition-all group flex flex-col justify-between space-y-4">
+            
+            <div class="flex items-start justify-between">
+              <!-- Class Badge -->
+              <div class="w-12 h-12 rounded-2xl bg-portal-navy text-white flex items-center justify-center font-black text-lg shadow-md shadow-portal-navy/25 group-hover:scale-105 transition-transform">
+                {{ cls.name }}
+              </div>
+              <span class="text-[11px] font-bold text-slate-600 bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-2xs font-mono">
+                قاعة {{ cls.roomNumber }}
+              </span>
+            </div>
+
+            <div class="space-y-1">
+              <h4 class="font-black text-slate-900 text-sm md:text-base group-hover:text-primary-800 transition-colors">
+                {{ cls.displayNameArabic }}
+              </h4>
+              <p class="text-xs text-slate-500 font-medium">
+                {{ cls.gradeLevel }} • مادة {{ teacherProfile()?.specialization || 'الرياضيات' }}
+              </p>
+            </div>
+
+            <!-- Quick Action Links for this Class -->
+            <div class="pt-3 border-t border-slate-100 flex items-center gap-2">
+              <a 
+                routerLink="/teacher/grades" 
+                class="flex-1 text-center py-2 px-3 rounded-xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-xs shadow-sm transition-colors">
+                رصد الدرجات
+              </a>
+              <a 
+                routerLink="/teacher/attendance" 
+                class="flex-1 text-center py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors">
+                التحضير
+              </a>
+            </div>
+
+          </div>
+        }
+      </div>
+    </div>
+  }
 
   <!-- Middle Content Grid: Schedule & Recent Activity -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

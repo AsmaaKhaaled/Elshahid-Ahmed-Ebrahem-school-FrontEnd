@@ -8,7 +8,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const tokenService = inject(TokenService);
   const router = inject(Router);
 
+  const isSetInitialPassword = req.url.includes('auth/set-initial-password');
+  const tempToken = tokenService.getTempToken();
   const token = tokenService.getToken();
+  const activeToken = isSetInitialPassword ? (tempToken || token) : token;
 
   let clonedRequest = req.clone({
     setHeaders: {
@@ -17,10 +20,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     }
   });
 
-  if (token) {
+  if (activeToken) {
     clonedRequest = clonedRequest.clone({
       setHeaders: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${activeToken}`
       }
     });
   }

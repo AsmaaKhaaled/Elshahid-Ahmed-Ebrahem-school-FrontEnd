@@ -125,27 +125,31 @@
 
   <!-- Quick Mock Persona Switcher (development builds only - hidden in production) -->
   @if (showDemoLogin) {
-  <div class="pt-4 border-t border-slate-100">
-    <p class="text-[11px] font-bold text-slate-400 text-center uppercase tracking-wider mb-2">الدخول التجريبي الفوري للمنظومة</p>
-    <div class="grid grid-cols-3 gap-2">
-      <button
-        type="button"
-        (click)="quickDemoLogin('ADMIN')"
-        class="p-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 transition-colors border border-slate-200/60">
-        الإدارة
-      </button>
-      <button
-        type="button"
-        (click)="quickDemoLogin('TEACHER')"
-        class="p-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 transition-colors border border-slate-200/60">
-        المعلم
-      </button>
-      <button
-        type="button"
-        (click)="quickDemoLogin('STUDENT')"
-        class="p-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 transition-colors border border-slate-200/60">
-        الطالب
-      </button>
+  <div class="pt-4 border-t border-slate-100 space-y-3">
+    <div>
+      <p class="text-[11px] font-bold text-slate-500 text-center tracking-wide mb-1.5">
+        حسابات الاختبار المعتمدة في قاعدة البيانات (انقر للتعبئة الفورية):
+      </p>
+      <div class="grid grid-cols-3 gap-2">
+        <button
+          type="button"
+          (click)="fillAccount('28901222800962', 'Teacher@2026')"
+          class="p-2 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-portal-navy hover:text-white text-slate-700 transition-colors border border-slate-200 text-center">
+          أ/ نشوه (معلمة)
+        </button>
+        <button
+          type="button"
+          (click)="fillAccount('STU-2026-001', 'Student@2026')"
+          class="p-2 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-portal-teal hover:text-white text-slate-700 transition-colors border border-slate-200 text-center">
+          عمر طارق (طالب)
+        </button>
+        <button
+          type="button"
+          (click)="fillAccount('admin@school.com', 'Admin@2026')"
+          class="p-2 text-[11px] font-bold rounded-xl bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-700 transition-colors border border-slate-200 text-center">
+          إدارة المدرسة
+        </button>
+      </div>
     </div>
   </div>
   }

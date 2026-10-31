@@ -52,6 +52,13 @@ export class LoginComponent {
     this.showPassword.update(v => !v);
   }
 
+  fillAccount(identifier: string, pass: string): void {
+    this.loginForm.patchValue({
+      identifier,
+      password: pass
+    });
+  }
+
   onSubmit(): void {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();

@@ -6,15 +6,20 @@ export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING_ACTIVATI
 
 export interface User {
   id: string;
-  nationalId: string;
+  nationalId?: string;
+  studentCode?: string;
   fullName: string;
   arabicName?: string;
-  email: string;
+  email?: string;
   phone?: string;
   role: UserRole;
   avatarUrl?: string;
   status: UserStatus;
   mustChangePassword: boolean;
+  forcePasswordChange?: boolean;
+  profile?: TeacherProfile | StudentProfile | any;
+  teacherProfile?: TeacherProfile;
+  studentProfile?: StudentProfile;
   schoolId?: string;
   schoolName?: string;
   gradeLevel?: string;
@@ -27,23 +32,44 @@ export interface User {
   updatedAt?: string;
 }
 
-export interface TeacherProfile {
+export interface TeacherAssignedClass {
   id: string;
-  userId: string;
+  name: string;
+  displayNameArabic: string;
+  gradeLevel?: string;
+  roomNumber?: string;
+}
+
+export interface TeacherAssignedSubject {
+  code: string;
+  nameArabic: string;
+}
+
+export interface TeacherProfile {
+  id?: string;
+  userId?: string;
+  teacherCode?: string;
   specialization: string;
-  hireDate: string;
-  assignedClasses: string[];
-  assignedSubjects: string[];
+  hireDate?: string;
+  classes?: TeacherAssignedClass[];
+  subjects?: TeacherAssignedSubject[];
+  assignedClasses?: string[];
+  assignedSubjects?: string[];
 }
 
 export interface StudentProfile {
-  id: string;
-  userId: string;
+  id?: string;
+  userId?: string;
   studentCode: string;
-  gradeLevel: string;
-  className: string;
-  guardianName: string;
-  guardianPhone: string;
-  academicYear: string;
+  gradeLevel?: string;
+  className?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  academicYear?: string;
+  class?: {
+    id: string;
+    name: string;
+    displayNameArabic: string;
+  };
 }
 

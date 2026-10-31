@@ -14,13 +14,13 @@ export class AdminAccountsStore {
     {
       id: DEV_SUPER_ADMIN.id,
       fullName: DEV_SUPER_ADMIN.fullName,
-      nationalId: DEV_SUPER_ADMIN.nationalId,
+      nationalId: DEV_SUPER_ADMIN.nationalId || '28001011234567',
       jobTitle: 'مدير المدرسة',
       phone: '',
       role: 'SUPER_ADMIN',
       permissions: [],
       status: 'ACTIVE',
-      createdAt: DEV_SUPER_ADMIN.createdAt
+      createdAt: DEV_SUPER_ADMIN.createdAt || new Date().toISOString()
     },
     ...SEEDED_ADMINS
   ]);

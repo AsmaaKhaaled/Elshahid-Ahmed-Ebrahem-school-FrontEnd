@@ -5,8 +5,16 @@ import { ApiService } from '../services/api.service';
 import { TokenService } from './token.service';
 import { DEV_SUPER_ADMIN, mockAdminLogin, mockForgotPassword } from './dev-auth.mock';
 import { ADMIN_PERMISSIONS, AdminRouteAccess, SUPER_ADMIN_ONLY } from '../admin/admin-permissions';
-import { User, UserRole } from '../models/user.model';
-import { AdminLoginCredentials, AuthResponse, LoginCredentials, SetInitialPasswordRequest } from '../models/auth-response.model';
+import { User, UserRole, TeacherProfile, StudentProfile } from '../models/user.model';
+import { 
+  AdminLoginCredentials, 
+  AuthResponse, 
+  LoginCredentials, 
+  LoginResponse,
+  SetInitialPasswordRequest, 
+  SetInitialPasswordResponse,
+  GetMeResponse 
+} from '../models/auth-response.model';
 
 export const ADMIN_ROLES: UserRole[] = ['ADMIN', 'SUPER_ADMIN'];
 
@@ -30,44 +38,99 @@ export class AuthService {
   readonly currentUser = signal<User | null>(this.getStoredUser());
   readonly isLoading = signal<boolean>(false);
   readonly authError = signal<string | null>(null);
+  readonly requirePasswordChange = signal<boolean>(
+    this.tokenService.hasTempToken() || (this.getStoredUser()?.forcePasswordChange ?? false)
+  );
 
   // Computed signals
-  readonly isAuthenticated = computed(() => !!this.currentUser() && this.tokenService.hasTokenSignal());
+  readonly isAuthenticated = computed(() => !!this.currentUser() && this.tokenService.hasValidToken());
   readonly userRole = computed<UserRole | null>(() => this.currentUser()?.role ?? null);
-  readonly mustChangePassword = computed(() => this.currentUser()?.mustChangePassword ?? false);
+  readonly mustChangePassword = computed(() => this.requirePasswordChange() || (this.currentUser()?.mustChangePassword ?? false));
   readonly userName = computed(() => this.currentUser()?.fullName ?? 'المستخدم');
   readonly isSuperAdmin = computed(() => this.userRole() === 'SUPER_ADMIN');
+  readonly isAdmin = computed(() => this.userRole() === 'ADMIN' || this.userRole() === 'SUPER_ADMIN');
+
+  readonly teacherProfile = computed<TeacherProfile | null>(() => {
+    const user = this.currentUser();
+    if (user?.role === 'TEACHER') {
+      return (user.profile || user.teacherProfile) as TeacherProfile ?? null;
+    }
+    return null;
+  });
+
+  readonly studentProfile = computed<StudentProfile | null>(() => {
+    const user = this.currentUser();
+    if (user?.role === 'STUDENT') {
+      return (user.profile || user.studentProfile) as StudentProfile ?? null;
+    }
+    return null;
+  });
 
   constructor() {
-    // If token exists but no user in memory, try parsing from token payload or storage
-    if (this.tokenService.hasValidToken() && !this.currentUser()) {
-      const stored = this.getStoredUser();
-      if (stored) {
-        this.currentUser.set(stored);
-      }
+    // Session introspection on initialization if user has valid full token
+    if (this.tokenService.hasValidToken()) {
+      this.fetchCurrentUser().subscribe({
+        error: () => {
+          // If session is invalid, clear storage
+          this.tokenService.clearTokens();
+          localStorage.removeItem(this.USER_STORAGE_KEY);
+          this.currentUser.set(null);
+        }
+      });
     }
   }
 
-  login(credentials: LoginCredentials): Observable<AuthResponse> {
+  /**
+   * Unified Login Endpoint (POST /api/v1/auth/login)
+   * Supports nationalId (14 digits) for teachers, studentCode for students, email for admins.
+   */
+  login(credentials: LoginCredentials): Observable<LoginResponse> {
     this.isLoading.set(true);
     this.authError.set(null);
 
-    return this.api.post<AuthResponse>('auth/login', credentials).pipe(
+    return this.api.post<LoginResponse>('auth/login', {
+      identifier: credentials.identifier.trim(),
+      password: credentials.password
+    }).pipe(
       tap((res) => {
         this.isLoading.set(false);
-        this.tokenService.setTokens(res.accessToken, res.refreshToken);
-        this.currentUser.set(res.user);
-        this.storeUser(res.user);
-        
-        if (res.user.mustChangePassword) {
+
+        // Normalize profile if embedded in root or teacherProfile/studentProfile
+        const user: User = {
+          ...res.user,
+          profile: res.user.profile || (res.user as any).teacherProfile || (res.user as any).studentProfile || null
+        };
+
+        if (res.requirePasswordChange || (res as any).forcePasswordChange || user.forcePasswordChange) {
+          // Phase 1: Force password change on first login
+          this.requirePasswordChange.set(true);
+          user.forcePasswordChange = true;
+          user.mustChangePassword = true;
+
+          if (res.tempToken) {
+            this.tokenService.setTempToken(res.tempToken);
+          }
+          this.currentUser.set(user);
+          this.storeUser(user);
           this.router.navigate(['/auth/set-initial-password']);
         } else {
-          this.navigateToRoleDashboard(res.user.role);
+          // Phase 2: Active account with standard full JWT
+          this.requirePasswordChange.set(false);
+          user.forcePasswordChange = false;
+          user.mustChangePassword = false;
+
+          const jwt = res.token || res.accessToken;
+          if (jwt) {
+            this.tokenService.setTokens(jwt);
+          }
+          this.currentUser.set(user);
+          this.storeUser(user);
+          this.navigateToRoleDashboard(user.role);
         }
       }),
       catchError((err) => {
         this.isLoading.set(false);
-        const msg = err?.error?.message || 'فشل تسجيل الدخول. يرجى التحقق من الرقم القومي وكلمة المرور.';
+        const msg = err?.error?.message || 'فشل تسجيل الدخول. يرجى التحقق من صحة المعرّف وكلمة المرور.';
         this.authError.set(msg);
         return throwError(() => err);
       })
@@ -75,9 +138,62 @@ export class AuthService {
   }
 
   /**
+   * Set Initial Password Endpoint (PATCH /api/v1/auth/set-initial-password)
+   * Uses tempToken via Authorization: Bearer <tempToken>
+   */
+  setInitialPassword(req: { newPassword: string; confirmPassword: string }): Observable<SetInitialPasswordResponse> {
+    this.isLoading.set(true);
+    this.authError.set(null);
+
+    return this.api.patch<SetInitialPasswordResponse>('auth/set-initial-password', req).pipe(
+      tap((res) => {
+        this.isLoading.set(false);
+        this.requirePasswordChange.set(false);
+
+        if (res.token) {
+          this.tokenService.setTokens(res.token);
+        }
+
+        const user: User = {
+          ...res.user,
+          forcePasswordChange: false,
+          mustChangePassword: false,
+          profile: res.user.profile || (res.user as any).teacherProfile || (res.user as any).studentProfile || null
+        };
+
+        this.currentUser.set(user);
+        this.storeUser(user);
+        this.navigateToRoleDashboard(user.role);
+      }),
+      catchError((err) => {
+        this.isLoading.set(false);
+        const msg = err?.error?.message || 'تعذر تعيين كلمة المرور، يرجى المحاولة مرة أخرى.';
+        this.authError.set(msg);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /**
+   * Session Introspection Endpoint (GET /api/v1/auth/me)
+   */
+  fetchCurrentUser(): Observable<GetMeResponse> {
+    return this.api.get<GetMeResponse>('auth/me').pipe(
+      tap((res) => {
+        if (res?.user) {
+          const user: User = {
+            ...res.user,
+            profile: res.user.profile || (res.user as any).teacherProfile || (res.user as any).studentProfile || null
+          };
+          this.currentUser.set(user);
+          this.storeUser(user);
+        }
+      })
+    );
+  }
+
+  /**
    * Login for the school administration page (/auth/admin).
-   * Accounts that aren't admins are rejected with NotAdminAccountError, even with valid credentials,
-   * and no session is stored for them.
    */
   adminLogin(credentials: AdminLoginCredentials): Observable<AuthResponse> {
     const request$ = isDevMode()
@@ -89,7 +205,10 @@ export class AuthService {
         if (!ADMIN_ROLES.includes(res.user.role)) {
           throw new NotAdminAccountError();
         }
-        this.tokenService.setTokens(res.accessToken, res.refreshToken);
+        const jwt = res.token || res.accessToken;
+        if (jwt) {
+          this.tokenService.setTokens(jwt, res.refreshToken);
+        }
         this.currentUser.set(res.user);
         this.storeUser(res.user);
         this.navigateToRoleDashboard(res.user.role);
@@ -97,36 +216,15 @@ export class AuthService {
     );
   }
 
-  // Always resolves the same way whether or not the email exists, so accounts can't be discovered
   requestAdminPasswordReset(email: string): Observable<void> {
     return isDevMode() ? mockForgotPassword() : this.api.post<void>('auth/admin/forgot-password', { email });
-  }
-
-  setInitialPassword(req: SetInitialPasswordRequest): Observable<{ success: boolean; message: string }> {
-    this.isLoading.set(true);
-    return this.api.post<{ success: boolean; message: string }>('auth/set-initial-password', req).pipe(
-      tap(() => {
-        this.isLoading.set(false);
-        // Update user mustChangePassword status locally
-        const current = this.currentUser();
-        if (current) {
-          const updated: User = { ...current, mustChangePassword: false };
-          this.currentUser.set(updated);
-          this.storeUser(updated);
-          this.navigateToRoleDashboard(updated.role);
-        }
-      }),
-      catchError((err) => {
-        this.isLoading.set(false);
-        return throwError(() => err);
-      })
-    );
   }
 
   logout(): void {
     this.tokenService.clearTokens();
     localStorage.removeItem(this.USER_STORAGE_KEY);
     this.currentUser.set(null);
+    this.requirePasswordChange.set(false);
     this.router.navigate(['/auth/login']);
   }
 
@@ -139,11 +237,6 @@ export class AuthService {
     return current.role === roles;
   }
 
-  /**
-   * Whether the signed-in user may open an admin section.
-   * SUPER_ADMIN: everything. ADMIN: only the sections granted to them. Others: nothing.
-   * Reads signals, so it can be used inside computed().
-   */
   canAccessAdminSection(access: AdminRouteAccess): boolean {
     const user = this.currentUser();
     if (user?.role === 'SUPER_ADMIN') return true;
@@ -151,15 +244,84 @@ export class AuthService {
     return user.permissions?.includes(access) ?? false;
   }
 
+  /**
+   * Test/Demo Session Helper with teacher (أ/ نشوه) and admin/super-admin profiles
+   */
   quickLoginAs(role: UserRole, customUser?: Partial<User>): void {
     const demoUsers: Record<UserRole, User> = {
+      TEACHER: {
+        id: 'tch-001',
+        nationalId: '28901222800962',
+        fullName: 'نشوه يوسف محمد يوسف',
+        email: 'nashwa.teacher@school.edu.eg',
+        role: 'TEACHER',
+        forcePasswordChange: false,
+        mustChangePassword: false,
+        status: 'ACTIVE',
+        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
+        profile: {
+          teacherCode: 'TCH-001',
+          specialization: 'رياضيات',
+          classes: [
+            {
+              id: 'class_id_1',
+              name: '3/2',
+              displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/2',
+              gradeLevel: '3rd Preparatory',
+              roomNumber: '302'
+            },
+            {
+              id: 'class_id_2',
+              name: '3/3',
+              displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/3',
+              gradeLevel: '3rd Preparatory',
+              roomNumber: '303'
+            },
+            {
+              id: 'class_id_3',
+              name: '3/4',
+              displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/4',
+              gradeLevel: '3rd Preparatory',
+              roomNumber: '304'
+            }
+          ],
+          subjects: [
+            {
+              code: 'MTH-PREP3',
+              nameArabic: 'رياضيات'
+            }
+          ]
+        },
+        createdAt: new Date().toISOString()
+      },
+      STUDENT: {
+        id: 'stu-1001',
+        studentCode: 'STU-2026-001',
+        nationalId: '31001011234567',
+        fullName: 'عمر طارق',
+        email: 'omar.tareq@school.edu.eg',
+        role: 'STUDENT',
+        forcePasswordChange: false,
+        mustChangePassword: false,
+        status: 'ACTIVE',
+        gradeLevel: 'الصف الثالث الإعدادي',
+        className: 'فصل 3/2',
+        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
+        profile: {
+          studentCode: 'STU-2026-001',
+          gradeLevel: 'الصف الثالث الإعدادي',
+          className: 'فصل 3/2'
+        },
+        createdAt: new Date().toISOString()
+      },
       ADMIN: {
         id: 'adm-001',
         nationalId: '28001011234567',
         fullName: 'أ. د. محمود عبد العزيز الشناوي',
-        email: 'admin@alshaheed.edu.eg',
+        email: 'admin@school.com',
         role: 'ADMIN',
         permissions: ADMIN_PERMISSIONS.map(p => p.key),
+        forcePasswordChange: false,
         mustChangePassword: false,
         status: 'ACTIVE',
         schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
@@ -169,44 +331,21 @@ export class AuthService {
         id: 'sup-001',
         nationalId: '27501011234567',
         fullName: 'إدارة تكنولوجيا التعليم والكنترول',
-        email: 'superadmin@alshaheed.edu.eg',
+        email: 'superadmin@school.com',
         role: 'SUPER_ADMIN',
+        forcePasswordChange: false,
         mustChangePassword: false,
         status: 'ACTIVE',
-        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
-        createdAt: new Date().toISOString()
-      },
-      TEACHER: {
-        id: 'tch-2001',
-        nationalId: '28904151234567',
-        fullName: 'أ. طارق عبد الحميد',
-        email: 'tarek.teacher@alshaheed.edu.eg',
-        role: 'TEACHER',
-        mustChangePassword: false,
-        status: 'ACTIVE',
-        schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
-        subjects: ['العلوم العامة', 'مسؤول معمل العلوم'],
-        createdAt: new Date().toISOString()
-      },
-      STUDENT: {
-        id: 'stu-1001',
-        nationalId: '31001011234567',
-        fullName: 'عمر أحمد محمود',
-        email: 'omar.ahmed@alshaheed.edu.eg',
-        role: 'STUDENT',
-        mustChangePassword: false,
-        status: 'ACTIVE',
-        gradeLevel: 'الصف الثاني الإعدادي',
-        className: 'فصل 2/3',
         schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
         createdAt: new Date().toISOString()
       },
       PARENT: {
         id: 'prn-001',
         nationalId: '27001011234567',
-        fullName: 'السيد / أحمد محمود',
-        email: 'ahmed.parent@alshaheed.edu.eg',
+        fullName: 'السيد / طارق أحمد',
+        email: 'tareq.parent@school.edu.eg',
         role: 'PARENT',
+        forcePasswordChange: false,
         mustChangePassword: false,
         status: 'ACTIVE',
         schoolName: 'مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين',
@@ -215,25 +354,18 @@ export class AuthService {
     };
 
     const user: User = { ...demoUsers[role], ...customUser };
-    this.startMockSession(user);
+    const mockToken = `header.${btoa(JSON.stringify({ id: user.id, role: user.role, isTemp: false, exp: Math.floor(Date.now() / 1000) + 86400 * 7 }))}.signature`;
+    this.tokenService.setTokens(mockToken);
+    this.requirePasswordChange.set(false);
+    this.currentUser.set(user);
+    this.storeUser(user);
     this.navigateToRoleDashboard(user.role);
   }
 
-  /**
-   * Development only: opens the admin panel as the SUPER_ADMIN without the login screen
-   * (see devSuperAdminGuard). Production builds always go through /auth/admin.
-   */
   startDevSuperAdminSession(): void {
     if (isDevMode()) {
-      this.startMockSession(DEV_SUPER_ADMIN);
+      this.quickLoginAs('SUPER_ADMIN', DEV_SUPER_ADMIN);
     }
-  }
-
-  private startMockSession(user: User): void {
-    const mockToken = `header.${btoa(JSON.stringify({ sub: user.id, role: user.role, exp: Math.floor(Date.now() / 1000) + 86400 }))}.signature`;
-    this.tokenService.setTokens(mockToken);
-    this.currentUser.set(user);
-    this.storeUser(user);
   }
 
   navigateToRoleDashboard(role: UserRole): void {
@@ -250,7 +382,7 @@ export class AuthService {
         this.router.navigate(['/student/dashboard']);
         break;
       default:
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/admin/dashboard']);
         break;
     }
   }

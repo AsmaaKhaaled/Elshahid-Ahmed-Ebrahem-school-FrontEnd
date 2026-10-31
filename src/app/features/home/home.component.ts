@@ -42,15 +42,20 @@ export class HomeComponent {
   readonly isMobileMenuOpen = signal<boolean>(false);
 
   // Student Form Model Signals
-  readonly studentEmail = signal<string>('omar.ahmed@alshaheed.edu.eg');
-  readonly studentCode = signal<string>('STU-1001');
+  readonly studentCode = signal<string>('STU-2026-001');
+  readonly studentPassword = signal<string>('Student@2026');
+  readonly studentShowPassword = signal<boolean>(false);
   readonly studentRememberMe = signal<boolean>(true);
+  readonly studentErrorMessage = signal<string | null>(null);
+  readonly studentIsLoading = signal<boolean>(false);
 
   // Teacher Form Model Signals
-  readonly teacherNationalId = signal<string>('28904151234567');
-  readonly teacherPassword = signal<string>('Academic#2026');
+  readonly teacherNationalId = signal<string>('28901222800962');
+  readonly teacherPassword = signal<string>('Teacher@2026');
   readonly teacherShowPassword = signal<boolean>(false);
   readonly teacherRememberMe = signal<boolean>(true);
+  readonly teacherErrorMessage = signal<string | null>(null);
+  readonly teacherIsLoading = signal<boolean>(false);
 
   // Core Pillars / Highlights Replacing Duplicates
   readonly pillars: AcademicPillar[] = [
@@ -147,21 +152,75 @@ export class HomeComponent {
     }
   }
 
+  fillStudentDemo(): void {
+    this.studentCode.set('STU-2026-001');
+    this.studentPassword.set('Student@2026');
+    this.studentErrorMessage.set(null);
+  }
+
+  fillTeacherDemo(): void {
+    this.teacherNationalId.set('28901222800962');
+    this.teacherPassword.set('Teacher@2026');
+    this.teacherErrorMessage.set(null);
+  }
+
   submitStudentLogin(): void {
-    this.closeModals();
-    this.authService.quickLoginAs('STUDENT', {
-      email: this.studentEmail(),
-      fullName: 'عمر أحمد محمود',
-      gradeLevel: 'الصف الثاني الإعدادي',
-      className: 'فصل 2/3'
+    const code = this.studentCode()?.trim();
+    const pass = this.studentPassword();
+
+    if (!code || !pass) {
+      this.studentErrorMessage.set('يرجى إدخال كود الطالب المدرسي وكلمة المرور');
+      return;
+    }
+
+    this.studentIsLoading.set(true);
+    this.studentErrorMessage.set(null);
+
+    this.authService.login({
+      identifier: code,
+      password: pass,
+      rememberMe: this.studentRememberMe()
+    }).subscribe({
+      next: () => {
+        this.studentIsLoading.set(false);
+        this.closeModals();
+      },
+      error: (err) => {
+        this.studentIsLoading.set(false);
+        this.studentErrorMessage.set(
+          err?.error?.message || 'تعذر تسجيل الدخول. يرجى التأكد من كود الطالب أو الاتصال بإدارة المدرسة.'
+        );
+      }
     });
   }
 
   submitTeacherLogin(): void {
-    this.closeModals();
-    this.authService.quickLoginAs('TEACHER', {
-      nationalId: this.teacherNationalId(),
-      fullName: 'أ. طارق عبد الحميد'
+    const nid = this.teacherNationalId()?.trim();
+    const pass = this.teacherPassword();
+
+    if (!nid || !pass) {
+      this.teacherErrorMessage.set('يرجى إدخال الرقم القومي للمعلم (14 رقماً) وكلمة المرور');
+      return;
+    }
+
+    this.teacherIsLoading.set(true);
+    this.teacherErrorMessage.set(null);
+
+    this.authService.login({
+      identifier: nid,
+      password: pass,
+      rememberMe: this.teacherRememberMe()
+    }).subscribe({
+      next: () => {
+        this.teacherIsLoading.set(false);
+        this.closeModals();
+      },
+      error: (err) => {
+        this.teacherIsLoading.set(false);
+        this.teacherErrorMessage.set(
+          err?.error?.message || 'تعذر تسجيل الدخول. يرجى التأكد من الرقم القومي وكلمة المرور.'
+        );
+      }
     });
   }
 }

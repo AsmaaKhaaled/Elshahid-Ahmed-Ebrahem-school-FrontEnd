@@ -8,15 +8,17 @@ export const authGuard: CanActivateFn = (route, state) => {
   const tokenService = inject(TokenService);
   const router = inject(Router);
 
+  // If user only holds a temporary token or must change password, strictly block access to dashboards
+  if (tokenService.hasTempToken() || authService.mustChangePassword()) {
+    if (!state.url.includes('/auth/set-initial-password')) {
+      return router.createUrlTree(['/auth/set-initial-password']);
+    }
+  }
+
   if (!tokenService.hasValidToken()) {
     return router.createUrlTree(['/auth/login'], {
       queryParams: { returnUrl: state.url }
     });
-  }
-
-  // If user must change their initial password, redirect them to set-initial-password
-  if (authService.mustChangePassword() && !state.url.includes('/auth/set-initial-password')) {
-    return router.createUrlTree(['/auth/set-initial-password']);
   }
 
   return true;
