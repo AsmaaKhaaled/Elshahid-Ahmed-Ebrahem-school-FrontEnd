@@ -17,7 +17,7 @@ export const featureRedirectGuard = (feature: string): CanActivateFn => (route, 
   const router = inject(Router);
 
   if (!authService.isAuthenticated()) {
-    return router.createUrlTree(['/auth/login'], {
+    return router.createUrlTree(['/'], {
       queryParams: { returnUrl: state.url }
     });
   }

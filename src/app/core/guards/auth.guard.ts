@@ -17,7 +17,7 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   if (!tokenService.hasValidToken()) {
     // The admin panel has its own login page
-    const loginPage = state.url.startsWith('/admin') ? '/auth/admin' : '/auth/login';
+    const loginPage = state.url.startsWith('/admin') ? '/auth/admin' : '/';
     return router.createUrlTree([loginPage], {
       queryParams: { returnUrl: state.url }
     });

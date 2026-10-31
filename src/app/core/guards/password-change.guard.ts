@@ -15,7 +15,7 @@ export const passwordChangeGuard: CanActivateFn = () => {
 
   // If user does not have any token, redirect to login
   if (!tokenService.hasValidToken()) {
-    return router.createUrlTree(['/auth/login']);
+    return router.createUrlTree(['/']);
   }
 
   // If user has a valid standard token and does not need password change, route to role dashboard

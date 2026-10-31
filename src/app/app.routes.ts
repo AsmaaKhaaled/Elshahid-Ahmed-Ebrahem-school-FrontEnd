@@ -23,10 +23,7 @@ export const routes: Routes = [
     path: 'auth',
     loadComponent: () => import('./layouts/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
     children: [
-      { 
-        path: 'login', 
-        loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
-      },
+      { path: 'login', redirectTo: '/', pathMatch: 'full' },
       // School administration login - reached from the small "دخول الإدارة" link, not advertised on the home page
       {
         path: 'admin',
@@ -37,7 +34,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/set-initial-password/set-initial-password.component').then(m => m.SetInitialPasswordComponent),
         canActivate: [passwordChangeGuard]
       },
-      { path: '', redirectTo: 'login', pathMatch: 'full' }
+      { path: '', redirectTo: '/', pathMatch: 'full' }
     ]
   },
 

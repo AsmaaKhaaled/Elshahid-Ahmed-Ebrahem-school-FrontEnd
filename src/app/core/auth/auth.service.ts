@@ -271,7 +271,8 @@ export class AuthService {
     localStorage.removeItem(this.USER_STORAGE_KEY);
     this.currentUser.set(null);
     this.requirePasswordChange.set(false);
-    this.router.navigate([wasAdmin ? '/auth/admin' : '/auth/login']);
+    const shouldGoToAdmin = wasAdmin && this.router.url.startsWith('/admin');
+    this.router.navigate([shouldGoToAdmin ? '/auth/admin' : '/']);
   }
 
   hasRole(roles: UserRole | UserRole[]): boolean {
