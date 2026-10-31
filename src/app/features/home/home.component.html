@@ -50,24 +50,15 @@
         </div>
       </div>
 
-      <!-- Middle Navigation Links (Desktop: lg and above) - Centered & Balanced -->
-      <nav class="hidden xl:flex items-center justify-center gap-1 2xl:gap-2 text-[11px] 2xl:text-xs font-bold text-slate-600 flex-1 mx-2 2xl:mx-4">
-        <a routerLink="/" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl bg-portal-navy text-white shadow-sm whitespace-nowrap transition-all">
+      <!-- Middle Navigation Links (Desktop) - Centered & Balanced -->
+      <nav class="hidden md:flex items-center justify-center gap-2 lg:gap-3 text-xs lg:text-sm font-bold text-slate-600 flex-1 mx-4">
+        <a routerLink="/" class="px-3.5 py-2 rounded-xl bg-portal-navy text-white shadow-sm whitespace-nowrap transition-all">
           الرئيسية
         </a>
-        <a routerLink="/subjects" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
+        <a routerLink="/subjects" class="px-3 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
           المناهج والمقررات
         </a>
-        <a routerLink="/lessons" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          الجدول المدرسي
-        </a>
-        <a routerLink="/exams" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          الاختبارات والتقييم
-        </a>
-        <a routerLink="/grades" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          كشوف الدرجات
-        </a>
-        <a routerLink="/announcements" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
+        <a routerLink="/announcements" class="px-3 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
           الإعلانات والتعميمات
         </a>
       </nav>
@@ -91,11 +82,22 @@
               </svg>
             </button>
           </div>
+
+          <!-- Notifications Bell (Only shown when logged in) -->
+          <a
+            routerLink="/announcements"
+            class="relative p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shrink-0"
+            title="الإشعارات المدرسية">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
+          </a>
         } @else {
           <!-- Quick Portal Entrance Button -->
           <a
             href="#portal-login-section"
-            class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs transition-colors whitespace-nowrap">
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs transition-colors whitespace-nowrap">
             <svg class="w-4 h-4 text-portal-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
             </svg>
@@ -103,22 +105,11 @@
           </a>
         }
 
-        <!-- Notifications Bell -->
-        <a
-          routerLink="/announcements"
-          class="relative p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shrink-0"
-          title="الإشعارات المدرسية">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
-        </a>
-
-        <!-- Mobile / Tablet Hamburger Menu Toggle (< lg) -->
+        <!-- Mobile / Tablet Hamburger Menu Toggle (< md) -->
         <button
           (click)="toggleMobileMenu()"
           type="button"
-          class="xl:hidden p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-portal-navy transition-colors shrink-0 focus:outline-none"
+          class="md:hidden p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-portal-navy transition-colors shrink-0 focus:outline-none"
           title="القائمة">
           @if (isMobileMenuOpen()) {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -134,11 +125,11 @@
     </div>
   </header>
 
-  <!-- ================= Mobile / Tablet Navigation Drawer (< xl) ================= -->
+  <!-- ================= Mobile / Tablet Navigation Drawer (< md) ================= -->
   @if (isMobileMenuOpen()) {
     <div
       (click)="closeMobileMenu()"
-      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm xl:hidden transition-opacity">
+      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm md:hidden transition-opacity">
     </div>
   }
 
@@ -146,7 +137,7 @@
     [class.translate-x-full]="!isMobileMenuOpen()"
     [class.invisible]="!isMobileMenuOpen()"
     [class.pointer-events-none]="!isMobileMenuOpen()"
-    class="fixed top-0 right-0 z-50 h-screen w-80 max-w-[85vw] bg-white text-slate-800 shadow-2xl xl:hidden transition-all duration-300 ease-in-out flex flex-col border-l border-slate-200">
+    class="fixed top-0 right-0 z-50 h-screen w-80 max-w-[85vw] bg-white text-slate-800 shadow-2xl md:hidden transition-all duration-300 ease-in-out flex flex-col border-l border-slate-200">
 
     <!-- Drawer Header -->
     <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -233,33 +224,6 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
         <span>المناهج والمقررات الدراسية</span>
-      </a>
-      <a
-        routerLink="/lessons"
-        (click)="closeMobileMenu()"
-        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
-        <svg class="w-4 h-4 text-portal-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span>الجدول المدرسي والحصص</span>
-      </a>
-      <a
-        routerLink="/exams"
-        (click)="closeMobileMenu()"
-        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
-        <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <span>الاختبارات والتقييمات</span>
-      </a>
-      <a
-        routerLink="/grades"
-        (click)="closeMobileMenu()"
-        class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
-        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-        </svg>
-        <span>كشوف الدرجات والشهادات</span>
       </a>
       <a
         routerLink="/announcements"
