@@ -9,3 +9,4 @@ import { RouterLink } from '@angular/router';
   styleUrl: './public-footer.component.css'
 })
 export class PublicFooterComponent {}
+

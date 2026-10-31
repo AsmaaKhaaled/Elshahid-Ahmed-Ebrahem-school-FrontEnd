@@ -93,3 +93,4 @@ export class PublicHeaderComponent {
     this.authService.logout();
   }
 }
+
