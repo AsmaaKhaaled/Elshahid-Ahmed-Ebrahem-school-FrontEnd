@@ -6,6 +6,7 @@ import { AcademicCalendarStore } from '../../core/academic/academic-calendar.sto
 import { HonorAvatarComponent } from '../honor-roll/honor-avatar.component';
 import { HonorRollStore } from '../honor-roll/honor-roll.store';
 import { TEACHER_HONORIFIC } from '../teachers/teacher.model';
+import { SCHOOL_INFO } from '../../core/constants/school.constants';
 
 interface SchoolNotice {
   day: string;
@@ -35,6 +36,20 @@ export class HomeComponent {
   readonly academicYear = inject(AcademicCalendarStore).currentYear;
   readonly academicTerm = inject(AcademicCalendarStore).currentTerm;
   private readonly router = inject(Router);
+
+  readonly schoolLogo = SCHOOL_INFO.logoUrl;
+  readonly isUserMenuOpen = signal<boolean>(false);
+
+  readonly userFirstName = computed(() => {
+    const fullName = this.authService.userName()?.trim();
+    if (!fullName) return 'المستخدم';
+    return fullName.split(/\s+/)[0] || fullName;
+  });
+
+  readonly userAvatarUrl = computed(() => {
+    const user = this.authService.currentUser();
+    return user?.avatarUrl || null;
+  });
 
   readonly userRoleArabic = computed(() => {
     const role = this.authService.userRole();
@@ -172,6 +187,19 @@ export class HomeComponent {
 
   closeMobileMenu(): void {
     this.isMobileMenuOpen.set(false);
+  }
+
+  toggleUserMenu(): void {
+    this.isUserMenuOpen.update(v => !v);
+  }
+
+  closeUserMenu(): void {
+    this.isUserMenuOpen.set(false);
+  }
+
+  logout(): void {
+    this.isUserMenuOpen.set(false);
+    this.authService.logout();
   }
 
   handleDirectDashboard(): void {

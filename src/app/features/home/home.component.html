@@ -39,14 +39,10 @@
 
       <!-- School Identity & Crest (Right in RTL) -->
       <div class="flex items-center gap-2.5 sm:gap-3.5 shrink-0 min-w-0">
-        <div
-          class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-portal-navy text-white flex items-center justify-center p-2 shadow-md shadow-portal-navy/20 border border-portal-navyLight shrink-0">
-          <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-              d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-          </svg>
-        </div>
+        <img
+          [src]="schoolLogo"
+          alt="شعار مدرسة الشهيد أحمد إبراهيم"
+          class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl object-cover shadow-sm border border-slate-200/90 bg-white p-0.5 shrink-0" />
         <div class="min-w-0">
           <h1
             class="text-xs sm:text-sm lg:text-base font-black text-slate-900 tracking-tight leading-tight whitespace-nowrap">
@@ -79,21 +75,93 @@
       <!-- Left User Widget / Quick Actions (Left in RTL) -->
       <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
         @if (authService.isAuthenticated()) {
-        <!-- Active User Profile Pill -->
-        <div class="flex items-center gap-2 p-1 sm:p-1.5 sm:pr-3 rounded-2xl bg-slate-50 border border-slate-200">
-          <div class="text-right hidden sm:block max-w-[90px] md:max-w-[120px] xl:max-w-[140px] 2xl:max-w-[180px]">
-            <span class="block text-xs font-bold text-slate-800 leading-tight truncate whitespace-nowrap">{{
-              authService.userName() }}</span>
-            <span class="block text-[10px] text-slate-500 font-medium">جلسة نشطة</span>
-          </div>
-          <button (click)="handleDirectDashboard()" type="button"
-            class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold text-xs shadow-sm hover:bg-portal-navyDark transition-colors shrink-0"
-            title="الذهاب للوحة التحكم">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <!-- User Profile Dropdown Pill -->
+        <div class="relative">
+          <button
+            (click)="toggleUserMenu()"
+            type="button"
+            class="flex items-center gap-2 p-1.5 pe-3 rounded-2xl bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 transition-all focus:outline-none focus:ring-2 focus:ring-portal-navy/20 cursor-pointer"
+            [attr.aria-expanded]="isUserMenuOpen()"
+            title="حساب المستخدم">
+            <!-- User Avatar / Default Icon -->
+            @if (userAvatarUrl()) {
+              <img [src]="userAvatarUrl()" alt="" class="w-8 h-8 rounded-xl object-cover ring-1 ring-slate-200 shrink-0" />
+            } @else {
+              <div class="w-8 h-8 rounded-xl bg-portal-navy text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                {{ authService.userName().slice(0, 1) }}
+              </div>
+            }
+
+            <!-- First Name Only -->
+            <span class="text-xs font-bold text-slate-800 hidden sm:inline-block leading-tight">
+              {{ userFirstName() }}
+            </span>
+
+            <!-- Dropdown Chevron -->
+            <svg
+              class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"
+              [class.rotate-180]="isUserMenuOpen()"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
+
+          <!-- User Popup Dropdown Menu -->
+          @if (isUserMenuOpen()) {
+            <!-- Invisible click-away backdrop -->
+            <div (click)="closeUserMenu()" class="fixed inset-0 z-40"></div>
+
+            <div
+              class="absolute left-0 mt-2 w-56 rounded-2xl bg-white shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 origin-top-left">
+              <!-- Header info inside dropdown -->
+              <div class="px-4 py-2.5 border-b border-slate-100 flex items-center gap-2.5 text-right">
+                @if (userAvatarUrl()) {
+                  <img [src]="userAvatarUrl()" alt="" class="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200 shrink-0" />
+                } @else {
+                  <div class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-black text-xs shrink-0">
+                    {{ authService.userName().slice(0, 1) }}
+                  </div>
+                }
+                <div class="min-w-0">
+                  <p class="text-xs font-black text-slate-900 truncate leading-snug">{{ authService.userName() }}</p>
+                  <span class="inline-block text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200/80 mt-0.5">
+                    {{ userRoleArabic() }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Options -->
+              <div class="py-1">
+                <!-- Option 1: Go to Dashboard -->
+                <button
+                  (click)="handleDirectDashboard(); closeUserMenu()"
+                  type="button"
+                  class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-portal-navy transition-colors text-right group cursor-pointer">
+                  <div class="w-7 h-7 rounded-lg bg-portal-navy/10 text-portal-navy flex items-center justify-center shrink-0 group-hover:bg-portal-navy group-hover:text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <span class="block">الذهاب للوحة التحكم</span>
+                  </div>
+                </button>
+
+                <!-- Option 2: Logout -->
+                <button
+                  (click)="logout()"
+                  type="button"
+                  class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors text-right group cursor-pointer">
+                  <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </div>
+                  <span class="block">تسجيل الخروج</span>
+                </button>
+              </div>
+            </div>
+          }
         </div>
 
         <!-- Notifications Bell (Only shown when logged in) -->
@@ -150,13 +218,10 @@
     <!-- Drawer Header -->
     <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold shrink-0">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-              d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-          </svg>
-        </div>
+        <img
+          [src]="schoolLogo"
+          alt="شعار المدرسة"
+          class="w-10 h-10 rounded-xl object-cover shadow-sm border border-slate-200/90 bg-white p-0.5 shrink-0" />
         <div class="min-w-0">
           <h3 class="font-black text-xs text-slate-900 leading-tight">مدرسة الشهيد أحمد إبراهيم</h3>
           <span class="text-[10px] text-slate-500 font-medium">الإعدادية بنين - القائمة الموحدة</span>
@@ -176,13 +241,17 @@
       @if (authService.isAuthenticated()) {
       <div class="p-3 bg-white rounded-2xl border border-slate-200/80 space-y-2.5">
         <div class="flex items-center gap-2.5">
-          <div
-            class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold text-xs shrink-0">
-            {{ authService.userName().slice(0, 1) }}
-          </div>
+          @if (userAvatarUrl()) {
+            <img [src]="userAvatarUrl()" alt="" class="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200 shrink-0" />
+          } @else {
+            <div
+              class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold text-xs shrink-0">
+              {{ authService.userName().slice(0, 1) }}
+            </div>
+          }
           <div class="min-w-0">
-            <span class="block text-xs font-bold text-slate-900 truncate">{{ authService.userName() }}</span>
-            <span class="block text-[10px] text-slate-500">جلسة نشطة</span>
+            <span class="block text-xs font-bold text-slate-900 truncate">{{ userFirstName() }}</span>
+            <span class="block text-[10px] text-slate-500">جلسة نشطة • {{ userRoleArabic() }}</span>
           </div>
         </div>
         <button (click)="handleDirectDashboard(); closeMobileMenu()" type="button"
@@ -190,6 +259,13 @@
           <span>الذهاب للوحة التحكم</span>
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+        <button (click)="logout(); closeMobileMenu()" type="button"
+          class="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
+          <span>تسجيل الخروج</span>
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
         </button>
       </div>
