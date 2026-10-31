@@ -3,6 +3,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { passwordChangeGuard } from './core/guards/password-change.guard';
 import { adminSectionGuard } from './core/guards/admin-section.guard';
+import { devSuperAdminGuard, skipAdminLoginInDevGuard } from './core/guards/dev-super-admin.guard';
 import { SUPER_ADMIN_ONLY } from './core/admin/admin-permissions';
 
 export const routes: Routes = [
@@ -29,6 +30,7 @@ export const routes: Routes = [
       // School administration login - reached from the small "دخول الإدارة" link, not advertised on the home page
       {
         path: 'admin',
+        canActivate: [skipAdminLoginInDevGuard],
         loadComponent: () => import('./features/auth/admin-login/admin-login.component').then(m => m.AdminLoginComponent)
       },
       {
@@ -44,7 +46,8 @@ export const routes: Routes = [
   {
     path: 'admin',
     loadComponent: () => import('./layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
-    canActivate: [authGuard, roleGuard],
+    // devSuperAdminGuard: no login needed while developing (does nothing in production builds)
+    canActivate: [devSuperAdminGuard, authGuard, roleGuard],
     // Each section declares its permission in data.access (see core/admin/admin-permissions.ts)
     canActivateChild: [adminSectionGuard],
     data: { roles: ['ADMIN', 'SUPER_ADMIN'] },

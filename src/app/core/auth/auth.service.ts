@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError, of } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { TokenService } from './token.service';
-import { mockAdminLogin, mockForgotPassword } from './dev-auth.mock';
+import { DEV_SUPER_ADMIN, mockAdminLogin, mockForgotPassword } from './dev-auth.mock';
 import { ADMIN_PERMISSIONS, AdminRouteAccess, SUPER_ADMIN_ONLY } from '../admin/admin-permissions';
 import { User, UserRole } from '../models/user.model';
 import { AdminLoginCredentials, AuthResponse, LoginCredentials, SetInitialPasswordRequest } from '../models/auth-response.model';
@@ -215,11 +215,25 @@ export class AuthService {
     };
 
     const user: User = { ...demoUsers[role], ...customUser };
+    this.startMockSession(user);
+    this.navigateToRoleDashboard(user.role);
+  }
+
+  /**
+   * Development only: opens the admin panel as the SUPER_ADMIN without the login screen
+   * (see devSuperAdminGuard). Production builds always go through /auth/admin.
+   */
+  startDevSuperAdminSession(): void {
+    if (isDevMode()) {
+      this.startMockSession(DEV_SUPER_ADMIN);
+    }
+  }
+
+  private startMockSession(user: User): void {
     const mockToken = `header.${btoa(JSON.stringify({ sub: user.id, role: user.role, exp: Math.floor(Date.now() / 1000) + 86400 }))}.signature`;
     this.tokenService.setTokens(mockToken);
     this.currentUser.set(user);
     this.storeUser(user);
-    this.navigateToRoleDashboard(user.role);
   }
 
   navigateToRoleDashboard(role: UserRole): void {
