@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
@@ -35,6 +35,37 @@ export class HomeComponent {
   readonly academicYear = inject(AcademicCalendarStore).currentYear;
   readonly academicTerm = inject(AcademicCalendarStore).currentTerm;
   private readonly router = inject(Router);
+
+  readonly userRoleArabic = computed(() => {
+    const role = this.authService.userRole();
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return 'المشرف العام';
+      case 'ADMIN':
+        return 'إدارة المدرسة';
+      case 'TEACHER':
+        return 'عضو هيئة التدريس';
+      case 'STUDENT':
+        return 'طالب مقيد';
+      default:
+        return 'مستخدم مسجل';
+    }
+  });
+
+  readonly dashboardTitle = computed(() => {
+    const role = this.authService.userRole();
+    switch (role) {
+      case 'SUPER_ADMIN':
+      case 'ADMIN':
+        return 'لوحة إدارة المدرسة';
+      case 'TEACHER':
+        return 'مساحة المعلم';
+      case 'STUDENT':
+        return 'بوابة الطالب';
+      default:
+        return 'لوحة التحكم';
+    }
+  });
 
   // Modal & Drawer Control Signals
   readonly isStudentModalOpen = signal<boolean>(false);
