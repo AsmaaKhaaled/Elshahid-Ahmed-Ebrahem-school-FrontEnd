@@ -1,13 +1,93 @@
-<div class="space-y-6">
+@if (isPublicPage()) {
+  <app-public-header />
+}
+
+<div [class]="isPublicPage() ? 'max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-8 min-h-[70vh]' : 'space-y-6'">
+
+  <!-- ================= Role-Specific Banners ================= -->
+  @if (isTeacher()) {
+    <!-- Teacher Announcement Notice Banner -->
+    <div class="bg-gradient-to-r from-portal-navy to-slate-800 rounded-3xl p-6 text-white shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4 border border-portal-navyLight/30">
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 text-primary-200">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        </div>
+        <div>
+          <span class="text-[11px] font-bold text-primary-200 bg-white/10 px-2.5 py-0.5 rounded-full inline-block mb-1">
+            مساحة أعضاء هيئة التدريس
+          </span>
+          <h3 class="text-lg font-black text-white">التعميمات الإدارية وتوجيهات التوجيه الفني</h3>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+            متابعة مواعيد تسليم درجات أعمال السنة، كشوف رصد التقييمات الشهرية، ومحاضر اجتماعات أسرة المواد.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-start md:self-auto">
+        <a routerLink="/teacher/dashboard" class="px-4 py-2.5 rounded-xl bg-white text-portal-navy hover:bg-slate-100 font-bold text-xs transition-colors shadow-xs whitespace-nowrap">
+          لوحة تحكم المعلم ←
+        </a>
+      </div>
+    </div>
+  } @else if (isStudent()) {
+    <!-- Student Announcement Notice Banner -->
+    <div class="bg-gradient-to-r from-portal-teal to-emerald-800 rounded-3xl p-6 text-white shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4 border border-portal-tealLight/30">
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0 text-white">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          </svg>
+        </div>
+        <div>
+          <span class="text-[11px] font-bold text-emerald-100 bg-white/15 px-2.5 py-0.5 rounded-full inline-block mb-1">
+            إشعارات وتنبيهات شؤون الطلاب
+          </span>
+          <h3 class="text-lg font-black text-white">مرحباً بك يا بطل في لوحة التنبيهات المدرسية</h3>
+          <p class="text-xs text-emerald-50 mt-0.5 leading-relaxed">
+            تابع مواعيد الامتحانات الشهرية المعتمدة، المشروعات البحثية للترم، وتنبيهات الأنشطة والرحلات المدرسية.
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-start md:self-auto">
+        <a routerLink="/student/dashboard" class="px-4 py-2.5 rounded-xl bg-white text-portal-tealDark hover:bg-slate-100 font-bold text-xs transition-colors shadow-xs whitespace-nowrap">
+          بوابة الطالب ←
+        </a>
+      </div>
+    </div>
+  } @else if (!isAuthenticated()) {
+    <!-- Public Visitor Announcement Banner -->
+    <div class="bg-gradient-to-r from-slate-900 to-portal-navy rounded-3xl p-6 sm:p-7 text-white shadow-card flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-700/60">
+      <div class="space-y-1.5 max-w-2xl text-right">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          المركز الإعلامي واللوحة الرسمية
+        </div>
+        <h3 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+          لوحة الإعلانات والتعميمات الرسمية المعتمدة
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          تنشر إدارة مدرسة الشهيد أحمد إبراهيم عبر هذه اللوحة كافة البيانات الإدارية، مواعيد الفعاليات، والجداول الدراسية المعتمدة للطلاب وأولياء الأمور.
+        </p>
+      </div>
+
+      <a routerLink="/" fragment="portal-login-section" class="px-5 py-3 rounded-2xl bg-portal-teal hover:bg-portal-tealDark text-white font-bold text-xs shadow-md transition-all self-start md:self-auto whitespace-nowrap">
+        تسجيل الدخول للبوابات ←
+      </a>
+    </div>
+  }
+
+  <!-- Header & Admin Controls -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
-      <h2 class="text-2xl font-black text-slate-800 tracking-tight">لوحة الإعلانات والتعميمات الرسمية</h2>
-      <p class="text-xs text-slate-500 mt-1">البيانات الإدارية، مواعيد الفعاليات المدرسية والتعميمات العاجلة</p>
+      <h2 class="text-2xl font-black text-slate-900 tracking-tight">جميع الإعلانات والتعميمات</h2>
+      <p class="text-xs text-slate-500 mt-1">فرز وبحث الإعلانات المدرسية بحسب التصنيف والجمهور المستهدف</p>
     </div>
 
     @if (isAdmin()) {
       <button (click)="openForm(null)" type="button"
-        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+        class="px-4 py-2.5 rounded-xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-xs shadow-md shadow-portal-navy/20 flex items-center gap-2 transition-all cursor-pointer">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -18,14 +98,22 @@
 
   <!-- Search & categories -->
   <div class="flex flex-col lg:flex-row lg:items-center gap-3">
-    <input type="text" [(ngModel)]="searchQuery" placeholder="البحث في عنوان أو نص الإعلان..."
-      class="w-full lg:w-80 h-10 px-4 rounded-[10px] border border-slate-200 bg-white text-[13px] font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+    <div class="relative w-full lg:w-80">
+      <input type="text" [(ngModel)]="searchQuery" placeholder="البحث في عنوان أو نص الإعلان..."
+        class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-portal-navy/20 focus:border-portal-navy shadow-xs" />
+      <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </span>
+    </div>
+
     <div class="flex flex-wrap gap-2">
       @for (filter of filters(); track filter.id) {
         <button type="button" (click)="selectedFilter.set(filter.id)"
-          [class]="selectedFilter() === filter.id ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
-          class="px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
-          {{ filter.id }} <span class="opacity-70">({{ filter.count }})</span>
+          [class]="selectedFilter() === filter.id ? 'bg-portal-navy text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer">
+          {{ filter.id }} <span class="opacity-70 text-[11px]">({{ filter.count }})</span>
         </button>
       }
     </div>
@@ -36,20 +124,21 @@
     @for (item of filteredAnnouncements(); track item.id) {
       @let expired = isExpired(item);
       <div
-        class="bg-white rounded-2xl p-6 shadow-soft border border-slate-100 hover:shadow-md transition-shadow space-y-3"
-        [class]="item.pinned && !expired ? 'border-r-4 border-r-primary-700' : ''"
+        class="bg-white rounded-3xl p-6 sm:p-7 shadow-card border border-slate-200/80 hover:shadow-xl transition-all space-y-3.5 relative overflow-hidden"
+        [class]="item.pinned && !expired ? 'border-r-4 border-r-portal-navy' : ''"
         [class.opacity-60]="expired">
+
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
             @if (item.pinned && !expired) {
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">مثبت ★</span>
             }
             @if (expired) {
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">انتهى ظهوره</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">منتهي الصلاحية</span>
             }
             <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" [class]="categoryStyles[item.category]">{{ item.category }}</span>
-            <span class="text-xs text-slate-400">
-              موجّه إلى: <strong class="text-slate-600">{{ audienceLabel(item.audiences) }}</strong>
+            <span class="text-xs text-slate-500 font-medium">
+              موجّه إلى: <strong class="text-slate-800">{{ audienceLabel(item.audiences) }}</strong>
             </span>
           </div>
 
@@ -58,50 +147,58 @@
           </span>
         </div>
 
-        <h3 class="text-lg font-black text-slate-800">{{ item.title }}</h3>
-        <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ item.content }}</p>
+        <h3 class="text-lg sm:text-xl font-black text-slate-900">{{ item.title }}</h3>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ item.content }}</p>
 
         @if (item.expiresAt && !expired && isAdmin()) {
-          <p class="text-xs text-slate-400">يظهر حتى {{ item.expiresAt | arabicDate:'dateOnly' }}</p>
+          <p class="text-xs text-slate-400">صالح للنشر حتى {{ item.expiresAt | arabicDate:'dateOnly' }}</p>
         }
 
-        <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+        <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
           <div class="flex flex-wrap items-center gap-4">
-            <span>صادر عن: <strong class="text-slate-700">{{ item.author }}</strong></span>
+            <span>صادر عن: <strong class="text-slate-800 font-bold">{{ item.author }}</strong></span>
             @if (item.attachment; as file) {
-              <a [href]="file.url" [download]="file.name" class="text-primary-700 hover:text-primary-900 font-bold">
-                📎 تحميل المرفق ({{ file.name }})
+              <a [href]="file.url" [download]="file.name" class="text-portal-teal hover:underline font-bold inline-flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <span>تحميل المرفق ({{ file.name }})</span>
               </a>
             }
           </div>
 
           @if (isAdmin()) {
-            <div class="flex items-center gap-1">
-              <button (click)="openForm(item)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100">تعديل</button>
-              <button (click)="store.togglePinned(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-primary-700 hover:bg-primary-50">
+            <div class="flex items-center gap-1.5">
+              <button (click)="openForm(item)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-slate-700 hover:bg-slate-100 cursor-pointer">تعديل</button>
+              <button (click)="store.togglePinned(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-portal-navy hover:bg-slate-100 cursor-pointer">
                 {{ item.pinned ? 'إلغاء التثبيت' : 'تثبيت' }}
               </button>
               @if (confirmingDeleteId() === item.id) {
-                <button (click)="deleteAnnouncement(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold bg-rose-600 text-white hover:bg-rose-700">تأكيد الحذف</button>
-                <button (click)="confirmingDeleteId.set(null)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100">تراجع</button>
+                <button (click)="deleteAnnouncement(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold bg-rose-600 text-white hover:bg-rose-700 cursor-pointer">تأكيد الحذف</button>
+                <button (click)="confirmingDeleteId.set(null)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 cursor-pointer">تراجع</button>
               } @else {
-                <button (click)="confirmingDeleteId.set(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-rose-600 hover:bg-rose-50">حذف</button>
+                <button (click)="confirmingDeleteId.set(item.id)" type="button" class="px-3 py-1.5 rounded-lg font-bold text-rose-600 hover:bg-rose-50 cursor-pointer">حذف</button>
               }
             </div>
           }
         </div>
       </div>
     } @empty {
-      <div class="bg-white rounded-2xl shadow-soft border border-slate-100 text-center py-12 text-slate-400 text-sm">
-        لا توجد إعلانات تطابق الاختيارات الحالية.
+      <div class="bg-white rounded-3xl shadow-card border border-slate-200/80 text-center py-16 text-slate-400 text-xs">
+        لا توجد إعلانات تطابق البحث أو التصنيف المحدد حالياً.
       </div>
     }
   </div>
 
-  @if (formOpen()) {
-    <app-announcement-form-dialog
-      [announcement]="editing()"
-      (saved)="saveAnnouncement($event)"
-      (closed)="formOpen.set(false)" />
-  }
 </div>
+
+@if (formOpen()) {
+  <app-announcement-form-dialog
+    [announcement]="editing()"
+    (saved)="saveAnnouncement($event)"
+    (closed)="formOpen.set(false)" />
+}
+
+@if (isPublicPage()) {
+  <app-public-footer />
+}

@@ -112,12 +112,12 @@ export const routes: Routes = [
   { path: 'teachers', canActivate: [featureRedirectGuard('teachers')], children: [] },
   { path: 'classes', canActivate: [featureRedirectGuard('classes')], children: [] },
   { path: 'lessons', canActivate: [featureRedirectGuard('lessons')], children: [] },
-  { path: 'subjects', canActivate: [featureRedirectGuard('subjects')], children: [] },
+  { path: 'subjects', loadComponent: () => import('./features/subjects/subjects.component').then(m => m.SubjectsComponent) },
   { path: 'assignments', canActivate: [featureRedirectGuard('assignments')], children: [] },
   { path: 'exams', canActivate: [featureRedirectGuard('exams')], children: [] },
   { path: 'attendance-stats', canActivate: [featureRedirectGuard('attendance-stats')], children: [] },
   { path: 'grades', canActivate: [featureRedirectGuard('grades')], children: [] },
-  { path: 'announcements', canActivate: [featureRedirectGuard('announcements')], children: [] },
+  { path: 'announcements', loadComponent: () => import('./features/announcements/announcements.component').then(m => m.AnnouncementsComponent) },
 
   // Wildcard fallback
   { path: '**', redirectTo: '' }
