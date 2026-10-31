@@ -44,34 +44,31 @@
             مدرسة الشهيد أحمد إبراهيم حسب الله
             <span class="hidden sm:inline font-bold text-slate-700"> الإعدادية بنين</span>
           </h1>
-          <p class="text-[10px] sm:text-[11px] text-slate-500 font-semibold truncate hidden lg:block">
+          <p class="text-[10px] sm:text-[11px] text-slate-500 font-semibold truncate hidden xl:block">
             بوابة التعلم والخدمات الأكاديمية الإلكترونية
           </p>
         </div>
       </div>
 
       <!-- Middle Navigation Links (Desktop: lg and above) - Centered & Balanced -->
-      <nav class="hidden lg:flex items-center justify-center gap-1 xl:gap-2 text-[11px] xl:text-xs font-bold text-slate-600 flex-1 mx-1 xl:mx-4">
+      <nav class="hidden xl:flex items-center justify-center gap-1 2xl:gap-2 text-[11px] 2xl:text-xs font-bold text-slate-600 flex-1 mx-2 2xl:mx-4">
         <a routerLink="/" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl bg-portal-navy text-white shadow-sm whitespace-nowrap transition-all">
           الرئيسية
         </a>
-        <button
-          (click)="handleDirectDashboard()"
-          type="button"
-          class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          لوحة التحكم
-        </button>
         <a routerLink="/subjects" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          المواد الدراسية
+          المناهج والمقررات
+        </a>
+        <a routerLink="/lessons" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
+          الجدول المدرسي
         </a>
         <a routerLink="/exams" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          الاختبارات
+          الاختبارات والتقييم
         </a>
         <a routerLink="/grades" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          النتائج
+          كشوف الدرجات
         </a>
         <a routerLink="/announcements" class="px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-colors">
-          الإعلانات والتنبيهات
+          الإعلانات والتعميمات
         </a>
       </nav>
 
@@ -80,7 +77,7 @@
         @if (authService.isAuthenticated()) {
           <!-- Active User Profile Pill -->
           <div class="flex items-center gap-2 p-1 sm:p-1.5 sm:pr-3 rounded-2xl bg-slate-50 border border-slate-200">
-            <div class="text-right hidden sm:block max-w-[100px] xl:max-w-[150px]">
+            <div class="text-right hidden sm:block max-w-[90px] md:max-w-[120px] xl:max-w-[140px] 2xl:max-w-[180px]">
               <span class="block text-xs font-bold text-slate-800 leading-tight truncate whitespace-nowrap">{{ authService.userName() }}</span>
               <span class="block text-[10px] text-slate-500 font-medium">جلسة نشطة</span>
             </div>
@@ -121,7 +118,7 @@
         <button
           (click)="toggleMobileMenu()"
           type="button"
-          class="lg:hidden p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-portal-navy transition-colors shrink-0 focus:outline-none"
+          class="xl:hidden p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-portal-navy transition-colors shrink-0 focus:outline-none"
           title="القائمة">
           @if (isMobileMenuOpen()) {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,11 +134,11 @@
     </div>
   </header>
 
-  <!-- ================= Mobile / Tablet Navigation Drawer (< lg) ================= -->
+  <!-- ================= Mobile / Tablet Navigation Drawer (< xl) ================= -->
   @if (isMobileMenuOpen()) {
     <div
       (click)="closeMobileMenu()"
-      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm lg:hidden transition-opacity">
+      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm xl:hidden transition-opacity">
     </div>
   }
 
@@ -149,7 +146,7 @@
     [class.translate-x-full]="!isMobileMenuOpen()"
     [class.invisible]="!isMobileMenuOpen()"
     [class.pointer-events-none]="!isMobileMenuOpen()"
-    class="fixed top-0 right-0 z-50 h-screen w-80 max-w-[85vw] bg-white text-slate-800 shadow-2xl lg:hidden transition-all duration-300 ease-in-out flex flex-col border-l border-slate-200">
+    class="fixed top-0 right-0 z-50 h-screen w-80 max-w-[85vw] bg-white text-slate-800 shadow-2xl xl:hidden transition-all duration-300 ease-in-out flex flex-col border-l border-slate-200">
 
     <!-- Drawer Header -->
     <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
@@ -380,38 +377,53 @@
   </section>
 
   <!-- ================= 4. Academic Pillars & School Highlights Grid ================= -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 py-2">
+  <section class="max-w-7xl mx-auto px-4 md:px-8 py-4 sm:py-6">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      @for (pillar of pillars; track pillar.id) {
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft hover:shadow-md transition-all space-y-2.5 group">
-          <div [class]="pillar.iconBg + ' ' + pillar.iconColor" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
-            @switch (pillar.id) {
-              @case ('smart-class') {
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              }
-              @case ('labs') {
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              }
-              @case ('monitoring') {
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
-              @case ('activities') {
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-              }
-            }
-          </div>
-          <h4 class="text-sm font-bold text-slate-900">{{ pillar.title }}</h4>
-          <p class="text-xs text-slate-500 leading-relaxed">{{ pillar.description }}</p>
+
+      <!-- 1. Smart Classes -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft hover:shadow-md transition-all space-y-3 group">
+        <div class="w-11 h-11 rounded-xl bg-blue-50 text-portal-navy flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+          <svg class="w-5 h-5 text-portal-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
         </div>
-      }
+        <h4 class="text-sm font-bold text-slate-900">الفصول والقاعات الذكية</h4>
+        <p class="text-xs text-slate-500 leading-relaxed">فصول تفاعلية وقاعات دراسية مجهزة بأحدث الشاشات والوسائل التعليمية الرقمية المتطورة.</p>
+      </div>
+
+      <!-- 2. Science Labs -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft hover:shadow-md transition-all space-y-3 group">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-portal-teal flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+          <svg class="w-5 h-5 text-portal-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        </div>
+        <h4 class="text-sm font-bold text-slate-900">معامل التجارب واللغات</h4>
+        <p class="text-xs text-slate-500 leading-relaxed">معامل علمية وبحثية مجهزة لتطبيق التجارب الكيميائية والفيزيائية والبرمجية عملياً.</p>
+      </div>
+
+      <!-- 3. Monitoring & Attendance -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft hover:shadow-md transition-all space-y-3 group">
+        <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+          <svg class="w-5 h-5 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h4 class="text-sm font-bold text-slate-900">المتابعة والرصد اللحظي</h4>
+        <p class="text-xs text-slate-500 leading-relaxed">منظومة رصد إلكترونية معتمدة للغياب اليومي ودرجات أعمال السنة وإشعارات فورية لولي الأمر.</p>
+      </div>
+
+      <!-- 4. Gifted & Activities -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-soft hover:shadow-md transition-all space-y-3 group">
+        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+          <svg class="w-5 h-5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+          </svg>
+        </div>
+        <h4 class="text-sm font-bold text-slate-900">رعاية الموهوبين والأنشطة</h4>
+        <p class="text-xs text-slate-500 leading-relaxed">برامج متخصصة لرعاية الطلاب الفائقين والمبدعين في مسابقات العلوم والذكاء الاصطناعي.</p>
+      </div>
+
     </div>
   </section>
 
