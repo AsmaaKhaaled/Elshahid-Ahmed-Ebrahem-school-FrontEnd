@@ -69,3 +69,43 @@
 .submit-locked .mat-mdc-checkbox {
   opacity: 0.6;
 }
+
+/* Report that exists only on paper (e.g. the attendance PDF) */
+.print-only {
+  display: none;
+}
+
+/* Printing a page prints only its .print-area (e.g. the school timetable), landscape */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  body:has(.print-area) * {
+    visibility: hidden;
+  }
+  body:has(.print-area) .print-area,
+  body:has(.print-area) .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0 0 auto 0;
+    box-shadow: none !important;
+    border: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-area .overflow-x-auto {
+    overflow: visible !important;
+  }
+  .print-area table {
+    min-width: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+}

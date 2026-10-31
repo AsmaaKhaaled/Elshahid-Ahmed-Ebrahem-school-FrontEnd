@@ -4,7 +4,7 @@ import { TeacherScheduleDialogComponent } from './teacher-schedule-dialog.compon
 import { Teacher, TermSchedules, slotKey } from './teacher.model';
 
 function teacher(id: string, subjects = ['الرياضيات']): Teacher {
-  return { id, name: `معلم ${id}`, nationalId: '', title: '', specialization: 'الرياضيات', email: '', phone: '', subjects, status: 'على رأس العمل' };
+  return { id, name: `معلم ${id}`, nationalId: '', title: '', specialization: 'الرياضيات', email: '', phone: '', subjects, classes: [], status: 'على رأس العمل' };
 }
 
 const termId = '2026-2027-T1';

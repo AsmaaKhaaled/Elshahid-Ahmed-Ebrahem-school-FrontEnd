@@ -53,6 +53,10 @@ export class PlatformActivityComponent {
   private readonly activityStore = inject(PlatformActivityStore);
   private readonly teachersStore = inject(TeachersStore);
 
+  constructor() {
+    this.teachersStore.ensureLoaded();
+  }
+
   readonly presenceLabels = PRESENCE_LABELS;
   readonly presenceStyles = PRESENCE_STYLES;
   readonly kindIcons = KIND_ICONS;

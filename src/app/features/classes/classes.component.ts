@@ -6,6 +6,7 @@ import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { Teacher, teacherDisplayName } from '../teachers/teacher.model';
 import { TeachersStore } from '../teachers/teachers.store';
 import { ClassAdvisorDialogComponent } from './class-advisor-dialog.component';
+import { ClassesStore } from './classes.store';
 import { AdvisorAssignment, SchoolClass, currentAdvisor } from './school-class.model';
 
 type AdvisorState =
@@ -25,6 +26,11 @@ type AdvisorState =
 export class ClassesComponent {
   private readonly teachersStore = inject(TeachersStore);
   private readonly authService = inject(AuthService);
+  private readonly classesStore = inject(ClassesStore);
+
+  constructor() {
+    this.teachersStore.ensureLoaded();
+  }
 
   readonly year = inject(AcademicCalendarStore).currentYear;
   readonly capacity = MAX_CLASS_CAPACITY;
@@ -41,21 +47,7 @@ export class ClassesComponent {
     ...GRADE_LEVELS.map(g => ({ id: g.label, label: g.shortLabel }))
   ];
 
-  readonly classes = signal<SchoolClass[]>([
-    seedClass('c1', '1/1', 0, 42, ['5', '5']),
-    seedClass('c2', '1/2', 0, 41, ['4', '4']),
-    seedClass('c3', '1/3', 0, 40, ['3', '3']),
-    seedClass('c4', '1/4', 0, 39, ['7', '6']),
-    seedClass('c5', '2/1', 1, 43, ['1', '1']),
-    seedClass('c6', '2/2', 1, 42, ['7', '7']),
-    seedClass('c7', '2/3', 1, 40, ['8', '8']),
-    seedClass('c8', '2/4', 1, 47, ['9', '9']),
-    seedClass('c9', '3/1', 2, 44, ['2', '2']),
-    seedClass('c10', '3/2', 2, 43, ['10', '10']),
-    seedClass('c11', '3/3', 2, 41, ['11', '11']),
-    // No advisor yet for the current year (e.g. right after the new year starts)
-    seedClass('c12', '3/4', 2, 42, ['12'])
-  ]);
+  readonly classes = this.classesStore.classes;
 
   readonly filteredClasses = computed(() => {
     const tab = this.selectedTab();
@@ -97,28 +89,7 @@ export class ClassesComponent {
   }
 
   assignAdvisor(classId: string, assignment: AdvisorAssignment): void {
-    this.classes.update(list =>
-      list.map(cls => (cls.id === classId ? { ...cls, advisorHistory: [...cls.advisorHistory, assignment] } : cls))
-    );
+    this.classesStore.assignAdvisor(classId, assignment);
     this.advisorClass.set(null);
   }
-}
-
-// Demo data - advisors: [2025/2026 advisor, 2026/2027 advisor?]
-function seedClass(id: string, section: string, gradeIndex: number, enrolledStudents: number, advisors: string[]): SchoolClass {
-  const [previousYearTeacher, currentYearTeacher] = advisors;
-  const history: AdvisorAssignment[] = [
-    { teacherId: previousYearTeacher, year: '2025/2026', since: '2025-09-20', reason: 'بداية عام دراسي جديد' }
-  ];
-  if (currentYearTeacher) {
-    history.push({ teacherId: currentYearTeacher, year: '2026/2027', since: '2026-09-19', reason: 'بداية عام دراسي جديد' });
-  }
-  return {
-    id,
-    section,
-    gradeLevel: GRADE_LEVELS[gradeIndex].label,
-    enrolledStudents,
-    shift: 'صباحي',
-    advisorHistory: history
-  };
 }

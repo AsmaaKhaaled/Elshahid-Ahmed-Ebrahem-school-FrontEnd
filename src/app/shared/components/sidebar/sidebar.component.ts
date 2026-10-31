@@ -77,6 +77,14 @@ export class SidebarComponent {
       roles: ['ADMIN', 'SUPER_ADMIN']
     },
     {
+      label: 'الجدول المدرسي',
+      route: '/school-timetable',
+      // Built from the teachers' schedules, so it shares their permission
+      access: 'teachers',
+      iconPaths: ['M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
+      roles: ['ADMIN', 'SUPER_ADMIN']
+    },
+    {
       label: 'الفصول الدراسية',
       route: '/classes',
       access: 'classes',
@@ -100,11 +108,11 @@ export class SidebarComponent {
     {
       label: 'الواجبات والتكليفات',
       route: '/assignments',
-      access: 'assignments',
       iconPaths: ['M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'],
       badge: 'مهمة',
       badgeColor: 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50',
-      roles: ['ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT']
+      // Assignments are the teachers' own work; the admin panel doesn't follow them
+      roles: ['TEACHER', 'STUDENT']
     },
     {
       label: 'الاختبارات والتقييم',

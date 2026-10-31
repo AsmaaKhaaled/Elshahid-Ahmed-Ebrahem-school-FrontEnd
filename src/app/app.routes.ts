@@ -54,9 +54,10 @@ export const routes: Routes = [
       { path: 'students', data: { access: 'students' }, loadComponent: () => import('./features/students/students.component').then(m => m.StudentsComponent) },
       { path: 'teachers', data: { access: 'teachers' }, loadComponent: () => import('./features/teachers/teachers.component').then(m => m.TeachersComponent) },
       { path: 'classes', data: { access: 'classes' }, loadComponent: () => import('./features/classes/classes.component').then(m => m.ClassesComponent) },
+      // Built from the teachers' schedules, so it shares their permission
+      { path: 'school-timetable', data: { access: 'teachers' }, loadComponent: () => import('./features/school-timetable/school-timetable.component').then(m => m.SchoolTimetableComponent) },
       // Temporarily disabled for admins (see the sidebar's disabledFor) - restore the loadComponent to re-enable
       { path: 'subjects', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'assignments', data: { access: 'assignments' }, loadComponent: () => import('./features/assignments/assignments.component').then(m => m.AssignmentsComponent) },
       { path: 'exams', data: { access: 'exams' }, loadComponent: () => import('./features/exams/exams.component').then(m => m.ExamsComponent) },
       { path: 'attendance-stats', data: { access: 'attendance-stats' }, loadComponent: () => import('./features/attendance-stats/attendance-stats.component').then(m => m.AttendanceStatsComponent) },
       { path: 'teacher-attendance', data: { access: 'teacher-attendance' }, loadComponent: () => import('./features/teacher-attendance/teacher-attendance.component').then(m => m.TeacherAttendanceComponent) },

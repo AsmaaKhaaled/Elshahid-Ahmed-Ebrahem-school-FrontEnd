@@ -1,4 +1,4 @@
-import { AdminPermission } from './admin-permissions';
+import { AdminPermission, isAdminPermission } from './admin-permissions';
 
 export type AdminAccountRole = 'SUPER_ADMIN' | 'ADMIN';
 export type AdminAccountStatus = 'ACTIVE' | 'SUSPENDED';
@@ -42,7 +42,8 @@ export function adminAccountFromDto(dto: AdminAccountDto): AdminAccount {
     jobTitle: dto.jobTitle ?? '',
     phone: dto.phone ?? '',
     role: dto.role,
-    permissions: dto.permissions as AdminPermission[],
+    // Drops sections that were removed from the admin panel (e.g. assignments), so the next save clears them
+    permissions: dto.permissions.filter(isAdminPermission),
     // INACTIVE accounts can't sign in either - shown (and re-activated) like suspended ones
     status: dto.status === 'ACTIVE' ? 'ACTIVE' : 'SUSPENDED',
     createdAt: dto.createdAt

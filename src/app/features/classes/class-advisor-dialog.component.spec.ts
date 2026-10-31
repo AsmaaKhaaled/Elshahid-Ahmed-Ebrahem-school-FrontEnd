@@ -7,7 +7,7 @@ import { SchoolClass } from './school-class.model';
 function teacher(id: string, status: Teacher['status'] = 'على رأس العمل'): Teacher {
   return {
     id, name: `معلم ${id}`, nationalId: '', title: '', specialization: 'الرياضيات',
-    email: '', phone: '', subjects: ['الرياضيات'], status
+    email: '', phone: '', subjects: ['الرياضيات'], classes: [], status
   };
 }
 

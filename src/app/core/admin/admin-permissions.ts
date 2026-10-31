@@ -8,7 +8,6 @@ export const ADMIN_PERMISSIONS = [
   { key: 'students', label: 'شؤون الطلاب' },
   { key: 'teachers', label: 'هيئة التدريس' },
   { key: 'classes', label: 'الفصول الدراسية' },
-  { key: 'assignments', label: 'الواجبات والتكليفات' },
   { key: 'exams', label: 'الاختبارات والتقييم' },
   { key: 'attendance-stats', label: 'إحصائية حضور وغياب الطلاب' },
   { key: 'teacher-attendance', label: 'دفتر حضور وغياب المعلمين' },
@@ -24,6 +23,10 @@ export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number]['key'];
 export const SUPER_ADMIN_ONLY = 'super-admin-only';
 
 export type AdminRouteAccess = AdminPermission | typeof SUPER_ADMIN_ONLY;
+
+export function isAdminPermission(key: string): key is AdminPermission {
+  return ADMIN_PERMISSIONS.some(p => p.key === key);
+}
 
 export function permissionLabel(permission: AdminPermission): string {
   return ADMIN_PERMISSIONS.find(p => p.key === permission)?.label ?? permission;

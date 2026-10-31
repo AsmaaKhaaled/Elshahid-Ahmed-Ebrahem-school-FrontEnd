@@ -1,0 +1,213 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 no-print">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">الجدول المدرسي</h2>
+      <p class="text-xs text-slate-500 mt-1">
+        يتجمع تلقائياً من الجداول الأسبوعية للمعلمين. للتعديل افتح جدول المعلم من صفحة هيئة التدريس.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button (click)="print()" type="button"
+        class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        <span>طباعة</span>
+      </button>
+      <button (click)="exportExcel()" [disabled]="exporting()" type="button"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 disabled:opacity-60">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span>{{ exporting() ? 'جاري التصدير...' : 'تصدير Excel (كل الفصول)' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Term, view & summary -->
+  <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+      <mat-form-field class="w-full sm:w-72" subscriptSizing="dynamic">
+        <mat-label>الفصل الدراسي</mat-label>
+        <mat-select [value]="selectedTermId()" (valueChange)="selectedTermId.set($event)">
+          @for (term of terms(); track term.id) {
+            <mat-option [value]="term.id">{{ term.label }}{{ term.id === currentTermId() ? ' (الحالي)' : '' }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-bold" role="tablist">
+        <button (click)="view.set('sections')" type="button" role="tab" [attr.aria-selected]="view() === 'sections'"
+          [class]="view() === 'sections' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+          class="px-4 py-2 rounded-lg transition-colors">جداول الفصول</button>
+        <button (click)="view.set('teachers')" type="button" role="tab" [attr.aria-selected]="view() === 'teachers'"
+          [class]="view() === 'teachers' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+          class="px-4 py-2 rounded-lg transition-colors">جدول المعلمين</button>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+      <span [class]="conflicts().length ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'" class="px-3 py-1.5 rounded-lg">
+        {{ conflicts().length ? '⚠ ' + conflicts().length + ' تعارض' : '✓ لا توجد تعارضات' }}
+      </span>
+      <span [class]="incompleteSections() ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'" class="px-3 py-1.5 rounded-lg">
+        {{ incompleteSections() ? incompleteSections() + ' فصل جدوله غير مكتمل' : '✓ كل الجداول مكتملة' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Conflicts list -->
+  @if (conflicts().length) {
+    <div class="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 space-y-2 no-print">
+      <h3 class="text-sm font-black text-rose-800">تعارضات: أكثر من معلم في نفس الفصل ونفس الحصة</h3>
+      <ul class="space-y-1.5 text-xs text-rose-900">
+        @for (conflict of conflicts(); track conflict.section + conflict.day + '-' + conflict.period) {
+          <li class="flex flex-wrap items-center gap-2">
+            <span class="font-bold">فصل {{ conflict.section }} — {{ days[conflict.day] }} الحصة {{ conflict.period + 1 }}:</span>
+            <span>{{ describeLessons(conflict.lessons) }}</span>
+            <button (click)="showConflict(conflict.section, conflict.day)" type="button" class="font-bold underline hover:text-rose-700">عرض</button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (view() === 'sections') {
+    <!-- Section picker -->
+    <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 space-y-3 no-print">
+      @for (grade of grades; track grade.id) {
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 sm:w-32 shrink-0">{{ grade.shortLabel }}</span>
+          <div class="flex flex-wrap gap-2">
+            @for (section of grade.sections; track section) {
+              @let cov = coverage().get(section);
+              <button (click)="selectedSection.set(section)" type="button" [attr.aria-pressed]="selectedSection() === section"
+                [class]="selectedSection() === section ? 'bg-primary-800 text-white border-primary-800' : 'bg-white text-slate-700 border-slate-200 hover:border-primary-300'"
+                class="px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-colors">
+                <span>{{ section }}</span>
+                @if (cov && cov.free > 0) {
+                  <span [class]="selectedSection() === section ? 'text-primary-100' : 'text-amber-700'" class="text-[10px] font-semibold">{{ cov.free }} فاضية</span>
+                }
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Section timetable -->
+    <div class="print-area bg-white rounded-2xl shadow-soft border border-slate-100 p-4 md:p-6 space-y-4">
+      @let cov = coverage().get(selectedSection());
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 class="font-black text-slate-800 text-lg">جدول فصل {{ selectedSection() }}</h3>
+          <p class="text-xs text-slate-500 mt-0.5">{{ termLabel() }}</p>
+        </div>
+        @if (cov) {
+          <span class="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg">
+            {{ cov.filled }} من {{ weeklySlots }} حصة مُسندة
+          </span>
+        }
+      </div>
+
+      <div class="overflow-x-auto rounded-2xl border border-slate-100">
+        <table class="w-full text-xs text-center min-w-[860px]">
+          <thead class="bg-slate-50 text-slate-500 font-bold">
+            <tr>
+              <th scope="col" class="py-2.5 px-2 w-20">اليوم</th>
+              @for (period of periods; track period) {
+                <th scope="col" class="py-2.5 px-2">الحصة {{ period + 1 }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (day of days; track day; let dayIndex = $index) {
+              <tr>
+                <th scope="row" class="py-2 px-2 font-bold text-slate-700 bg-slate-50/60">{{ day }}</th>
+                @for (period of periods; track period) {
+                  @let lessons = lessonsAt(dayIndex, period);
+                  <td class="p-1.5 align-top" [class.bg-rose-50]="lessons.length > 1">
+                    @for (lesson of lessons; track lesson.teacherId) {
+                      <div [class]="lessons.length > 1 ? 'bg-rose-100 border border-rose-200' : 'bg-primary-50'" class="rounded-lg px-1.5 py-1.5 mb-1 last:mb-0">
+                        <span class="block font-bold text-slate-800 leading-tight">{{ lesson.subject }}</span>
+                        <span class="block text-[10px] text-slate-500 leading-tight mt-0.5">{{ lesson.teacherName }}</span>
+                      </div>
+                    } @empty {
+                      <span class="block py-2 text-slate-300">—</span>
+                    }
+                    @if (lessons.length > 1) {
+                      <span class="block text-[10px] font-bold text-rose-700">تعارض</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else {
+    <!-- Teachers timetable, one day at a time -->
+    <div class="print-area bg-white rounded-2xl shadow-soft border border-slate-100 p-4 md:p-6 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="font-black text-slate-800 text-lg">جدول المعلمين — يوم {{ days[selectedDay()] }}</h3>
+          <p class="text-xs text-slate-500 mt-0.5">{{ termLabel() }} • كل خانة فيها الفصل اللي المعلم بيدرّسه في الحصة</p>
+        </div>
+        <div class="flex flex-wrap gap-1.5 no-print" role="tablist">
+          @for (day of days; track day; let dayIndex = $index) {
+            <button (click)="selectedDay.set(dayIndex)" type="button" role="tab" [attr.aria-selected]="selectedDay() === dayIndex"
+              [class]="selectedDay() === dayIndex ? 'bg-primary-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">{{ day }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-2xl border border-slate-100">
+        <table class="w-full text-xs text-center min-w-[760px]">
+          <thead class="bg-slate-50 text-slate-500 font-bold">
+            <tr>
+              <th scope="col" class="py-2.5 px-3 text-right">المعلم</th>
+              @for (period of periods; track period) {
+                <th scope="col" class="py-2.5 px-2">الحصة {{ period + 1 }}</th>
+              }
+              <th scope="col" class="py-2.5 px-2">النصاب الأسبوعي</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (teacher of teachers(); track teacher.id) {
+              @let schedule = scheduleOf(teacher.id);
+              <tr>
+                <th scope="row" class="py-2 px-3 text-right font-bold text-slate-700 whitespace-nowrap">
+                  {{ displayName(teacher) }}
+                  <span class="block text-[10px] font-medium text-slate-400">{{ teacher.specialization }}</span>
+                </th>
+                @for (period of periods; track period) {
+                  @let key = slotKey(selectedDay(), period);
+                  @let slot = schedule[key];
+                  <td class="p-1.5">
+                    @if (slot) {
+                      <span [class]="conflictKeys().has(slot.section + '|' + key) ? 'bg-rose-100 text-rose-800' : 'bg-primary-50 text-primary-800'"
+                        class="inline-block min-w-12 rounded-lg px-2 py-1.5 font-bold">{{ slot.section }}</span>
+                    } @else {
+                      <span class="text-slate-300">—</span>
+                    }
+                  </td>
+                }
+                <td class="p-1.5 font-bold text-slate-600">{{ weeklyLoad(teacher.id) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (teachersWithoutSchedule().length) {
+        <p class="text-xs text-amber-800 bg-amber-50 rounded-xl px-3 py-2 no-print">
+          معلمين لسه ملهمش جدول في الفصل الدراسي ده: {{ teachersWithoutSchedule().join('، ') }}
+        </p>
+      }
+    </div>
+  }
+</div>

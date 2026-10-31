@@ -1,4 +1,5 @@
 import type { CellValue, Workbook, Worksheet } from 'exceljs';
+import { newWorkbook, saveWorkbook, styleHeader } from '../../shared/utils/excel';
 import { GRADE_LEVELS, GradeLevel } from '../../core/constants/school.constants';
 import {
   EGYPT_MOBILE_PATTERN,
@@ -40,12 +41,6 @@ export interface ImportResult {
   rows: ImportRow[];
   // File-level problem (wrong format, missing columns...) - no rows when set
   fileError: string | null;
-}
-
-// exceljs is ~1MB, so it is only loaded when the admin imports or exports
-async function newWorkbook(): Promise<Workbook> {
-  const { Workbook } = await import('exceljs');
-  return new Workbook();
 }
 
 export async function downloadImportTemplate(): Promise<void> {
@@ -344,13 +339,6 @@ function addStudentsSheet(workbook: Workbook): Worksheet {
   return sheet;
 }
 
-function styleHeader(cell: ReturnType<Worksheet['getCell']>, text: string): void {
-  cell.value = text;
-  cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } };
-  cell.alignment = { horizontal: 'center', vertical: 'middle' };
-}
-
 function listValidation(options: string[], error: string) {
   return {
     type: 'list' as const,
@@ -359,16 +347,6 @@ function listValidation(options: string[], error: string) {
     showErrorMessage: true,
     error
   };
-}
-
-async function saveWorkbook(workbook: Workbook, fileName: string): Promise<void> {
-  const buffer = await workbook.xlsx.writeBuffer();
-  const url = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 function failed(fileError: string): ImportResult {
