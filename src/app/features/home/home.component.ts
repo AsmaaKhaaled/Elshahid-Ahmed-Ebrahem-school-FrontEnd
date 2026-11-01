@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { HonorAvatarComponent } from '../honor-roll/honor-avatar.component';
+import { PublicHeaderComponent } from '../../shared/components/public-header/public-header.component';
+import { PublicFooterComponent } from '../../shared/components/public-footer/public-footer.component';
 import { HonorRollStore } from '../honor-roll/honor-roll.store';
 import { TEACHER_HONORIFIC } from '../teachers/teacher.model';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
@@ -27,7 +29,7 @@ interface AcademicPillar {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, FormsModule, HonorAvatarComponent],
+  imports: [RouterLink, FormsModule, HonorAvatarComponent, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })

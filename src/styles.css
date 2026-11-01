@@ -69,3 +69,11 @@
 .submit-locked .mat-mdc-checkbox {
   opacity: 0.6;
 }
+/* Utility to hide scrollbar while preserving scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
