@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, signal, computed, inject, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, signal, computed, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -18,7 +18,7 @@ import { StudentsStore } from './students.store';
   templateUrl: './students.component.html',
   styleUrl: './students.component.css'
 })
-export class StudentsComponent {
+export class StudentsComponent implements OnInit {
   readonly searchQuery = signal<string>('');
   readonly selectedGrade = signal<string>('ALL');
   readonly selectedStatus = signal<string>('ALL');
@@ -45,6 +45,10 @@ export class StudentsComponent {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.noticeTimer));
+  }
+
+  ngOnInit(): void {
+    this.store.loadFromApi();
   }
 
   readonly filteredStudents = computed(() => {
@@ -76,7 +80,7 @@ export class StudentsComponent {
     const isNew = !this.editingStudent();
     this.store.saveStudent(student);
     this.showForm.set(false);
-    this.showNotice(isNew ? `تم تسجيل الطالب ${student.name}` : `تم حفظ تعديلات ${student.name}`);
+    this.showNotice(isNew ? `تم تسجيل الطالب ${student.name} وتأسيس حسابه بنجاح` : `تم حفظ تعديلات ${student.name}`);
   }
 
   deleteStudent(studentId: string): void {
