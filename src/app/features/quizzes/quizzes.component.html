@@ -1,0 +1,129 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">الكويزات والاختبارات القصيرة</h2>
+      <p class="text-xs text-slate-500 mt-1">
+        @if (scope.isTeacher()) {
+          اعمل كويز أونلاين بتصحيح تلقائي، أو ارفع ورقة أسئلة والطلاب يرفعوا حلولهم
+        } @else {
+          كويزات واختبارات فصل {{ scope.studentSection() }}
+          @if (pendingCount()) {
+            · <strong class="text-amber-700">{{ pendingCount() }} مستني حلك</strong>
+          }
+        }
+      </p>
+    </div>
+
+    @if (scope.isTeacher()) {
+      <button type="button" (click)="openForm(null)"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>كويز أو اختبار جديد</span>
+      </button>
+    }
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    @for (kind of kindFilters; track kind) {
+      <button type="button" (click)="selectedKind.set(kind)"
+        [class]="selectedKind() === kind ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+        {{ kind }}
+      </button>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    @for (item of filteredQuizzes(); track item.id) {
+      @let closed = isClosed(item);
+      <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 flex flex-col justify-between hover:border-primary-200 transition-all space-y-4">
+        <div class="space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <span class="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full">{{ item.kind }} · {{ item.subject }}</span>
+            <span [class]="closed ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'" class="text-xs font-bold px-2 py-0.5 rounded-md">
+              {{ closed ? 'مقفول' : 'متاح' }}
+            </span>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 leading-snug">{{ item.title }}</h3>
+          <p class="text-xs text-slate-500">
+            {{ item.mode === 'online' ? '💻 أونلاين' : '📄 ملف أسئلة' }}
+            · {{ item.totalMarks }} درجة
+            @if (item.mode === 'online') {
+              · {{ item.questions.length }} سؤال
+              @if (item.durationMinutes) { · {{ item.durationMinutes }} دقيقة }
+            }
+          </p>
+          @if (scope.isTeacher()) {
+            <p class="text-xs text-slate-500">فصل {{ sectionsLabel(item.sections) }} · نُشر {{ item.publishedAt | timeAgo }}</p>
+            <p class="text-sm font-bold text-slate-700 pt-1">
+              {{ attemptsCount(item) }} طالب سلّموا
+              @if (ungradedCount(item); as count) {
+                · <span class="text-amber-700">{{ count }} مستني تصحيح</span>
+              }
+            </p>
+          } @else {
+            @let mine = myAttempt(item);
+            <p class="text-sm font-bold pt-1">
+              @if (mine?.score != null) {
+                <span class="text-emerald-700">✓ درجتك: {{ mine!.score }} من {{ item.totalMarks }}</span>
+              } @else if (mine) {
+                <span class="text-primary-700">✓ سلّمت · مستني التصحيح</span>
+              } @else if (!closed) {
+                <span class="text-amber-700">لسه محلّتش</span>
+              } @else {
+                <span class="text-rose-600">فاتك</span>
+              }
+            </p>
+          }
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-sm">
+          <div>
+            <span class="text-slate-400 block text-xs">متاح لحد:</span>
+            <span class="font-semibold text-slate-700">{{ item.closesAt | arabicDate:'short' }}</span>
+          </div>
+
+          @if (scope.isTeacher()) {
+            @if (confirmingDeleteId() === item.id) {
+              <div class="flex items-center gap-1.5 text-xs">
+                <button type="button" (click)="deleteQuiz(item.id)" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">تأكيد الحذف</button>
+                <button type="button" (click)="confirmingDeleteId.set(null)" class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold">إلغاء</button>
+              </div>
+            } @else {
+              <div class="flex items-center gap-1.5 text-xs">
+                <button type="button" (click)="viewingResults.set(item)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 font-bold transition-colors">النتائج</button>
+                <button type="button" (click)="openForm(item)" class="px-2 py-1.5 rounded-xl text-slate-500 hover:bg-slate-100 font-bold" title="تعديل">✎</button>
+                <button type="button" (click)="confirmingDeleteId.set(item.id)" class="px-2 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold" title="حذف">🗑</button>
+              </div>
+            }
+          } @else {
+            <button type="button" (click)="taking.set(item)" class="px-3 py-1.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white text-xs font-bold transition-colors">
+              {{ myAttempt(item) || closed ? 'عرض' : 'ابدأ الحل' }}
+            </button>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="col-span-full text-center py-10 text-slate-400 text-sm">
+        @if (scope.isTeacher()) {
+          لسه معملتش كويزات. اضغط "كويز أو اختبار جديد" عشان تبدأ.
+        } @else {
+          مفيش كويزات لفصلك لسه.
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@if (formOpen()) {
+  <app-quiz-form-dialog [quiz]="editing()" [locked]="!!editing() && attemptsCount(editing()!) > 0"
+    (saved)="saveQuiz($event)" (closed)="formOpen.set(false)" />
+}
+@if (viewingResults(); as quiz) {
+  <app-quiz-results-dialog [quiz]="quiz" (closed)="viewingResults.set(null)" />
+}
+@if (taking(); as quiz) {
+  <app-quiz-take-dialog [quiz]="quiz" (submitted)="submitAttempt($event)" (closed)="taking.set(null)" />
+}

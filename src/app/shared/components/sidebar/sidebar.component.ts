@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -35,9 +35,6 @@ export class SidebarComponent {
   readonly school = SCHOOL_INFO;
 
   readonly role = input<UserRole>('ADMIN');
-  readonly isCollapsed = model<boolean>(false);
-  // Pinned: always visible, no toggle/backdrop (used by the admin layout)
-  readonly pinned = input<boolean>(false);
 
   private readonly activeRole = computed<UserRole>(() => this.role() || this.authService.userRole() || 'ADMIN');
 
@@ -95,7 +92,8 @@ export class SidebarComponent {
       label: 'المناهج والمواد الدراسية',
       route: '/subjects',
       iconPaths: ['M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
-      roles: ['ADMIN', 'SUPER_ADMIN', 'TEACHER'],
+      // Each teacher keeps their own subjects' curriculum; students follow their class's
+      roles: ['ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT'],
       disabledFor: ['ADMIN', 'SUPER_ADMIN']
     },
     {
@@ -112,6 +110,28 @@ export class SidebarComponent {
       badge: 'مهمة',
       badgeColor: 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50',
       // Assignments are the teachers' own work; the admin panel doesn't follow them
+      roles: ['TEACHER', 'STUDENT']
+    },
+    {
+      label: 'المواد التعليمية والملفات',
+      route: '/materials',
+      iconPaths: ['M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z', 'M12 11v6m0 0l-3-3m3 3l3-3'],
+      // Teachers upload, students download; admins see the uploads in "نشاط المستخدمين على المنصة"
+      roles: ['TEACHER', 'STUDENT']
+    },
+    {
+      label: 'فيديوهات الشرح',
+      route: '/videos',
+      iconPaths: ['M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
+      // Coming soon: hosting & streaming videos needs storage on the server first.
+      // Until then teachers share video links (YouTube, Drive) in المواد التعليمية.
+      roles: ['TEACHER', 'STUDENT'],
+      disabledFor: ['TEACHER', 'STUDENT']
+    },
+    {
+      label: 'الكويزات والاختبارات القصيرة',
+      route: '/quizzes',
+      iconPaths: ['M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
       roles: ['TEACHER', 'STUDENT']
     },
     {
@@ -215,17 +235,6 @@ export class SidebarComponent {
 
   isDisabled(item: NavItem): boolean {
     return !!item.disabledFor?.includes(this.activeRole());
-  }
-
-  closeSidebar(): void {
-    this.isCollapsed.set(true);
-  }
-
-  onNavigate(): void {
-    // Auto-close on mobile upon navigation
-    if (!this.pinned() && window.innerWidth < 1024) {
-      this.closeSidebar();
-    }
   }
 
   logout(): void {

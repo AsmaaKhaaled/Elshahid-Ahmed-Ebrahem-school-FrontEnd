@@ -37,6 +37,8 @@ const PRESENCE_STYLES: Record<Presence, { dot: string; text: string }> = {
 const KIND_ICONS: Record<ActivityKind, string> = {
   assignment: '📝',
   file: '📎',
+  curriculum: '📘',
+  quiz: '❓',
   grades: '📊',
   submission: '✅'
 };
@@ -84,14 +86,26 @@ export class PlatformActivityComponent {
       if (!latestEvent.has(event.actorId)) latestEvent.set(event.actorId, event);
     }
 
+    // Uploading or handing something in counts as being seen
+    const seenAt = (lastSeen: string | null | undefined, event: ActivityEvent | undefined) =>
+      [lastSeen, event?.at].filter((at): at is string => !!at).sort().pop() ?? null;
+
+    const counts = this.activityStore.teacherContentCounts();
     const rows: PresenceRow[] = this.activeTab() === 'teacher'
       ? this.teachersStore.teachers().map(t => {
-          const lastSeen = this.activityStore.teacherLastSeen()[t.id] ?? null;
-          return { id: t.id, name: teacherDisplayName(t), info: t.specialization, lastSeen, presence: presenceOf(lastSeen), lastEvent: latestEvent.get(t.id) ?? null };
+          const lastEvent = latestEvent.get(t.id);
+          const lastSeen = seenAt(this.activityStore.teacherLastSeen()[t.id], lastEvent);
+          const published = counts[t.id];
+          const info = published
+            ? `${t.specialization} · ${published.curricula} منهج · ${published.materials} مادة · ${published.assignments} واجب · ${published.quizzes} كويز/اختبار`
+            : `${t.specialization} · لم ينشر محتوى بعد`;
+          return { id: t.id, name: teacherDisplayName(t), info, lastSeen, presence: presenceOf(lastSeen), lastEvent: lastEvent ?? null };
         })
-      : this.activityStore.students().map(s => ({
-          id: s.id, name: s.name, info: `فصل ${s.section}`, lastSeen: s.lastSeen, presence: presenceOf(s.lastSeen), lastEvent: latestEvent.get(s.id) ?? null
-        }));
+      : this.activityStore.students().map(s => {
+          const lastEvent = latestEvent.get(s.id);
+          const lastSeen = seenAt(s.lastSeen, lastEvent);
+          return { id: s.id, name: s.name, info: `فصل ${s.section}`, lastSeen, presence: presenceOf(lastSeen), lastEvent: lastEvent ?? null };
+        });
 
     // Most recently seen first; never-logged-in at the bottom
     return rows.sort((a, b) => (b.lastSeen ?? '').localeCompare(a.lastSeen ?? ''));

@@ -2,9 +2,12 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { AssignmentsStore } from '../assignments/assignments.store';
 import { TeachersStore } from '../teachers/teachers.store';
 import { teacherDisplayName } from '../teachers/teacher.model';
+import { sectionsLabel } from '../teaching/teaching.model';
+import { TeachingStore } from '../teaching/teaching.store';
+import { CurriculumStore } from '../subjects/curriculum.store';
 
 export type ActorType = 'teacher' | 'student';
-export type ActivityKind = 'assignment' | 'file' | 'grades' | 'submission';
+export type ActivityKind = 'assignment' | 'file' | 'curriculum' | 'quiz' | 'grades' | 'submission';
 
 export interface ActivityEvent {
   id: string;
@@ -41,6 +44,8 @@ const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
 export class PlatformActivityStore {
   private readonly teachersStore = inject(TeachersStore);
   private readonly assignmentsStore = inject(AssignmentsStore);
+  private readonly teachingStore = inject(TeachingStore);
+  private readonly curriculumStore = inject(CurriculumStore);
 
   // teacherId -> last time seen on the platform (missing = never logged in)
   readonly teacherLastSeen = signal<Record<string, string>>({
@@ -68,39 +73,73 @@ export class PlatformActivityStore {
     { id: 's8', name: 'محمد علي حسن عبد الله', section: '3/1', lastSeen: null }
   ]);
 
-  // Uploads that are not assignments (lesson files, grades, student submissions)
+  // Uploads not kept in the assignments / teaching stores yet (grades)
   private readonly otherEvents = signal<Omit<ActivityEvent, 'actorName'>[]>([
-    { id: 'e1', actorType: 'teacher', actorId: '4', kind: 'file', action: 'رفع ملف شرح', detail: 'ملخص درس الكسور العشرية — فصل 1/3', at: ago(1 * MIN) },
-    { id: 'e2', actorType: 'teacher', actorId: '11', kind: 'grades', action: 'رفع درجات', detail: 'درجات اختبار الشهر — فصل 3/4', at: ago(20 * MIN) },
-    { id: 'e3', actorType: 'teacher', actorId: '2', kind: 'file', action: 'رفع ملف شرح', detail: 'Unit 3 Vocabulary — فصل 2/1', at: ago(6 * HOUR) },
-    { id: 'e4', actorType: 'teacher', actorId: '3', kind: 'file', action: 'رفع فيديو شرح', detail: 'تجربة عملية: الخلية تحت المجهر — فصل 1/1', at: ago(1 * DAY) },
-    { id: 's-e1', actorType: 'student', actorId: 's1', kind: 'submission', action: 'سلّم واجب', detail: 'تقرير عن مكونات الخلية — العلوم', at: ago(2 * MIN) },
-    { id: 's-e2', actorType: 'student', actorId: 's3', kind: 'submission', action: 'سلّم واجب', detail: 'Unit 3 Reading Comprehension — اللغة الإنجليزية', at: ago(5 * MIN) },
-    { id: 's-e3', actorType: 'student', actorId: 's2', kind: 'submission', action: 'سلّم واجب', detail: 'تقرير عن مكونات الخلية — العلوم', at: ago(16 * MIN) },
-    { id: 's-e4', actorType: 'student', actorId: 's7', kind: 'submission', action: 'سلّم واجب', detail: 'خريطة صماء لمحافظات مصر — الدراسات الاجتماعية', at: ago(2 * DAY) },
-    { id: 's-e5', actorType: 'student', actorId: 's4', kind: 'submission', action: 'سلّم واجب', detail: 'تمارين على المعادلات من الدرجة الأولى — الرياضيات', at: ago(7 * HOUR) }
+    { id: 'e2', actorType: 'teacher', actorId: '11', kind: 'grades', action: 'رفع درجات', detail: 'درجات اختبار الشهر — فصل 3/4', at: ago(20 * MIN) }
   ]);
 
-  // Everything uploaded on the platform, newest first. Assignments come straight from the assignments store.
+  // Everything uploaded on the platform, newest first - built from what teachers publish and students hand in
   readonly events = computed<ActivityEvent[]>(() => {
     const teachers = new Map(this.teachersStore.teachers().map(t => [t.id, teacherDisplayName(t)]));
     const students = new Map(this.students().map(s => [s.id, s.name]));
-    const nameOf = (type: ActorType, id: string) =>
-      (type === 'teacher' ? teachers.get(id) : students.get(id)) ?? 'مستخدم محذوف';
+    const nameOf = (type: ActorType, id: string, fallback = 'مستخدم محذوف') =>
+      (type === 'teacher' ? teachers.get(id) : students.get(id)) ?? fallback;
+    const teacherEvent = (id: string, kind: ActivityKind, action: string, detail: string, actorId: string, at: string): ActivityEvent =>
+      ({ id, actorType: 'teacher', actorId, actorName: nameOf('teacher', actorId), kind, action, detail, at });
+    const studentEvent = (id: string, action: string, detail: string, actorId: string, name: string, at: string): ActivityEvent =>
+      ({ id, actorType: 'student', actorId, actorName: nameOf('student', actorId, name), kind: 'submission', action, detail, at });
 
-    const assignmentEvents: ActivityEvent[] = this.assignmentsStore.assignments().map(a => ({
-      id: `assignment-${a.id}`,
-      actorType: 'teacher',
-      actorId: a.teacherId,
-      actorName: nameOf('teacher', a.teacherId),
-      kind: 'assignment',
-      action: 'نشر واجب',
-      detail: `${a.title} — فصل ${a.section}`,
-      at: a.publishedAt
-    }));
+    const assignments = this.assignmentsStore.assignments();
+    const quizzes = this.teachingStore.quizzes();
+
+    const published: ActivityEvent[] = [
+      ...assignments.map(a =>
+        teacherEvent(`assignment-${a.id}`, 'assignment', 'نشر واجب', `${a.title} — فصل ${a.section}`, a.teacherId, a.publishedAt)
+      ),
+      ...this.teachingStore.materials().map(m =>
+        teacherEvent(
+          `material-${m.id}`, 'file', m.files.length ? `رفع ${m.files.length > 1 ? `${m.files.length} ملفات` : 'ملف'} شرح` : 'نشر رابط شرح',
+          `${m.title} — فصل ${sectionsLabel(m.sections)}`, m.teacherId, m.publishedAt
+        )
+      ),
+      ...quizzes.map(q =>
+        teacherEvent(
+          `quiz-${q.id}`, 'quiz', `نشر ${q.kind} ${q.mode === 'online' ? 'أونلاين' : '(ملف)'}`,
+          `${q.title} — فصل ${sectionsLabel(q.sections)}`, q.teacherId, q.publishedAt
+        )
+      ),
+      ...this.curriculumStore.curricula().flatMap(c =>
+        c.files.map(f =>
+          teacherEvent(`curriculum-file-${f.id}`, 'curriculum', 'رفع ملف منهج', `${f.title} — منهج ${c.subject}`, c.teacherId, f.uploadedAt)
+        )
+      )
+    ];
+
+    const assignmentTitles = new Map(assignments.map(a => [a.id, `${a.title} — ${a.subject}`]));
+    const quizTitles = new Map(quizzes.map(q => [q.id, { title: `${q.title} — ${q.subject}`, kind: q.kind }]));
+    const handedIn: ActivityEvent[] = [
+      ...this.assignmentsStore.submissions().map(s =>
+        studentEvent(`submission-${s.id}`, 'سلّم واجب', assignmentTitles.get(s.assignmentId) ?? '', s.studentId, s.studentName, s.submittedAt)
+      ),
+      ...this.teachingStore.attempts().map(a => {
+        const quiz = quizTitles.get(a.quizId);
+        return studentEvent(`attempt-${a.id}`, `حل ${quiz?.kind ?? 'كويز'}`, quiz?.title ?? '', a.studentId, a.studentName, a.submittedAt);
+      })
+    ];
 
     const others = this.otherEvents().map(e => ({ ...e, actorName: nameOf(e.actorType, e.actorId) }));
-    return [...assignmentEvents, ...others].sort((a, b) => b.at.localeCompare(a.at));
+    return [...published, ...handedIn, ...others].sort((a, b) => b.at.localeCompare(a.at));
+  });
+
+  /** Per teacher: how much they published (curricula, materials, assignments, quizzes). */
+  readonly teacherContentCounts = computed(() => {
+    const counts: Record<string, { curricula: number; materials: number; assignments: number; quizzes: number }> = {};
+    const of = (id: string) => (counts[id] ??= { curricula: 0, materials: 0, assignments: 0, quizzes: 0 });
+    this.curriculumStore.curricula().forEach(c => of(c.teacherId).curricula++);
+    this.teachingStore.materials().forEach(m => of(m.teacherId).materials++);
+    this.assignmentsStore.assignments().forEach(a => of(a.teacherId).assignments++);
+    this.teachingStore.quizzes().forEach(q => of(q.teacherId).quizzes++);
+    return counts;
   });
 }
 

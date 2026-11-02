@@ -32,7 +32,7 @@ export const featureRedirectGuard = (feature: string): CanActivateFn => (route, 
 
     case 'subjects':
       if (role === 'TEACHER') return router.createUrlTree(['/teacher/subjects']);
-      if (role === 'STUDENT' || role === 'PARENT') return router.createUrlTree(['/student/lessons']);
+      if (role === 'STUDENT' || role === 'PARENT') return router.createUrlTree(['/student/subjects']);
       return router.createUrlTree(['/admin/dashboard']);
 
     case 'lessons':
@@ -61,9 +61,11 @@ export const featureRedirectGuard = (feature: string): CanActivateFn => (route, 
       return router.createUrlTree(['/student/dashboard']);
 
     case 'assignments':
-      if (role === 'TEACHER') return router.createUrlTree(['/teacher/assignments']);
-      if (role === 'STUDENT' || role === 'PARENT') return router.createUrlTree(['/student/assignments']);
-      // Not part of the admin panel
+    case 'materials':
+    case 'quizzes':
+      if (role === 'TEACHER') return router.createUrlTree([`/teacher/${feature}`]);
+      if (role === 'STUDENT' || role === 'PARENT') return router.createUrlTree([`/student/${feature}`]);
+      // Not part of the admin panel (admins follow the teachers' uploads from platform-activity)
       return router.createUrlTree(['/admin/dashboard']);
 
     case 'students':

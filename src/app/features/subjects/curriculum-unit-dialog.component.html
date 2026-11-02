@@ -1,0 +1,55 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()"
+    class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-4 sm:p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">{{ unit() ? 'تعديل الوحدة' : 'وحدة جديدة' }}</h3>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <mat-form-field class="w-full">
+      <mat-label>اسم الوحدة</mat-label>
+      <input matInput name="title" required maxlength="120" [(ngModel)]="title" placeholder="مثال: الوحدة الأولى: المعادلات" />
+      <mat-error>اسم الوحدة مطلوب</mat-error>
+    </mat-form-field>
+
+    <div class="space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="font-bold text-sm text-slate-800">الدروس ({{ lessons.length }})</span>
+        <span class="text-[11px] text-slate-500">الأسبوع حسب توزيع المنهج (اختياري)</span>
+      </div>
+
+      @for (lesson of lessons; track lesson.id; let n = $index) {
+        <div class="flex items-center gap-2">
+          <span class="w-6 shrink-0 text-center text-xs font-bold text-slate-400">{{ n + 1 }}</span>
+          <input type="text" [name]="'lesson-' + lesson.id" maxlength="150" [(ngModel)]="lesson.title" placeholder="اسم الدرس"
+            class="flex-1 min-w-0 h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+          <label class="flex items-center gap-1 shrink-0 text-[11px] font-bold text-slate-500">
+            <span class="hidden sm:inline">أسبوع</span>
+            <input type="number" min="1" max="20" [name]="'week-' + lesson.id" [(ngModel)]="lesson.week" placeholder="-"
+              aria-label="الأسبوع"
+              class="w-14 h-10 px-1 rounded-xl border border-slate-200 text-center text-xs font-bold bg-white" />
+          </label>
+          @if (lesson.doneAt) {
+            <span class="shrink-0 text-emerald-600 text-xs font-bold" title="اتشرح">✓</span>
+          }
+          <button type="button" (click)="removeLesson(lesson.id)" class="shrink-0 w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" aria-label="حذف الدرس">✕</button>
+        </div>
+      }
+
+      <button type="button" (click)="addLesson()"
+        class="px-3 py-1.5 rounded-xl border border-dashed border-primary-300 text-primary-800 hover:bg-primary-50 text-xs font-bold transition-colors">
+        + درس
+      </button>
+      @if (lessonsError()) {
+        <p class="text-xs text-rose-600 font-semibold">ضيف درس واحد على الأقل</p>
+      }
+    </div>
+
+    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+      <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+        حفظ الوحدة
+      </button>
+    </div>
+  </form>
+</div>

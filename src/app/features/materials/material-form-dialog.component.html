@@ -1,0 +1,89 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()"
+    class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-4 sm:p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">{{ material() ? 'تعديل المادة التعليمية' : 'رفع مادة تعليمية جديدة' }}</h3>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <div class="space-y-4 pt-1">
+      <mat-form-field class="w-full">
+        <mat-label>العنوان</mat-label>
+        <input matInput name="title" required maxlength="120" [(ngModel)]="draft.title" placeholder="مثال: ملخص الوحدة الأولى" />
+        <mat-error>العنوان مطلوب</mat-error>
+      </mat-form-field>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <mat-form-field class="w-full">
+          <mat-label>المادة</mat-label>
+          <mat-select name="subject" required [(ngModel)]="draft.subject">
+            @for (subject of scope.subjects(); track subject) {
+              <mat-option [value]="subject">{{ subject }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>اختر المادة</mat-error>
+        </mat-form-field>
+        <mat-form-field class="w-full">
+          <mat-label>تظهر لفصول</mat-label>
+          <mat-select name="sections" required multiple [(ngModel)]="draft.sections">
+            @for (section of scope.sections(); track section) {
+              <mat-option [value]="section">فصل {{ section }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>الفصول المسندة ليك بس</mat-hint>
+          <mat-error>اختر فصل واحد على الأقل</mat-error>
+        </mat-form-field>
+      </div>
+
+      @let lessons = lessonOptions();
+      @if (lessons.length) {
+        <mat-form-field class="w-full">
+          <mat-label>درس من المنهج (اختياري)</mat-label>
+          <mat-select name="lessonId" [(ngModel)]="draft.lessonId">
+            <mat-option value="">بدون ربط بدرس</mat-option>
+            @for (lesson of lessons; track lesson.id) {
+              <mat-option [value]="lesson.id">{{ lesson.title }} <span class="text-slate-400 text-xs">· {{ lesson.unit }}</span></mat-option>
+            }
+          </mat-select>
+          <mat-hint>بتظهر للطالب جوه الدرس ده في "المناهج والمواد الدراسية"</mat-hint>
+        </mat-form-field>
+      }
+
+      <mat-form-field class="w-full">
+        <mat-label>وصف أو ملاحظة للطلاب (اختياري)</mat-label>
+        <textarea matInput name="description" rows="3" [(ngModel)]="draft.description"></textarea>
+      </mat-form-field>
+
+      <mat-form-field class="w-full">
+        <mat-label>رابط (اختياري) - فيديو يوتيوب، درايف...</mat-label>
+        <input matInput type="url" name="link" dir="ltr" [(ngModel)]="draft.link" (ngModelChange)="contentError.set(false)" placeholder="https://" />
+      </mat-form-field>
+
+      <!-- Files -->
+      <div class="space-y-2">
+        <label class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-700 cursor-pointer transition-colors">
+          📎 إرفاق ملفات (PDF، Word، PowerPoint، صور)
+          <input type="file" multiple class="hidden" [accept]="accept" (change)="onFilesSelected($event)" />
+        </label>
+        <p class="text-[11px] text-slate-400">حتى {{ maxMb }} ميجا للملف الواحد</p>
+        <p class="text-[11px] font-semibold text-amber-700">🎬 {{ videoSoon }}</p>
+        @if (draft.files.length) {
+          <app-teaching-files [files]="draft.files" [removable]="true" (removed)="removeFile($event)" />
+        }
+        @if (fileError()) {
+          <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
+        }
+        @if (contentError()) {
+          <p class="text-xs text-rose-600 font-semibold">ارفع ملف واحد على الأقل أو ضيف رابط</p>
+        }
+      </div>
+    </div>
+
+    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+      <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+        {{ material() ? 'حفظ التعديلات' : 'نشر للطلاب' }}
+      </button>
+    </div>
+  </form>
+</div>

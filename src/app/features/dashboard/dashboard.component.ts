@@ -17,6 +17,7 @@ import { WEEKLY_SLOTS, buildSchoolTimetable, findConflicts, sectionCoverage } fr
 import { StudentsStore } from '../students/students.store';
 import { TEACHER_STATUSES, WeeklySchedule, teacherDisplayName } from '../teachers/teacher.model';
 import { TeachersStore } from '../teachers/teachers.store';
+import { StudentDashboardComponent } from './student-dashboard.component';
 
 interface StatTile {
   title: string;
@@ -50,7 +51,7 @@ interface ActivityItem {
   selector: 'app-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ArabicDatePipe, TermEndAlertComponent, BarListChartComponent, DonutChartComponent],
+  imports: [RouterLink, ArabicDatePipe, TermEndAlertComponent, BarListChartComponent, DonutChartComponent, StudentDashboardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -60,6 +61,7 @@ export class DashboardComponent {
   readonly today = new Date();
 
   readonly isTeacher = computed(() => this.authService.userRole() === 'TEACHER');
+  readonly isStudent = computed(() => ['STUDENT', 'PARENT'].includes(this.authService.userRole() ?? ''));
   readonly isSuperAdmin = computed(() => this.authService.isSuperAdmin());
   readonly isAdmin = computed(() => this.authService.isAdmin());
   readonly teacherProfile = computed(() => this.authService.teacherProfile());

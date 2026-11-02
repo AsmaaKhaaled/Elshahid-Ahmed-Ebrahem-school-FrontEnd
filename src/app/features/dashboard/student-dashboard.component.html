@@ -1,0 +1,175 @@
+<div class="space-y-6">
+  <!-- Welcome Banner -->
+  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-l from-primary-950 via-primary-900 to-slate-900 text-white p-5 sm:p-6 md:p-8 shadow-card border border-primary-800/40">
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div class="space-y-2 max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-primary-200 border border-white/10">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>فصل {{ scope.studentSection() }} · {{ currentTerm().label }}</span>
+        </div>
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">أهلاً يا {{ auth.userName() }} 👋</h2>
+        <p class="text-sm text-slate-300 leading-relaxed">
+          @if (dueItems().length) {
+            عندك <strong class="text-white">{{ dueItems().length }}</strong> {{ dueItems().length === 1 ? 'حاجة مطلوبة' : 'حاجات مطلوبة' }} منك، ابدأ بالأقرب في الميعاد.
+          } @else {
+            مفيش حاجة مطلوبة منك دلوقتي. راجع دروسك من المناهج والمواد التعليمية.
+          }
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <a routerLink="/student/subjects" class="px-4 py-2.5 rounded-xl bg-white text-primary-900 hover:bg-primary-50 font-bold text-xs shadow-md transition-all">📚 مناهجي</a>
+        <a routerLink="/student/assignments" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all">📝 الواجبات</a>
+        <a routerLink="/student/quizzes" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all">❓ الكويزات</a>
+      </div>
+    </div>
+    <div class="absolute -left-10 -bottom-10 w-60 h-60 bg-primary-600/20 rounded-full blur-3xl pointer-events-none"></div>
+  </div>
+
+  <!-- KPI tiles -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+    <a routerLink="/student/assignments" class="block bg-white p-4 sm:p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
+      <span class="text-xs font-bold text-slate-500">واجبات مطلوبة</span>
+      <span class="mt-2 block text-2xl font-black" [class]="pendingAssignments() ? 'text-amber-600' : 'text-slate-800'">{{ pendingAssignments() }}</span>
+      <span class="mt-1 block text-[11px] font-semibold text-slate-500">{{ pendingAssignments() ? 'لسه متسلمتش' : '✓ سلّمت كله' }}</span>
+    </a>
+    <a routerLink="/student/quizzes" class="block bg-white p-4 sm:p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
+      <span class="text-xs font-bold text-slate-500">كويزات واختبارات مفتوحة</span>
+      <span class="mt-2 block text-2xl font-black" [class]="pendingQuizzes() ? 'text-amber-600' : 'text-slate-800'">{{ pendingQuizzes() }}</span>
+      <span class="mt-1 block text-[11px] font-semibold text-slate-500">{{ pendingQuizzes() ? 'مستنية حلك' : '✓ حليت كله' }}</span>
+    </a>
+    <a routerLink="/student/materials" class="block bg-white p-4 sm:p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
+      <span class="text-xs font-bold text-slate-500">مواد تعليمية جديدة</span>
+      <span class="mt-2 block text-2xl font-black text-slate-800">{{ newMaterials() }}</span>
+      <span class="mt-1 block text-[11px] font-semibold text-slate-500">آخر 7 أيام</span>
+    </a>
+    <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-soft border border-slate-100/80">
+      <span class="text-xs font-bold text-slate-500">متوسط درجاتي</span>
+      @if (averageMark(); as avg) {
+        <span class="mt-2 block text-2xl font-black" [class]="avg.percent >= 50 ? 'text-emerald-600' : 'text-rose-600'">{{ avg.percent }}%</span>
+        <span class="mt-1 block text-[11px] font-semibold text-slate-500">من {{ avg.count }} {{ avg.count === 1 ? 'تقييم' : 'تقييمات' }} اتصححت</span>
+      } @else {
+        <span class="mt-2 block text-2xl font-black text-slate-300">—</span>
+        <span class="mt-1 block text-[11px] font-semibold text-slate-500">لسه مفيش درجات</span>
+      }
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- What's due -->
+    <section class="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100/80 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">مطلوب منك</h3>
+        <span class="text-xs text-slate-400">الأقرب في الميعاد الأول</span>
+      </div>
+      <ul class="space-y-2.5">
+        @for (item of dueItems(); track item.kind + item.id) {
+          @let label = dueLabel(item.due);
+          <li>
+            <a [routerLink]="item.link"
+              class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-100 transition-colors">
+              <span class="w-fit text-[10px] font-bold px-2 py-0.5 rounded-full"
+                [class]="item.kind === 'واجب' ? 'bg-amber-50 text-amber-800' : 'bg-primary-50 text-primary-800'">{{ item.kind }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-slate-800">{{ item.title }}</p>
+                <p class="text-[11px] text-slate-500">{{ item.subject }} · لحد {{ item.due | arabicDate:'dateOnly' }}</p>
+              </div>
+              <span class="w-fit text-[11px] font-bold px-2.5 py-1 rounded-full"
+                [class]="label.urgent ? 'bg-rose-50 text-rose-700' : 'bg-white text-slate-600 border border-slate-200'">{{ label.text }}</span>
+            </a>
+          </li>
+        } @empty {
+          <li class="rounded-xl bg-emerald-50 px-3 py-6 text-center text-xs font-bold text-emerald-800">✓ مفيش واجبات ولا كويزات مستنياك</li>
+        }
+      </ul>
+    </section>
+
+    <!-- Curricula progress -->
+    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100/80 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">مناهج موادي</h3>
+        <a routerLink="/student/subjects" class="text-xs font-bold text-primary-700 hover:text-primary-900">كل المناهج ←</a>
+      </div>
+      <ul class="space-y-4">
+        @for (cur of curricula(); track cur.id) {
+          @let progress = progressOf(cur);
+          @let last = lastTaught(cur);
+          <li class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-800">{{ cur.subject }}</span>
+              <span class="font-black text-primary-700">{{ progress.percent }}%</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full bg-gradient-to-l from-emerald-500 to-primary-600" [style.width.%]="progress.percent"></div>
+            </div>
+            @if (last) {
+              <p class="text-[11px] text-slate-500 truncate">آخر درس: {{ last.title }}</p>
+            }
+          </li>
+        } @empty {
+          <li class="text-xs text-slate-400 py-4 text-center">مدرسين فصلك لسه منزلوش المناهج</li>
+        }
+      </ul>
+    </section>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Latest materials -->
+    <section class="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100/80 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">أحدث المواد التعليمية</h3>
+        <a routerLink="/student/materials" class="text-xs font-bold text-primary-700 hover:text-primary-900">الكل ←</a>
+      </div>
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        @for (m of latestMaterials(); track m.id) {
+          <li class="rounded-xl bg-slate-50 border border-slate-100 p-3.5 space-y-2 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10px] font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">{{ m.subject }}</span>
+              <span class="text-[10px] text-slate-400">{{ m.publishedAt | timeAgo }}</span>
+            </div>
+            <p class="text-sm font-bold text-slate-800">{{ m.title }}</p>
+            @if (m.files.length) {
+              <app-teaching-files [files]="m.files" />
+            }
+            @if (m.link) {
+              <a [href]="m.link" target="_blank" rel="noopener" class="inline-block text-xs font-bold text-primary-700 hover:underline">🔗 فتح الرابط</a>
+            }
+          </li>
+        } @empty {
+          <li class="text-xs text-slate-400 py-4 text-center md:col-span-2">مفيش مواد منشورة لفصلك لسه</li>
+        }
+      </ul>
+    </section>
+
+    <div class="space-y-6">
+      <!-- Videos: coming soon (needs video storage & streaming on the server) -->
+      <section aria-disabled="true" class="rounded-2xl p-4 sm:p-6 border-2 border-dashed border-slate-200 bg-white/60 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="font-bold text-slate-500 text-base">🎬 فيديوهات الشرح</h3>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-500">قريباً</span>
+        </div>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          هتقدر تتفرج على فيديوهات شرح المدرسين جوه حسابك. لحد ما تتفعّل، المدرسين بينزلوا لينكات الفيديو في المواد التعليمية.
+        </p>
+      </section>
+
+      <!-- Announcements -->
+      <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100/80 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <h3 class="font-bold text-slate-800 text-base">أحدث الإعلانات</h3>
+          <a routerLink="/student/announcements" class="text-xs font-bold text-primary-700 hover:text-primary-900">الكل ←</a>
+        </div>
+        <ul class="space-y-3">
+          @for (item of latestAnnouncements(); track item.id) {
+            <li class="space-y-0.5">
+              <p class="text-xs font-bold text-slate-800 leading-relaxed">{{ item.title }}</p>
+              <p class="text-[11px] text-slate-400">{{ item.publishedAt | arabicDate:'dateOnly' }}</p>
+            </li>
+          } @empty {
+            <li class="text-xs text-slate-400 py-2 text-center">مفيش إعلانات جديدة</li>
+          }
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>

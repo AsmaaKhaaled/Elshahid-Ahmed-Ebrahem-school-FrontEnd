@@ -1,0 +1,80 @@
+<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()"
+    class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-4 sm:p-6 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">{{ assignment() ? 'تعديل الواجب' : 'إضافة واجب جديد' }}</h3>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <div class="space-y-4 pt-1">
+      <mat-form-field class="w-full">
+        <mat-label>عنوان الواجب</mat-label>
+        <input matInput name="title" required maxlength="120" [(ngModel)]="title" placeholder="مثال: حل تمارين صفحة 24" />
+        <mat-error>العنوان مطلوب</mat-error>
+      </mat-form-field>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <mat-form-field class="w-full">
+          <mat-label>المادة</mat-label>
+          <mat-select name="subject" required [(ngModel)]="subject">
+            @for (s of scope.subjects(); track s) {
+              <mat-option [value]="s">{{ s }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>اختر المادة</mat-error>
+        </mat-form-field>
+        <mat-form-field class="w-full">
+          <mat-label>الفصول</mat-label>
+          <mat-select name="sections" required multiple [(ngModel)]="sections" [disabled]="!!assignment()">
+            @for (section of scope.sections(); track section) {
+              <mat-option [value]="section">فصل {{ section }}</mat-option>
+            }
+          </mat-select>
+          @if (!assignment()) {
+            <mat-hint>كل فصل بيتابع تسليماته لوحده</mat-hint>
+          }
+          <mat-error>اختر فصل واحد على الأقل</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field class="w-full">
+        <mat-label>المطلوب من الطلاب</mat-label>
+        <textarea matInput name="description" required rows="4" [(ngModel)]="description"></textarea>
+        <mat-error>اكتب المطلوب</mat-error>
+      </mat-form-field>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <mat-form-field class="w-full">
+          <mat-label>آخر موعد للتسليم</mat-label>
+          <input matInput type="datetime-local" name="dueDate" required [min]="assignment() ? '' : minDue" [(ngModel)]="dueDate" />
+          <mat-error>حدد موعد التسليم</mat-error>
+        </mat-form-field>
+        <mat-form-field class="w-full">
+          <mat-label>الدرجة النهائية</mat-label>
+          <input matInput type="number" name="maxScore" required min="1" max="100" [(ngModel)]="maxScore" />
+          <mat-error>من 1 لـ 100</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="space-y-2">
+        <label class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-700 cursor-pointer transition-colors">
+          📎 إرفاق ملفات (اختياري)
+          <input type="file" multiple class="hidden" [accept]="accept" (change)="onFilesSelected($event)" />
+        </label>
+        @if (attachments.length) {
+          <app-teaching-files [files]="attachments" [removable]="true" (removed)="removeFile($event)" />
+        }
+        @if (fileError()) {
+          <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+      <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+        {{ assignment() ? 'حفظ التعديلات' : 'نشر الواجب' }}
+      </button>
+    </div>
+  </form>
+</div>

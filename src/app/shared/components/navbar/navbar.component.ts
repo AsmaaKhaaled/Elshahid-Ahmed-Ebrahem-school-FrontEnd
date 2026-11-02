@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -41,8 +41,6 @@ export class NavbarComponent {
   readonly isAdmin = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(this.authService.userRole() ?? ''));
 
   readonly title = input<string>('لوحة التحكم');
-  readonly showSidebarToggle = input<boolean>(true);
-  readonly toggleSidebar = output<void>();
 
   readonly today = new Date();
   readonly isProfileMenuOpen = signal<boolean>(false);
