@@ -6,7 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { ClassesService, SchoolClass } from '../../core/services/classes.service';
-import { CreateStudentPayload, CreatedStudentData, StudentsService } from '../../core/services/students.service';
+import { CreateStudentPayload, StudentsService } from '../../core/services/students.service';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { Student, nextStudentCode } from './student.model';
 
@@ -57,8 +57,6 @@ export class StudentFormDialogComponent implements OnInit {
   readonly isSubmitting = signal<boolean>(false);
   readonly serverError = signal<string | null>(null);
   readonly confirmingDelete = signal<boolean>(false);
-  readonly createdResult = signal<CreatedStudentData | null>(null);
-  readonly copiedToClipboard = signal<boolean>(false);
 
   // Reactive Form
   readonly form = this.fb.group({
@@ -241,11 +239,9 @@ export class StudentFormDialogComponent implements OnInit {
         next: (res) => {
           this.isSubmitting.set(false);
           const data = res?.data;
-          if (data?.initialCredentials) {
-            this.createdResult.set(data);
-          } else {
-            this.emitSavedStudent(data || payload);
-          }
+          const initialPassword = data?.initialCredentials?.initialPassword || 'Student@2026';
+          // Immediately emit saved student to update table instantly!
+          this.emitSavedStudent(data || payload, initialPassword);
         },
         error: (err) => {
           this.isSubmitting.set(false);
@@ -276,37 +272,10 @@ export class StudentFormDialogComponent implements OnInit {
     }
   }
 
-  copyCredentials(): void {
-    const result = this.createdResult();
-    if (!result) return;
-    const text = `بيانات الدخول لطالب بمدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية:
-الاسم: ${result.fullNameArabic}
-كود الطالب (اسم المستخدم): ${result.studentCode}
-الرقم القومي: ${result.nationalId}
-كلمة المرور المؤقتة: ${result.initialCredentials?.initialPassword || 'Student@2026'}
-رابط الدخول: ${typeof window !== 'undefined' ? window.location.origin : ''}`;
-
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        this.copiedToClipboard.set(true);
-        setTimeout(() => this.copiedToClipboard.set(false), 2500);
-      });
-    }
-  }
-
-  finishAndClose(): void {
-    const result = this.createdResult();
-    if (result) {
-      this.emitSavedStudent(result);
-    } else {
-      this.closed.emit();
-    }
-  }
-
-  private emitSavedStudent(data: any): void {
+  private emitSavedStudent(data: any, initialPassword?: string): void {
     const gradeLevelStr = data.gradeLevel || this.form.get('gradeLevel')?.value || '';
     const gradeId = gradeLevelStr.includes('الأول') ? 'G1' : gradeLevelStr.includes('الثاني') ? 'G2' : 'G3';
-    const selectedClass = this.allClasses().find(c => c.id === data.classId);
+    const selectedClass = this.allClasses().find(c => c.id === (data.classId || this.form.get('classId')?.value));
     const className = data.class?.name || selectedClass?.name || '1/1';
 
     const mapped: Student = {
@@ -319,7 +288,8 @@ export class StudentFormDialogComponent implements OnInit {
       guardianName: data.guardianName || this.form.get('guardianName')?.value,
       guardianPhone: data.guardianPhone || this.form.get('guardianPhone')?.value,
       status: (data.enrollmentStatus || 'منتظم') as any,
-      gpa: null
+      gpa: null,
+      initialPassword: initialPassword || data.initialCredentials?.initialPassword
     };
 
     this.saved.emit(mapped);

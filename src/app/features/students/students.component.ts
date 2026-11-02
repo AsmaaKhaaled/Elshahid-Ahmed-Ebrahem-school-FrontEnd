@@ -10,6 +10,14 @@ import { StudentImportDialogComponent } from './student-import-dialog.component'
 import { STUDENT_STATUSES, Student, gradeOf } from './student.model';
 import { StudentsStore } from './students.store';
 
+export interface CredentialNoticeData {
+  studentName: string;
+  studentCode: string;
+  nationalId: string;
+  initialPassword: string;
+  className: string;
+}
+
 @Component({
   selector: 'app-students',
   standalone: true,
@@ -41,10 +49,19 @@ export class StudentsComponent implements OnInit {
   readonly exporting = signal(false);
   readonly notice = signal<string | null>(null);
 
+  // Instant feedback & credentials highlight for newly added student
+  readonly newlyAddedStudentId = signal<string | null>(null);
+  readonly credentialNotice = signal<CredentialNoticeData | null>(null);
+  readonly copiedCred = signal<boolean>(false);
+
   private noticeTimer?: ReturnType<typeof setTimeout>;
+  private newlyAddedTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.noticeTimer));
+    inject(DestroyRef).onDestroy(() => {
+      clearTimeout(this.noticeTimer);
+      clearTimeout(this.newlyAddedTimer);
+    });
   }
 
   ngOnInit(): void {
@@ -80,7 +97,50 @@ export class StudentsComponent implements OnInit {
     const isNew = !this.editingStudent();
     this.store.saveStudent(student);
     this.showForm.set(false);
-    this.showNotice(isNew ? `تم تسجيل الطالب ${student.name} وتأسيس حسابه بنجاح` : `تم حفظ تعديلات ${student.name}`);
+
+    if (isNew) {
+      // 1. Reset all filters and search so the new student is 100% visible immediately in table
+      this.searchQuery.set('');
+      this.selectedGrade.set('ALL');
+      this.selectedSection.set('ALL');
+      this.selectedStatus.set('ALL');
+
+      // 2. Visually highlight the newly added student row
+      this.newlyAddedStudentId.set(student.id);
+      clearTimeout(this.newlyAddedTimer);
+      this.newlyAddedTimer = setTimeout(() => this.newlyAddedStudentId.set(null), 8000);
+
+      // 3. Show prominent credentials notice with one-click copy button
+      this.credentialNotice.set({
+        studentName: student.name,
+        studentCode: student.code,
+        nationalId: student.nationalId,
+        initialPassword: student.initialPassword || 'Student@2026',
+        className: student.className
+      });
+
+      // 4. Background synchronization with backend API
+      this.store.loadFromApi();
+    } else {
+      this.showNotice(`تم حفظ تعديلات ${student.name}`);
+    }
+  }
+
+  copyNoticeCredentials(cred: CredentialNoticeData): void {
+    const text = `بيانات الدخول لطالب بمدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية:
+الاسم: ${cred.studentName}
+كود الطالب (اسم المستخدم): ${cred.studentCode}
+الرقم القومي: ${cred.nationalId}
+كلمة المرور المؤقتة: ${cred.initialPassword}
+الفصل: فصل ${cred.className}
+رابط الدخول: ${typeof window !== 'undefined' ? window.location.origin : ''}`;
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.copiedCred.set(true);
+        setTimeout(() => this.copiedCred.set(false), 3000);
+      });
+    }
   }
 
   deleteStudent(studentId: string): void {

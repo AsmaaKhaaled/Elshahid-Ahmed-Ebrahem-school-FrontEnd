@@ -87,7 +87,7 @@ describe('StudentFormDialogComponent', () => {
     expect(component.serverError()).toContain(student.name);
   });
 
-  it('submits valid new student to the backend API', () => {
+  it('submits valid new student to the backend API and immediately emits saved student', () => {
     studentsServiceMock.createStudent.and.returnValue(of({
       status: 'success',
       data: {
@@ -110,6 +110,9 @@ describe('StudentFormDialogComponent', () => {
     }));
 
     fixture.detectChanges();
+
+    const saved = jasmine.createSpy('saved');
+    component.saved.subscribe(saved);
 
     component.form.patchValue({
       fullNameArabic: 'طالب جديد للاختبار',
@@ -134,7 +137,10 @@ describe('StudentFormDialogComponent', () => {
       guardianPhone: '01012345678',
       enrollmentStatus: 'منتظم'
     });
-    expect(component.createdResult()).toBeTruthy();
-    expect(component.createdResult()?.initialCredentials?.initialPassword).toBe('Student@2026');
+    expect(saved).toHaveBeenCalledWith(jasmine.objectContaining({
+      name: 'طالب جديد للاختبار',
+      code: 'STD-2026-006',
+      initialPassword: 'Student@2026'
+    }));
   });
 });

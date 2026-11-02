@@ -100,7 +100,19 @@ export class StudentsStore {
             status: (s.enrollmentStatus || s.status || 'منتظم') as any,
             gpa: s.gpa ?? null
           }));
-          this.students.set(mapped);
+
+          this.students.update(current => {
+            const list = [...current];
+            mapped.forEach(dbStudent => {
+              const idx = list.findIndex(s => s.code === dbStudent.code || s.nationalId === dbStudent.nationalId || s.id === dbStudent.id);
+              if (idx >= 0) {
+                list[idx] = { ...list[idx], ...dbStudent };
+              } else {
+                list.push(dbStudent);
+              }
+            });
+            return list;
+          });
         }
       },
       error: () => {
@@ -110,11 +122,13 @@ export class StudentsStore {
   }
 
   saveStudent(student: Student): void {
-    this.students.update(list =>
-      list.some(s => s.id === student.id)
-        ? list.map(s => (s.id === student.id ? student : s))
-        : [student, ...list]
-    );
+    this.students.update(list => {
+      const exists = list.some(s => s.id === student.id || s.code === student.code || (student.nationalId && s.nationalId === student.nationalId));
+      if (exists) {
+        return list.map(s => (s.id === student.id || s.code === student.code || (student.nationalId && s.nationalId === student.nationalId) ? student : s));
+      }
+      return [student, ...list];
+    });
   }
 
   addStudents(students: Student[]): void {

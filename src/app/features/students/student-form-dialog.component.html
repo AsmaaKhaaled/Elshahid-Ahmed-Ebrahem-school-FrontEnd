@@ -11,10 +11,10 @@
         </div>
         <div>
           <h3 class="font-black text-slate-800 text-lg leading-tight">
-            {{ createdResult() ? 'تأكيد تسجيل الطالب' : (student() ? 'تعديل بيانات الطالب' : 'تسجيل طالب جديد بالمنظومة') }}
+            {{ student() ? 'تعديل بيانات الطالب' : 'تسجيل طالب جديد بالمنظومة' }}
           </h3>
           <p class="text-[11px] text-slate-400 mt-0.5">
-            {{ createdResult() ? 'بيانات حساب الدخول المعتمد' : 'تسجيل قيد رسمي وتأسيس حساب إلكتروني موحد' }}
+            تسجيل قيد رسمي وتأسيس حساب إلكتروني موحد للطالب
           </p>
         </div>
       </div>
@@ -23,296 +23,215 @@
         (click)="closed.emit()"
         type="button"
         title="إغلاق"
-        class="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors">
+        [disabled]="isSubmitting()"
+        class="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors disabled:opacity-50">
         ✕
       </button>
     </div>
 
-    <!-- SUCCESS VIEW (After Registration) -->
-    @if (createdResult(); as res) {
-      <div class="space-y-5 py-2">
-        <!-- Success Badge -->
-        <div class="text-center space-y-2">
-          <div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
-            <svg class="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-            </svg>
+    <!-- FORM VIEW -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-4">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-1">
+
+        <!-- 1. الاسم رباعي باللغة العربية -->
+        <mat-form-field appearance="outline" class="w-full sm:col-span-2">
+          <mat-label>الاسم رباعي (باللغة العربية) *</mat-label>
+          <input
+            matInput
+            formControlName="fullNameArabic"
+            placeholder="مثال: أحمد محمد محمود خليل"
+            (input)="serverError.set(null)" />
+          @if (fullNameArabicControl?.touched && fullNameArabicControl?.hasError('required')) {
+            <mat-error>اسم الطالب رباعياً باللغة العربية مطلوب</mat-error>
+          }
+          @if (fullNameArabicControl?.touched && fullNameArabicControl?.hasError('minlength')) {
+            <mat-error>يجب ألا يقل الاسم عن 3 أحرف</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- 2. الرقم القومي للطالب -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>الرقم القومي للطالب (14 رقم) *</mat-label>
+          <input
+            matInput
+            formControlName="nationalId"
+            inputmode="numeric"
+            maxlength="14"
+            placeholder="31102151234567"
+            (input)="serverError.set(null)" />
+          @if (nationalIdControl?.touched && nationalIdControl?.hasError('required')) {
+            <mat-error>الرقم القومي مطلوب</mat-error>
+          }
+          @if (nationalIdControl?.touched && nationalIdControl?.hasError('pattern')) {
+            <mat-error>14 رقماً ويبدأ بـ 2 أو 3</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- 3. كود الطالب -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>كود الطالب *</mat-label>
+          <input
+            matInput
+            formControlName="studentCode"
+            dir="ltr"
+            placeholder="STD-2026-006"
+            (input)="serverError.set(null)" />
+          @if (!student()) {
+            <mat-hint class="text-[11px] text-slate-400">اتولد تلقائياً - تقدر تغيّره</mat-hint>
+          }
+          @if (studentCodeControl?.touched && studentCodeControl?.hasError('required')) {
+            <mat-error>كود الطالب مطلوب</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- 4. الصف الدراسي -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>الصف الدراسي *</mat-label>
+          <mat-select formControlName="gradeLevel">
+            @for (grade of gradeLevels; track grade) {
+              <mat-option [value]="grade">{{ grade }}</mat-option>
+            }
+          </mat-select>
+          @if (gradeLevelControl?.touched && gradeLevelControl?.hasError('required')) {
+            <mat-error>اختر الصف الدراسي</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- 5. الفصل (Cascading Dropdown) -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>الفصل *</mat-label>
+          <mat-select formControlName="classId">
+            @for (cls of filteredClasses(); track cls.id) {
+              <mat-option [value]="cls.id">
+                {{ cls.displayNameArabic || ('فصل ' + cls.name) }}
+              </mat-option>
+            }
+          </mat-select>
+          @if (classIdControl?.touched && classIdControl?.hasError('required')) {
+            <mat-error>اختر الفصل</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- 6. اسم ولي الأمر -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>اسم ولي الأمر *</mat-label>
+          <input
+            matInput
+            formControlName="guardianName"
+            placeholder="مثال: محمد محمود خليل"
+            (input)="serverError.set(null)" />
+          @if (guardianNameControl?.touched && guardianNameControl?.hasError('required')) {
+            <mat-error>اسم ولي الأمر مطلوب</mat-error>
+          }
+          @if (guardianNameControl?.touched && guardianNameControl?.hasError('minlength')) {
+            <mat-error>يجب ألا يقل عن 3 أحرف</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- 7. هاتف ولي الأمر -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>هاتف ولي الأمر *</mat-label>
+          <input
+            matInput
+            type="tel"
+            formControlName="guardianPhone"
+            dir="ltr"
+            maxlength="11"
+            placeholder="01012345678"
+            (input)="serverError.set(null)" />
+          @if (guardianPhoneControl?.touched && guardianPhoneControl?.hasError('required')) {
+            <mat-error>رقم الهاتف مطلوب</mat-error>
+          }
+          @if (guardianPhoneControl?.touched && guardianPhoneControl?.hasError('pattern')) {
+            <mat-error>رقم مصري صحيح (11 رقماً يبدأ بـ 01)</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- 8. حالة القيد -->
+        <mat-form-field appearance="outline" class="w-full sm:col-span-2">
+          <mat-label>حالة القيد *</mat-label>
+          <mat-select formControlName="enrollmentStatus">
+            @for (status of enrollmentStatuses; track status) {
+              <mat-option [value]="status">{{ status }}</mat-option>
+            }
+          </mat-select>
+          @if (enrollmentStatusControl?.touched && enrollmentStatusControl?.hasError('required')) {
+            <mat-error>حالة القيد مطلوبة</mat-error>
+          }
+        </mat-form-field>
+
+      </div>
+
+      <!-- Server Error Alert Box -->
+      @if (serverError()) {
+        <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-700 flex items-center gap-3 animate-fadeIn" role="alert">
+          <svg class="w-5 h-5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div class="flex-1">
+            <span class="block">{{ serverError() }}</span>
           </div>
-          <h4 class="text-xl font-black text-slate-800">تم تسجيل الطالب وتأسيس حسابه بالمنظومة بنجاح!</h4>
-          <p class="text-xs text-slate-500 max-w-md mx-auto">
-            تم تسجيل القيد في قاعدة بيانات المدرسة وإنشاء الحساب الإلكتروني الموحد للطالب للدخول على المنظومة والامتحانات.
-          </p>
+          <button (click)="serverError.set(null)" type="button" class="text-rose-400 hover:text-rose-600">✕</button>
+        </div>
+      }
+
+      <!-- Delete Confirmation (Edit mode only) -->
+      @if (confirmingDelete()) {
+        <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>سيتم حذف قيد الطالب نهائياً من المنظومة. هل أنت متأكد؟</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
+            <button (click)="confirmDelete()" type="button" class="px-3.5 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>
+          </div>
+        </div>
+      }
+
+      <!-- Action Buttons -->
+      <div class="pt-4 flex items-center justify-between gap-3 border-t border-slate-100">
+        <div>
+          @if (student() && !confirmingDelete()) {
+            <button (click)="confirmingDelete.set(true)" type="button" class="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs transition-colors">
+              حذف الطالب
+            </button>
+          }
         </div>
 
-        <!-- Credentials Card -->
-        <div class="bg-gradient-to-br from-slate-900 to-primary-950 text-white rounded-2xl p-5 shadow-xl space-y-4 border border-slate-800">
-          <div class="flex items-center justify-between border-b border-white/10 pb-3">
-            <div>
-              <span class="text-[11px] text-slate-300 block">اسم الطالب بالكامل</span>
-              <span class="font-black text-base text-emerald-400 block">{{ res.fullNameArabic }}</span>
-            </div>
-            <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
-              حساب مفعل
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
-              <span class="text-[11px] text-slate-400 block mb-1">كود الطالب (اسم المستخدم)</span>
-              <span class="font-mono text-sm font-black text-amber-300 tracking-wider block select-all">{{ res.studentCode }}</span>
-            </div>
-            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
-              <span class="text-[11px] text-slate-400 block mb-1">كلمة المرور الافتراضية</span>
-              <span class="font-mono text-sm font-black text-amber-300 tracking-wider block select-all">{{ res.initialCredentials?.initialPassword || 'Student@2026' }}</span>
-            </div>
-            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
-              <span class="text-[11px] text-slate-400 block mb-1">الرقم القومي</span>
-              <span class="font-mono text-xs text-slate-200 block select-all">{{ res.nationalId }}</span>
-            </div>
-            <div class="bg-white/5 rounded-xl p-3 border border-white/10">
-              <span class="text-[11px] text-slate-400 block mb-1">المرحلة والفصل</span>
-              <span class="text-xs text-slate-200 font-semibold block">{{ res.gradeLevel }} ({{ res.class?.displayNameArabic || res.class?.name || 'فصل 1/1' }})</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2 text-xs text-amber-200/90 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-            <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>يطلب النظام من الطالب إلزامياً تعيين كلمة مرور جديدة عند تسجيل دخوله الأول للمنظومة.</span>
-          </div>
-        </div>
-
-        <!-- Success Footer Actions -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+        <div class="flex items-center gap-3">
           <button
-            (click)="copyCredentials()"
+            (click)="closed.emit()"
             type="button"
-            class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-colors">
-            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            <span>{{ copiedToClipboard() ? '✓ تم النسخ إلى الحافظة' : 'نسخ بيانات الدخول' }}</span>
+            [disabled]="isSubmitting()"
+            class="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs transition-colors disabled:opacity-50">
+            إلغاء
           </button>
 
           <button
-            (click)="finishAndClose()"
-            type="button"
-            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center justify-center gap-2 transition-all">
-            <span>إتمام والعودة لجدول الطلاب</span>
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
+            type="submit"
+            [disabled]="form.invalid || isSubmitting()"
+            class="px-6 py-2.5 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            @if (isSubmitting()) {
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <span>جاري حفظ القيد...</span>
+            } @else {
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{{ student() ? 'حفظ التعديلات' : 'حفظ القيد' }}</span>
+            }
           </button>
         </div>
       </div>
-    }
 
-    <!-- FORM VIEW -->
-    @if (!createdResult()) {
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-4">
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 pt-1">
-
-          <!-- 1. الاسم رباعي باللغة العربية -->
-          <mat-form-field appearance="outline" class="w-full sm:col-span-2">
-            <mat-label>الاسم رباعي (باللغة العربية) *</mat-label>
-            <input
-              matInput
-              formControlName="fullNameArabic"
-              placeholder="مثال: أحمد محمد محمود خليل"
-              (input)="serverError.set(null)" />
-            @if (fullNameArabicControl?.touched && fullNameArabicControl?.hasError('required')) {
-              <mat-error>اسم الطالب رباعياً باللغة العربية مطلوب</mat-error>
-            }
-            @if (fullNameArabicControl?.touched && fullNameArabicControl?.hasError('minlength')) {
-              <mat-error>يجب ألا يقل الاسم عن 3 أحرف</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- 2. الرقم القومي للطالب -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>الرقم القومي للطالب (14 رقم) *</mat-label>
-            <input
-              matInput
-              formControlName="nationalId"
-              inputmode="numeric"
-              maxlength="14"
-              placeholder="31102151234567"
-              (input)="serverError.set(null)" />
-            @if (nationalIdControl?.touched && nationalIdControl?.hasError('required')) {
-              <mat-error>الرقم القومي مطلوب</mat-error>
-            }
-            @if (nationalIdControl?.touched && nationalIdControl?.hasError('pattern')) {
-              <mat-error>14 رقماً ويبدأ بـ 2 أو 3</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- 3. كود الطالب -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>كود الطالب *</mat-label>
-            <input
-              matInput
-              formControlName="studentCode"
-              dir="ltr"
-              placeholder="STD-2026-006"
-              (input)="serverError.set(null)" />
-            @if (!student()) {
-              <mat-hint class="text-[11px] text-slate-400">اتولد تلقائياً - تقدر تغيّره</mat-hint>
-            }
-            @if (studentCodeControl?.touched && studentCodeControl?.hasError('required')) {
-              <mat-error>كود الطالب مطلوب</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- 4. الصف الدراسي -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>الصف الدراسي *</mat-label>
-            <mat-select formControlName="gradeLevel">
-              @for (grade of gradeLevels; track grade) {
-                <mat-option [value]="grade">{{ grade }}</mat-option>
-              }
-            </mat-select>
-            @if (gradeLevelControl?.touched && gradeLevelControl?.hasError('required')) {
-              <mat-error>اختر الصف الدراسي</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- 5. الفصل (Cascading Dropdown) -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>الفصل *</mat-label>
-            <mat-select formControlName="classId">
-              @for (cls of filteredClasses(); track cls.id) {
-                <mat-option [value]="cls.id">
-                  {{ cls.displayNameArabic || ('فصل ' + cls.name) }}
-                </mat-option>
-              }
-            </mat-select>
-            @if (classIdControl?.touched && classIdControl?.hasError('required')) {
-              <mat-error>اختر الفصل</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- 6. اسم ولي الأمر -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>اسم ولي الأمر *</mat-label>
-            <input
-              matInput
-              formControlName="guardianName"
-              placeholder="مثال: محمد محمود خليل"
-              (input)="serverError.set(null)" />
-            @if (guardianNameControl?.touched && guardianNameControl?.hasError('required')) {
-              <mat-error>اسم ولي الأمر مطلوب</mat-error>
-            }
-            @if (guardianNameControl?.touched && guardianNameControl?.hasError('minlength')) {
-              <mat-error>يجب ألا يقل عن 3 أحرف</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- 7. هاتف ولي الأمر -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>هاتف ولي الأمر *</mat-label>
-            <input
-              matInput
-              type="tel"
-              formControlName="guardianPhone"
-              dir="ltr"
-              maxlength="11"
-              placeholder="01012345678"
-              (input)="serverError.set(null)" />
-            @if (guardianPhoneControl?.touched && guardianPhoneControl?.hasError('required')) {
-              <mat-error>رقم الهاتف مطلوب</mat-error>
-            }
-            @if (guardianPhoneControl?.touched && guardianPhoneControl?.hasError('pattern')) {
-              <mat-error>رقم مصري صحيح (11 رقماً يبدأ بـ 01)</mat-error>
-            }
-          </mat-form-field>
-
-          <!-- 8. حالة القيد -->
-          <mat-form-field appearance="outline" class="w-full sm:col-span-2">
-            <mat-label>حالة القيد *</mat-label>
-            <mat-select formControlName="enrollmentStatus">
-              @for (status of enrollmentStatuses; track status) {
-                <mat-option [value]="status">{{ status }}</mat-option>
-              }
-            </mat-select>
-            @if (enrollmentStatusControl?.touched && enrollmentStatusControl?.hasError('required')) {
-              <mat-error>حالة القيد مطلوبة</mat-error>
-            }
-          </mat-form-field>
-
-        </div>
-
-        <!-- Server Error Alert Box -->
-        @if (serverError()) {
-          <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-700 flex items-center gap-3 animate-fadeIn" role="alert">
-            <svg class="w-5 h-5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div class="flex-1">
-              <span class="block">{{ serverError() }}</span>
-            </div>
-            <button (click)="serverError.set(null)" type="button" class="text-rose-400 hover:text-rose-600">✕</button>
-          </div>
-        }
-
-        <!-- Delete Confirmation (Edit mode only) -->
-        @if (confirmingDelete()) {
-          <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-              <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              <span>سيتم حذف قيد الطالب نهائياً من المنظومة. هل أنت متأكد؟</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
-              <button (click)="confirmDelete()" type="button" class="px-3.5 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>
-            </div>
-          </div>
-        }
-
-        <!-- Action Buttons -->
-        <div class="pt-4 flex items-center justify-between gap-3 border-t border-slate-100">
-          <div>
-            @if (student() && !confirmingDelete()) {
-              <button (click)="confirmingDelete.set(true)" type="button" class="px-3.5 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs transition-colors">
-                حذف الطالب
-              </button>
-            }
-          </div>
-
-          <div class="flex items-center gap-3">
-            <button
-              (click)="closed.emit()"
-              type="button"
-              [disabled]="isSubmitting()"
-              class="px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs transition-colors disabled:opacity-50">
-              إلغاء
-            </button>
-
-            <button
-              type="submit"
-              [disabled]="form.invalid || isSubmitting()"
-              class="px-6 py-2.5 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-              @if (isSubmitting()) {
-                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                </svg>
-                <span>جاري حفظ القيد...</span>
-              } @else {
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{{ student() ? 'حفظ التعديلات' : 'حفظ القيد' }}</span>
-              }
-            </button>
-          </div>
-        </div>
-
-      </form>
-    }
+    </form>
 
   </div>
 </div>

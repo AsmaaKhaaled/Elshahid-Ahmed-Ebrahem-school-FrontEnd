@@ -18,6 +18,7 @@ export interface Student {
   status: StudentStatus;
   // null until the student has graded results
   gpa: number | null;
+  initialPassword?: string;
 }
 
 export const NATIONAL_ID_PATTERN = /^\d{14}$/;
