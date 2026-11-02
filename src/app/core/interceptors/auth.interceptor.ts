@@ -36,7 +36,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401 && !isLoginRequest) {
         // Clear session and redirect to the matching login page
         tokenService.clearTokens();
-        const loginPage = router.url.startsWith('/admin') ? '/auth/admin' : '/auth/login';
+        const loginPage = router.url.startsWith('/admin') ? '/auth/admin' : '/';
         router.navigate([loginPage], {
           queryParams: { sessionExpired: 'true' }
         });

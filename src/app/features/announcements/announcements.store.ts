@@ -100,8 +100,11 @@ export class AnnouncementsStore {
   readonly visible = computed(() => {
     const role = this.authService.userRole();
     const list = this.isAdmin()
-      ? this.announcements()
-      : this.announcements().filter(a => !isExpired(a) && a.audiences.includes(role as Audience));
+      ? this.announcements(): this.announcements().filter(a => {
+          if (isExpired(a)) return false;
+          if (!role) return true;
+          return a.audiences.includes(role as Audience) || a.audiences.length === AUDIENCES.length;
+        });
     return [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.publishedAt.localeCompare(a.publishedAt));
   });
 

@@ -23,10 +23,7 @@ export const routes: Routes = [
     path: 'auth',
     loadComponent: () => import('./layouts/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
     children: [
-      { 
-        path: 'login', 
-        loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
-      },
+      { path: 'login', redirectTo: '/', pathMatch: 'full' },
       // School administration login - reached from the small "دخول الإدارة" link, not advertised on the home page
       {
         path: 'admin',
@@ -37,7 +34,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/set-initial-password/set-initial-password.component').then(m => m.SetInitialPasswordComponent),
         canActivate: [passwordChangeGuard]
       },
-      { path: '', redirectTo: 'login', pathMatch: 'full' }
+      { path: '', redirectTo: '/', pathMatch: 'full' }
     ]
   },
 
@@ -82,7 +79,7 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'classes', loadComponent: () => import('./features/classes/classes.component').then(m => m.ClassesComponent) },
-      { path: 'subjects', loadComponent: () => import('./features/subjects/subjects.component').then(m => m.SubjectsComponent) },
+      { path: 'subjects', loadComponent: () => import('./features/subjects/curriculum.component').then(m => m.CurriculumComponent) },
       { path: 'lessons', loadComponent: () => import('./features/lessons/lessons.component').then(m => m.LessonsComponent) },
       { path: 'materials', loadComponent: () => import('./features/materials/materials.component').then(m => m.MaterialsComponent) },
       { path: 'assignments', loadComponent: () => import('./features/assignments/assignments.component').then(m => m.AssignmentsComponent) },
@@ -103,7 +100,7 @@ export const routes: Routes = [
     data: { roles: ['STUDENT', 'PARENT'] },
     children: [
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'subjects', loadComponent: () => import('./features/subjects/subjects.component').then(m => m.SubjectsComponent) },
+      { path: 'subjects', loadComponent: () => import('./features/subjects/curriculum.component').then(m => m.CurriculumComponent) },
       { path: 'lessons', loadComponent: () => import('./features/lessons/lessons.component').then(m => m.LessonsComponent) },
       { path: 'materials', loadComponent: () => import('./features/materials/materials.component').then(m => m.MaterialsComponent) },
       { path: 'assignments', loadComponent: () => import('./features/assignments/assignments.component').then(m => m.AssignmentsComponent) },
@@ -122,14 +119,14 @@ export const routes: Routes = [
   { path: 'teachers', canActivate: [featureRedirectGuard('teachers')], children: [] },
   { path: 'classes', canActivate: [featureRedirectGuard('classes')], children: [] },
   { path: 'lessons', canActivate: [featureRedirectGuard('lessons')], children: [] },
-  { path: 'subjects', canActivate: [featureRedirectGuard('subjects')], children: [] },
+  { path: 'subjects', loadComponent: () => import('./features/subjects/subjects.component').then(m => m.SubjectsComponent) },
   { path: 'assignments', canActivate: [featureRedirectGuard('assignments')], children: [] },
   { path: 'materials', canActivate: [featureRedirectGuard('materials')], children: [] },
   { path: 'quizzes', canActivate: [featureRedirectGuard('quizzes')], children: [] },
   { path: 'exams', canActivate: [featureRedirectGuard('exams')], children: [] },
   { path: 'attendance-stats', canActivate: [featureRedirectGuard('attendance-stats')], children: [] },
   { path: 'grades', canActivate: [featureRedirectGuard('grades')], children: [] },
-  { path: 'announcements', canActivate: [featureRedirectGuard('announcements')], children: [] },
+  { path: 'announcements', loadComponent: () => import('./features/announcements/announcements.component').then(m => m.AnnouncementsComponent) },
 
   // Wildcard fallback
   { path: '**', redirectTo: '' }

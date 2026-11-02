@@ -1,11 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { HonorAvatarComponent } from '../honor-roll/honor-avatar.component';
+import { PublicHeaderComponent } from '../../shared/components/public-header/public-header.component';
+import { PublicFooterComponent } from '../../shared/components/public-footer/public-footer.component';
 import { HonorRollStore } from '../honor-roll/honor-roll.store';
 import { TEACHER_HONORIFIC } from '../teachers/teacher.model';
+import { SCHOOL_INFO } from '../../core/constants/school.constants';
 
 interface SchoolNotice {
   day: string;
@@ -26,7 +29,7 @@ interface AcademicPillar {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, FormsModule, HonorAvatarComponent],
+  imports: [RouterLink, FormsModule, HonorAvatarComponent, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -35,6 +38,51 @@ export class HomeComponent {
   readonly academicYear = inject(AcademicCalendarStore).currentYear;
   readonly academicTerm = inject(AcademicCalendarStore).currentTerm;
   private readonly router = inject(Router);
+
+  readonly schoolLogo = SCHOOL_INFO.logoUrl;
+  readonly isUserMenuOpen = signal<boolean>(false);
+
+  readonly userFirstName = computed(() => {
+    const fullName = this.authService.userName()?.trim();
+    if (!fullName) return 'المستخدم';
+    return fullName.split(/\s+/)[0] || fullName;
+  });
+
+  readonly userAvatarUrl = computed(() => {
+    const user = this.authService.currentUser();
+    return user?.avatarUrl || null;
+  });
+
+  readonly userRoleArabic = computed(() => {
+    const role = this.authService.userRole();
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return 'المشرف العام';
+      case 'ADMIN':
+        return 'إدارة المدرسة';
+      case 'TEACHER':
+        return 'عضو هيئة التدريس';
+      case 'STUDENT':
+        return 'طالب مقيد';
+      default:
+        return 'مستخدم مسجل';
+    }
+  });
+
+  readonly dashboardTitle = computed(() => {
+    const role = this.authService.userRole();
+    switch (role) {
+      case 'SUPER_ADMIN':
+      case 'ADMIN':
+        return 'لوحة إدارة المدرسة';
+      case 'TEACHER':
+        return 'مساحة المعلم';
+      case 'STUDENT':
+        return 'بوابة الطالب';
+      default:
+        return 'لوحة التحكم';
+    }
+  });
 
   // Modal & Drawer Control Signals
   readonly isStudentModalOpen = signal<boolean>(false);
@@ -141,6 +189,19 @@ export class HomeComponent {
 
   closeMobileMenu(): void {
     this.isMobileMenuOpen.set(false);
+  }
+
+  toggleUserMenu(): void {
+    this.isUserMenuOpen.update(v => !v);
+  }
+
+  closeUserMenu(): void {
+    this.isUserMenuOpen.set(false);
+  }
+
+  logout(): void {
+    this.isUserMenuOpen.set(false);
+    this.authService.logout();
   }
 
   handleDirectDashboard(): void {

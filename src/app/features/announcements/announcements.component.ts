@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
 import { AnnouncementFormDialogComponent } from './announcement-form-dialog.component';
+import { PublicHeaderComponent } from '../../shared/components/public-header/public-header.component';
+import { PublicFooterComponent } from '../../shared/components/public-footer/public-footer.component';
+import { AuthService } from '../../core/auth/auth.service';
 import {
   ANNOUNCEMENT_CATEGORIES,
   Announcement,
@@ -26,18 +29,34 @@ type CategoryFilter = 'الكل' | AnnouncementCategory | 'المنتهية';
   selector: 'app-announcements',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ArabicDatePipe, TimeAgoPipe, AnnouncementFormDialogComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    ArabicDatePipe,
+    TimeAgoPipe,
+    AnnouncementFormDialogComponent,
+    PublicHeaderComponent,
+    PublicFooterComponent
+  ],
   templateUrl: './announcements.component.html',
   styleUrl: './announcements.component.css'
 })
 export class AnnouncementsComponent implements OnInit {
   readonly store = inject(AnnouncementsStore);
+  readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly categoryStyles = CATEGORY_STYLES;
   readonly audienceLabel = audienceLabel;
   readonly isExpired = isExpired;
   readonly isAdmin = this.store.isAdmin;
+
+  readonly isAuthenticated = this.authService.isAuthenticated;
+  readonly userRole = this.authService.userRole;
+  readonly isTeacher = computed(() => this.userRole() === 'TEACHER');
+  readonly isStudent = computed(() => this.userRole() === 'STUDENT');
+  readonly isPublicPage = computed(() => this.router.url === '/announcements' || this.router.url.startsWith('/announcements?'));
 
   readonly searchQuery = signal('');
   readonly selectedFilter = signal<CategoryFilter>('الكل');

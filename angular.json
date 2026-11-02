@@ -38,7 +38,8 @@
               "src/material-theme.scss",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": ["exceljs"]
           },
           "configurations": {
             "production": {
