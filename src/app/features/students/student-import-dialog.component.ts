@@ -1,92 +1,164 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ExcelImportResult, StudentsService } from '../../core/services/students.service';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
-import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
-import { ImportRow, downloadImportTemplate, parseStudentsFile } from './student-excel';
-import { Student, gradeOf } from './student.model';
-
-type ImportStep = 'pick' | 'reading' | 'review';
+import { Student } from './student.model';
 
 @Component({
   selector: 'app-student-import-dialog',
   standalone: true,
-  imports: [PortalToBodyDirective, SubmitLockDirective],
+  imports: [CommonModule, PortalToBodyDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './student-import-dialog.component.html',
   styleUrl: './student-import-dialog.component.css'
 })
 export class StudentImportDialogComponent {
-  // Already enrolled students, to catch duplicates before saving
+  private readonly studentsService = inject(StudentsService);
+
   readonly existing = input<Student[]>([]);
   readonly imported = output<Student[]>();
   readonly closed = output<void>();
 
-  readonly step = signal<ImportStep>('pick');
-  readonly fileName = signal('');
-  readonly fileError = signal<string | null>(null);
-  readonly rows = signal<ImportRow[]>([]);
-  readonly errorsOnly = signal(false);
-  readonly dragging = signal(false);
-  readonly downloadingTemplate = signal(false);
-  // Locked from the click until the page closes the dialog
-  readonly lock = submitLock();
+  readonly selectedFile = signal<File | null>(null);
+  readonly isUploading = signal<boolean>(false);
+  readonly isDownloadingTemplate = signal<boolean>(false);
+  readonly dragging = signal<boolean>(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly importResult = signal<ExcelImportResult | null>(null);
 
-  readonly validRows = computed(() => this.rows().filter(row => !row.errors.length));
-  readonly invalidCount = computed(() => this.rows().length - this.validRows().length);
-  readonly visibleRows = computed(() => (this.errorsOnly() ? this.rows().filter(row => row.errors.length) : this.rows()));
+  readonly formattedFileSize = computed(() => {
+    const file = this.selectedFile();
+    if (!file) return '';
+    return this.formatBytes(file.size);
+  });
 
-  readonly gradeLabel = (student: Student) => gradeOf(student)?.shortLabel ?? '—';
+  downloadTemplate(): void {
+    if (this.isDownloadingTemplate()) return;
+    this.isDownloadingTemplate.set(true);
+    this.errorMessage.set(null);
 
-  async downloadTemplate(): Promise<void> {
-    this.downloadingTemplate.set(true);
-    try {
-      await downloadImportTemplate();
-    } finally {
-      this.downloadingTemplate.set(false);
-    }
+    this.studentsService.downloadTemplate().subscribe({
+      next: (blob) => {
+        this.isDownloadingTemplate.set(false);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'students_template.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.isDownloadingTemplate.set(false);
+        this.errorMessage.set('تعذر تحميل النموذج من السيرفر. يرجى التأكد من تشغيل الخادم والاتصال.');
+      }
+    });
   }
 
   onFileSelected(event: Event): void {
     const inputEl = event.target as HTMLInputElement;
     const file = inputEl.files?.[0];
-    // Reset so picking the same (fixed) file again still fires change
     inputEl.value = '';
-    if (file) this.readFile(file);
+    if (file) {
+      this.handleFile(file);
+    }
   }
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragging.set(false);
-    const file = event.dataTransfer?.files[0];
-    if (file) this.readFile(file);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      this.handleFile(file);
+    }
   }
 
-  async readFile(file: File): Promise<void> {
-    this.fileName.set(file.name);
-    this.fileError.set(null);
-    this.step.set('reading');
+  handleFile(file: File): void {
+    this.errorMessage.set(null);
+    const validExtensions = ['.xlsx', '.xls', '.csv'];
+    const fileName = file.name.toLowerCase();
+    const isValid = validExtensions.some(ext => fileName.endsWith(ext));
 
-    const result = await parseStudentsFile(file, this.existing()).catch(() => ({
-      rows: [],
-      fileError: 'حصل خطأ غير متوقع أثناء قراءة الملف - حاول مرة أخرى'
-    }));
-    if (result.fileError) {
-      this.fileError.set(result.fileError);
-      this.step.set('pick');
+    if (!isValid) {
+      this.errorMessage.set('نوع الملف غير مدعوم. يرجى اختيار ملف إكسيل (.xlsx أو .xls أو .csv).');
       return;
     }
-    this.rows.set(result.rows);
-    this.errorsOnly.set(result.rows.some(row => row.errors.length) && result.rows.length > 20);
-    this.step.set('review');
+
+    if (file.size > 10 * 1024 * 1024) {
+      this.errorMessage.set('حجم الملف يتجاوز الحد الأقصى المسموح به (10 ميجابايت).');
+      return;
+    }
+
+    this.selectedFile.set(file);
   }
 
-  restart(): void {
-    this.rows.set([]);
-    this.fileError.set(null);
-    this.step.set('pick');
+  removeFile(): void {
+    this.selectedFile.set(null);
+    this.errorMessage.set(null);
   }
 
-  confirm(): void {
-    const students = this.validRows().map(row => row.student);
-    if (students.length) this.lock.run(() => this.imported.emit(students));
+  onUpload(): void {
+    const file = this.selectedFile();
+    if (!file || this.isUploading()) return;
+
+    this.isUploading.set(true);
+    this.errorMessage.set(null);
+
+    this.studentsService.uploadExcel(file).subscribe({
+      next: (res) => {
+        this.isUploading.set(false);
+        const data = res?.data;
+        if (data) {
+          this.importResult.set(data);
+        } else {
+          this.errorMessage.set('تمت المعالجة ولكن لم تتوفر استجابة كاملة من الخادم.');
+        }
+      },
+      error: (err) => {
+        this.isUploading.set(false);
+        const errorMsg =
+          err?.error?.message ||
+          err?.error?.details?.[0]?.message ||
+          'حدث خطأ أثناء معالجة ملف الإكسيل بالسيرفر. يرجى التأكد من مطابقة الأعمدة للقالب.';
+        this.errorMessage.set(errorMsg);
+      }
+    });
+  }
+
+  reset(): void {
+    this.selectedFile.set(null);
+    this.importResult.set(null);
+    this.errorMessage.set(null);
+    this.isUploading.set(false);
+  }
+
+  finish(): void {
+    const res = this.importResult();
+    const rawStudents = res?.students || [];
+
+    const mapped: Student[] = rawStudents.map((s: any) => ({
+      id: s.id || crypto.randomUUID(),
+      code: s.studentCode || s.code,
+      nationalId: s.nationalId,
+      name: s.fullNameArabic || s.name,
+      gradeId: s.gradeLevel?.includes('الأول') ? 'G1' : s.gradeLevel?.includes('الثاني') ? 'G2' : 'G3',
+      className: s.class?.name || s.className || '1/1',
+      guardianName: s.guardianName || '',
+      guardianPhone: s.guardianPhone || '',
+      status: (s.enrollmentStatus || s.status || 'منتظم') as any,
+      gpa: null
+    }));
+
+    this.imported.emit(mapped);
+    this.closed.emit();
+  }
+
+  private formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 }

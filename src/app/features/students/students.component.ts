@@ -150,9 +150,12 @@ export class StudentsComponent implements OnInit {
   }
 
   importStudents(students: Student[]): void {
-    this.store.addStudents(students);
+    if (students && students.length > 0) {
+      this.store.addStudents(students);
+      this.showNotice(`تم استيراد ${students.length} طالب من ملف Excel وتأسيس حساباتهم بنجاح`);
+    }
     this.showImport.set(false);
-    this.showNotice(`تم تسجيل ${students.length} طالب من ملف Excel بنجاح`);
+    this.store.loadFromApi();
   }
 
   async exportExcel(): Promise<void> {

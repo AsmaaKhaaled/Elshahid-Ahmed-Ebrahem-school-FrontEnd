@@ -40,6 +40,20 @@ export interface CreatedStudentData {
   initialCredentials?: InitialCredentials;
 }
 
+export interface ExcelImportError {
+  row: number;
+  name?: string;
+  error: string;
+}
+
+export interface ExcelImportResult {
+  totalRows: number;
+  importedCount: number;
+  failedCount: number;
+  errors?: ExcelImportError[];
+  students?: any[];
+}
+
 export interface StudentApiResponse<T> {
   success?: boolean;
   status?: string;
@@ -66,5 +80,22 @@ export class StudentsService {
   getAll(): Observable<StudentApiResponse<any[]>> {
     return this.http.get<StudentApiResponse<any[]>>(this.apiUrl);
   }
-}
 
+  /**
+   * رفع واستيراد ملف الإكسيل
+   */
+  uploadExcel(file: File): Observable<StudentApiResponse<ExcelImportResult>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<StudentApiResponse<ExcelImportResult>>(`${this.apiUrl}/upload-excel`, formData);
+  }
+
+  /**
+   * تنزيل قالب الإكسيل الفارغ
+   */
+  downloadTemplate(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/excel-template`, {
+      responseType: 'blob'
+    });
+  }
+}
