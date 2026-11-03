@@ -1,12 +1,15 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, signal, inject } from '@angular/core';
 import { Student } from './student.model';
+import { StudentsService } from '../../core/services/students.service';
 
 /**
  * Single source of truth for enrolled students.
- * Local state for now - each method maps to a backend endpoint once the API is ready.
+ * Integrates with Backend StudentsService and maintains responsive local state.
  */
 @Injectable({ providedIn: 'root' })
 export class StudentsStore {
+  private readonly studentsService = inject(StudentsService);
+
   readonly students = signal<Student[]>([
     {
       id: '1',
@@ -80,15 +83,54 @@ export class StudentsStore {
     };
   });
 
-  saveStudent(student: Student): void {
-    this.students.update(list =>
-      list.some(s => s.id === student.id)
-        ? list.map(s => (s.id === student.id ? student : s))
-        : [...list, student]
-    );
+  loadFromApi(): void {
+    this.studentsService.getAll().subscribe({
+      next: (res) => {
+        const rawList = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const mapped: Student[] = rawList.map((s: any) => ({
+            id: s.id,
+            code: s.studentCode || s.code,
+            nationalId: s.nationalId,
+            name: s.fullNameArabic || s.name,
+            gradeId: s.gradeLevel?.includes('الأول') ? 'G1' : s.gradeLevel?.includes('الثاني') ? 'G2' : 'G3',
+            className: s.class?.name || s.className || '1/1',
+            guardianName: s.guardianName || '',
+            guardianPhone: s.guardianPhone || '',
+            status: (s.enrollmentStatus || s.status || 'منتظم') as any,
+            gpa: s.gpa ?? null
+          }));
+
+          this.students.update(current => {
+            const list = [...current];
+            mapped.forEach(dbStudent => {
+              const idx = list.findIndex(s => s.code === dbStudent.code || s.nationalId === dbStudent.nationalId || s.id === dbStudent.id);
+              if (idx >= 0) {
+                list[idx] = { ...list[idx], ...dbStudent };
+              } else {
+                list.push(dbStudent);
+              }
+            });
+            return list;
+          });
+        }
+      },
+      error: () => {
+        // Fallback: keep current list
+      }
+    });
   }
 
-  // Bulk enrolment from the Excel import (POST /students/bulk on the backend)
+  saveStudent(student: Student): void {
+    this.students.update(list => {
+      const exists = list.some(s => s.id === student.id || s.code === student.code || (student.nationalId && s.nationalId === student.nationalId));
+      if (exists) {
+        return list.map(s => (s.id === student.id || s.code === student.code || (student.nationalId && s.nationalId === student.nationalId) ? student : s));
+      }
+      return [student, ...list];
+    });
+  }
+
   addStudents(students: Student[]): void {
     this.students.update(list => [...list, ...students]);
   }

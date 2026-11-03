@@ -39,7 +39,8 @@ type CategoryFilter = 'الكل' | AnnouncementCategory | 'المنتهية';
     PublicFooterComponent
   ],
   templateUrl: './announcements.component.html',
-  styleUrl: './announcements.component.css'
+  styleUrl: './announcements.component.css',
+  host: { class: 'block min-h-screen' }
 })
 export class AnnouncementsComponent implements OnInit {
   readonly store = inject(AnnouncementsStore);

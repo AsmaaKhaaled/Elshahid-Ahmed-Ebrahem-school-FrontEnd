@@ -61,6 +61,7 @@
 
       <!-- Notifications Popup Menu: latest announcements addressed to this user -->
       @if (isNotificationsOpen()) {
+        <div class="fixed inset-0 z-40" (click)="isNotificationsOpen.set(false)"></div>
         <div class="absolute left-0 mt-2 w-[calc(100vw-6rem)] max-w-80 rounded-2xl bg-white shadow-elevated border border-slate-100 py-3 z-50 animate-in fade-in slide-in-from-top-2">
           <div class="px-4 pb-2 border-b border-slate-100 flex items-center justify-between">
             <span class="font-bold text-sm text-slate-800">التنبيهات المدرسية</span>
@@ -98,7 +99,7 @@
           {{ userInitials() }}
         </div>
         <div class="text-right hidden md:block">
-          <span class="block text-xs font-bold text-slate-800 leading-tight">{{ authService.userName() }}</span>
+          <span class="block text-xs font-bold text-slate-800 leading-tight">{{ userTwoPartName() }}</span>
           <span class="block text-[11px] text-slate-600 font-medium">{{ roleLabel() }}</span>
         </div>
         <svg class="w-4 h-4 text-slate-400 hidden md:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,20 +109,21 @@
 
       <!-- User Popup Menu -->
       @if (isProfileMenuOpen()) {
+        <div class="fixed inset-0 z-40" (click)="isProfileMenuOpen.set(false)"></div>
         <div class="absolute left-0 mt-2 w-56 rounded-2xl bg-white shadow-elevated border border-slate-100 py-2 z-50">
           <div class="px-4 py-2 border-b border-slate-100 md:hidden">
-            <p class="text-sm font-bold text-slate-800">{{ authService.userName() }}</p>
+            <p class="text-sm font-bold text-slate-800">{{ userTwoPartName() }}</p>
             <p class="text-xs text-slate-500">{{ roleLabel() }}</p>
           </div>
 
           <a
             routerLink="/home"
             (click)="isProfileMenuOpen.set(false)"
-            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600 transition-colors text-right">
+            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600 transition-colors text-right cursor-pointer">
             <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            <span>الصفحة الرئيسية للمدرسة</span>
+            <span>الرجوع إلى الصفحة الرئيسية</span>
           </a>
 
           <button
@@ -133,6 +135,8 @@
             </svg>
             <span>{{ isAdmin() ? 'بيانات الحساب' : 'تغيير كلمة المرور' }}</span>
           </button>
+
+          <div class="my-1 border-t border-slate-100"></div>
 
           <button
             (click)="handleLogout()"

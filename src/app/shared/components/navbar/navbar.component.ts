@@ -9,6 +9,7 @@ import { TimeAgoPipe, arabicCount } from '../../pipes/time-ago.pipe';
 import { AnnouncementsStore, announcementsPath } from '../../../features/announcements/announcements.store';
 import { AccountSettingsDialogComponent } from '../account-settings-dialog/account-settings-dialog.component';
 import { SidebarDrawer } from '../sidebar/sidebar-drawer.service';
+import { getArabicTwoPartName } from '../../../core/utils/arabic-name.util';
 
 const NAME_TITLES = new Set(['أ', 'د', 'م', 'الأستاذ', 'الأستاذة', 'الشيخ', 'المهندس', 'الدكتور']);
 
@@ -81,6 +82,8 @@ export class NavbarComponent {
       this.isProfileMenuOpen.set(false);
     }
   }
+
+  readonly userTwoPartName = computed(() => getArabicTwoPartName(this.authService.userName()));
 
   // Initials of the logged-in user's real name, skipping titles like "أ." / "د." / "الأستاذ"
   readonly userInitials = computed(() => {

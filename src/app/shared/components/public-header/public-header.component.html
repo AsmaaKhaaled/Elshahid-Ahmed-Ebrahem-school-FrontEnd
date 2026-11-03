@@ -46,7 +46,7 @@
 </div>
 
 <!-- ================= 2. Main Navigation Bar ================= -->
-<header class="bg-white sticky top-0 z-40 border-b border-slate-200/90 shadow-sm w-full">
+<header class="bg-white border-b border-slate-200/90 shadow-sm w-full">
   <div class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
 
     <!-- School Identity & Crest (Right in RTL) -->
@@ -106,13 +106,13 @@
               <img [src]="userAvatarUrl()" alt="" class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl object-cover ring-1 ring-slate-200 shrink-0" />
             } @else {
               <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-portal-navy text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
-                {{ authService.userName().slice(0, 1) }}
+                {{ userInitial() }}
               </div>
             }
 
             <!-- First Name Only (hidden on small mobile, visible on sm+) -->
             <span class="text-xs font-bold text-slate-800 hidden sm:inline-block leading-tight">
-              {{ userFirstName() }}
+              {{ userTwoPartName() }}
             </span>
 
             <!-- Dropdown Chevron -->
@@ -137,7 +137,7 @@
                   <img [src]="userAvatarUrl()" alt="" class="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200 shrink-0" />
                 } @else {
                   <div class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-black text-xs shrink-0">
-                    {{ authService.userName().slice(0, 1) }}
+                    {{ userInitial() }}
                   </div>
                 }
                 <div class="min-w-0">
@@ -263,11 +263,11 @@
             <img [src]="userAvatarUrl()" alt="" class="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200 shrink-0" />
           } @else {
             <div class="w-9 h-9 rounded-xl bg-portal-navy text-white flex items-center justify-center font-bold text-xs shrink-0">
-              {{ authService.userName().slice(0, 1) }}
+              {{ userInitial() }}
             </div>
           }
           <div class="min-w-0">
-            <span class="block text-xs font-bold text-slate-900 truncate">{{ userFirstName() }}</span>
+            <span class="block text-xs font-bold text-slate-900 truncate">{{ userTwoPartName() }}</span>
             <span class="block text-[10px] text-slate-500">جلسة نشطة • {{ userRoleArabic() }}</span>
           </div>
         </div>
