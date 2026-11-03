@@ -32,9 +32,9 @@ export class TeacherAttendanceService {
     return this.api.post<DayResponse>(`${BASE}/day/${date}/reopen`, {}).pipe(map(res => res.data.day));
   }
 
-  getArchive(filters: ArchiveFilters, page: number, pageSize: number): Observable<ArchivePage> {
+  getArchive(filters: ArchiveFilters, page: number, limit: number): Observable<ArchivePage> {
     return this.api
-      .get<ArchiveResponse>(`${BASE}/records`, { ...queryOf(filters), page, pageSize })
+      .get<ArchiveResponse>(`${BASE}/records`, { ...queryOf(filters), page, limit })
       .pipe(map(res => ({ records: res.data.records, summary: res.data.summary, meta: res.meta })));
   }
 

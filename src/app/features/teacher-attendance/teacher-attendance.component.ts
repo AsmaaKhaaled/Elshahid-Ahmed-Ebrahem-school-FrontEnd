@@ -1,8 +1,13 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, OnInit, afterNextRender, computed, inject, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { Observable, Subscription, concatMap, of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { today } from '../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
+import { TimeFieldComponent } from '../../shared/components/time-field/time-field.component';
+import { PAGE_SIZE_OPTIONS, loadPageSize, savePageSize } from '../../shared/components/pagination/page-size';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { HolidayDialogComponent } from './holiday-dialog.component';
@@ -28,15 +33,15 @@ import {
 import { TeacherAttendanceService } from './teacher-attendance.service';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
-const SHEET_PAGE_SIZE = 10;
-const ARCHIVE_PAGE_SIZE = 10;
+const SHEET_SIZE_KEY = 'teacher-attendance-sheet';
+const ARCHIVE_SIZE_KEY = 'teacher-attendance-archive';
 const EMPTY_FILTERS: ArchiveFilters = { from: '', to: '', teacherId: '', status: '' };
 
 @Component({
   selector: 'app-teacher-attendance',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardTableDirective, ArabicDatePipe, PaginationComponent, HolidayDialogComponent],
+  imports: [CardTableDirective, ArabicDatePipe, PaginationComponent, HolidayDialogComponent, DateFieldComponent, TimeFieldComponent, MatFormFieldModule, MatSelectModule],
   templateUrl: './teacher-attendance.component.html',
   styleUrl: './teacher-attendance.component.css'
 })
@@ -52,8 +57,7 @@ export class TeacherAttendanceComponent implements OnInit {
   readonly notRecorded = NOT_RECORDED_OPTION;
   readonly statusOption = statusOption;
   readonly isOnDuty = isOnDuty;
-  readonly sheetPageSize = SHEET_PAGE_SIZE;
-  readonly archivePageSize = ARCHIVE_PAGE_SIZE;
+  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
   readonly isSuperAdmin = this.authService.isSuperAdmin;
 
   // ---- Daily sheet ----
@@ -68,12 +72,14 @@ export class TeacherAttendanceComponent implements OnInit {
   readonly busy = signal<'save' | 'close' | 'reopen' | null>(null);
   readonly confirmingClose = signal(false);
   readonly sheetPage = signal(1);
+  readonly sheetPageSize = signal(loadPageSize(SHEET_SIZE_KEY));
 
   readonly editable = computed(() => !!this.day()?.editable);
   readonly dirty = computed(() => JSON.stringify(this.draft()) !== JSON.stringify(this.day()?.records ?? []));
+  // Only the visible slice is paged; saving still reads the whole draft()
   readonly sheetRows = computed(() => {
-    const start = (this.sheetPage() - 1) * SHEET_PAGE_SIZE;
-    return this.draft().slice(start, start + SHEET_PAGE_SIZE);
+    const start = (this.sheetPage() - 1) * this.sheetPageSize();
+    return this.draft().slice(start, start + this.sheetPageSize());
   });
   readonly unmarkedCount = computed(() => this.draft().filter(r => !r.status || r.status === 'NOT_RECORDED').length);
   readonly onSiteCount = computed(() => this.draft().filter(r => isOnDuty(r.status)).length);
@@ -85,6 +91,7 @@ export class TeacherAttendanceComponent implements OnInit {
   // ---- Archive ----
   readonly filters = signal<ArchiveFilters>(EMPTY_FILTERS);
   readonly archivePage = signal(1);
+  readonly archivePageSize = signal(loadPageSize(ARCHIVE_SIZE_KEY));
   readonly archive = signal<ArchivePage | null>(null);
   readonly loadingArchive = signal(false);
   readonly archiveError = signal<string | null>(null);
@@ -148,6 +155,12 @@ export class TeacherAttendanceComponent implements OnInit {
 
   goToday(): void {
     this.changeDate(this.day()?.today ?? today());
+  }
+
+  changeSheetPageSize(size: number): void {
+    savePageSize(SHEET_SIZE_KEY, size);
+    this.sheetPageSize.set(size);
+    this.sheetPage.set(1);
   }
 
   loadDay(): void {
@@ -241,11 +254,18 @@ export class TeacherAttendanceComponent implements OnInit {
     this.loadArchive();
   }
 
+  changeArchivePageSize(size: number): void {
+    savePageSize(ARCHIVE_SIZE_KEY, size);
+    this.archivePageSize.set(size);
+    this.archivePage.set(1);
+    this.loadArchive();
+  }
+
   loadArchive(): void {
     this.archiveRequest?.unsubscribe();
     this.loadingArchive.set(true);
     this.archiveError.set(null);
-    this.archiveRequest = this.service.getArchive(this.filters(), this.archivePage(), ARCHIVE_PAGE_SIZE).subscribe({
+    this.archiveRequest = this.service.getArchive(this.filters(), this.archivePage(), this.archivePageSize()).subscribe({
       next: page => {
         this.archive.set(page);
         this.loadingArchive.set(false);
@@ -334,7 +354,7 @@ export class TeacherAttendanceComponent implements OnInit {
     this.day.set(day);
     this.draft.set(cloneRecords(day.records));
     // Stay on the same page after saving; start from page 1 on another day
-    const lastPage = Math.max(1, Math.ceil(day.records.length / SHEET_PAGE_SIZE));
+    const lastPage = Math.max(1, Math.ceil(day.records.length / this.sheetPageSize()));
     this.sheetPage.set(sameDay ? Math.min(this.sheetPage(), lastPage) : 1);
   }
 

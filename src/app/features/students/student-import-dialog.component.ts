@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { ExcelImportResult, StudentsService } from '../../core/services/students.service';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { Student } from './student.model';
+import { studentFromApi } from './students.store';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 @Component({
@@ -138,18 +139,7 @@ export class StudentImportDialogComponent {
     const res = this.importResult();
     const rawStudents = res?.students || [];
 
-    const mapped: Student[] = rawStudents.map((s: any) => ({
-      id: s.id || crypto.randomUUID(),
-      code: s.studentCode || s.code,
-      nationalId: s.nationalId,
-      name: s.fullNameArabic || s.name,
-      gradeId: s.gradeLevel?.includes('الأول') ? 'G1' : s.gradeLevel?.includes('الثاني') ? 'G2' : 'G3',
-      className: s.class?.name || s.className || '1/1',
-      guardianName: s.guardianName || '',
-      guardianPhone: s.guardianPhone || '',
-      status: (s.enrollmentStatus || s.status || 'منتظم') as any,
-      gpa: null
-    }));
+    const mapped: Student[] = rawStudents.map(studentFromApi);
 
     this.imported.emit(mapped);
     this.closed.emit();

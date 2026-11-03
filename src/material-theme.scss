@@ -20,6 +20,9 @@ $slate-700: #334155;
 $primary-50: #eff6ff;
 $primary-600: #2563eb;
 $primary-700: #1d4ed8;
+$primary-800: #1B365D;
+$slate-100: #f1f5f9;
+$slate-800: #1e293b;
 
 html {
   color-scheme: light;
@@ -88,8 +91,113 @@ html {
     label-text-weight: 700,
     label-text-color: $slate-400,
   ));
+
+  // ----- Calendar (DateFieldComponent) -----
+  @include mat.datepicker-overrides((
+    calendar-container-background-color: #ffffff,
+    calendar-container-shape: 16px,
+    calendar-container-elevation-shadow: (0 20px 40px -12px rgba(15, 23, 42, 0.18), 0 4px 10px -4px rgba(15, 23, 42, 0.08)),
+    calendar-text-font: 'Cairo, sans-serif',
+    calendar-text-size: 13px,
+    calendar-header-text-size: 11px,
+    calendar-header-text-weight: 700,
+    calendar-header-text-color: $slate-400,
+    calendar-header-divider-color: $slate-100,
+    calendar-body-label-text-size: 12px,
+    calendar-body-label-text-weight: 700,
+    calendar-body-label-text-color: $slate-500,
+    calendar-period-button-text-size: 13px,
+    calendar-period-button-text-weight: 700,
+    calendar-period-button-text-color: $slate-800,
+    calendar-period-button-icon-color: $slate-500,
+    calendar-navigation-button-icon-color: $slate-500,
+    calendar-date-text-color: $slate-700,
+    calendar-date-hover-state-background-color: $slate-100,
+    calendar-date-focus-state-background-color: $slate-100,
+    calendar-date-selected-state-background-color: $primary-800,
+    calendar-date-selected-state-text-color: #ffffff,
+    calendar-date-today-outline-color: $primary-600,
+    calendar-date-today-selected-state-outline-color: #ffffff,
+    calendar-date-disabled-state-text-color: $slate-300,
+    toggle-icon-color: $slate-400,
+    toggle-active-state-icon-color: $primary-700,
+  ));
+
+  // ----- Time list (TimeFieldComponent): same panel as the dropdowns -----
+  @include mat.timepicker-overrides((
+    container-background-color: #ffffff,
+    container-shape: 12px,
+    container-elevation-shadow: (0 10px 24px -6px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.06)),
+  ));
 }
 
+// Time list: rounded options like the dropdown panel
+.mat-timepicker-panel {
+  padding: 4px !important;
+  border: 1px solid $slate-200;
+  border-radius: 12px !important;
+  margin-top: 4px;
+
+  .mat-mdc-option {
+    min-height: 36px;
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Compact (32px) field for toolbars, filter rows, pagination and grid cells
+.field-compact {
+  @include mat.form-field-overrides((
+    container-height: 32px,
+    container-vertical-padding: 4px,
+    container-text-size: 12px,
+    outlined-label-text-size: 12px,
+  ));
+  @include mat.select-overrides((
+    trigger-text-size: 12px,
+  ));
+  @include mat.icon-button-overrides((
+    state-layer-size: 28px,
+  ));
+
+  .mat-mdc-icon-button {
+    padding: 2px !important;
+  }
+
+  // Material's 180px default width would overflow narrow spots (pagination, grid cells)
+  .mat-mdc-form-field-infix {
+    width: auto;
+    min-width: 0;
+  }
+  .mat-mdc-text-field-wrapper {
+    padding-inline: 10px;
+  }
+}
+
+// Inside a timetable cell: as small as the cell
+.field-cell .mat-mdc-text-field-wrapper {
+  padding-inline: 6px;
+}
+
+// Calendar popup: rounded, airy, the selected day a navy circle
+.app-datepicker-panel {
+  .mat-calendar {
+    font-family: 'Cairo', sans-serif;
+  }
+  .mat-calendar-header {
+    padding: 8px 8px 0;
+  }
+  .mat-calendar-content {
+    padding: 0 8px 8px;
+  }
+  .mat-calendar-body-cell-content {
+    font-weight: 600;
+  }
+  .mat-calendar-body-selected {
+    font-weight: 800;
+    box-shadow: 0 4px 10px -4px rgba(27, 54, 93, 0.5);
+  }
+}
 // White surface so fields look the same on gray pages and white cards
 .mat-mdc-form-field .mat-mdc-text-field-wrapper {
   background-color: #ffffff;

@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { AuthService } from '../../core/auth/auth.service';
 import { today } from '../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
+import { PAGE_SIZE_OPTIONS, loadPageSize, savePageSize } from '../../shared/components/pagination/page-size';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
@@ -14,8 +18,8 @@ import {
 } from './class-attendance.model';
 import { ClassAttendanceStore, shiftIsoDate } from './class-attendance.store';
 
-const SHEET_PAGE_SIZE = 15;
-const ARCHIVE_PAGE_SIZE = 10;
+const SHEET_SIZE_KEY = 'student-attendance-sheet';
+const ARCHIVE_SIZE_KEY = 'student-attendance-archive';
 const EMPTY_FILTERS: ClassArchiveFilters = { from: '', to: '', studentId: '', status: '' };
 
 /**
@@ -27,7 +31,7 @@ const EMPTY_FILTERS: ClassArchiveFilters = { from: '', to: '', studentId: '', st
 @Component({
   selector: 'app-attendance',
   standalone: true,
-  imports: [CardTableDirective, ArabicDatePipe, PaginationComponent],
+  imports: [CardTableDirective, ArabicDatePipe, PaginationComponent, DateFieldComponent, MatFormFieldModule, MatSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './attendance.component.html',
   styleUrl: './attendance.component.css'
@@ -44,8 +48,7 @@ export class AttendanceComponent {
   readonly archiveStatusOptions = ALL_STUDENT_STATUS_OPTIONS;
   readonly notRecorded = STUDENT_NOT_RECORDED;
   readonly statusOption = studentStatusOption;
-  readonly sheetPageSize = SHEET_PAGE_SIZE;
-  readonly archivePageSize = ARCHIVE_PAGE_SIZE;
+  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
 
   private noticeTimer?: ReturnType<typeof setTimeout>;
 
@@ -73,10 +76,12 @@ export class AttendanceComponent {
   private readonly stored = computed(() => this.store.recordsOf(this.selectedSection(), this.selectedDate()));
   readonly dirty = computed(() => JSON.stringify(this.draft()) !== JSON.stringify(this.stored()));
 
+  // Only the visible slice is paged; the whole draft() is still what gets saved
   readonly sheetPage = signal(1);
+  readonly sheetPageSize = signal(loadPageSize(SHEET_SIZE_KEY));
   readonly sheetRows = computed(() => {
-    const start = (this.sheetPage() - 1) * SHEET_PAGE_SIZE;
-    return this.draft().slice(start, start + SHEET_PAGE_SIZE);
+    const start = (this.sheetPage() - 1) * this.sheetPageSize();
+    return this.draft().slice(start, start + this.sheetPageSize());
   });
   readonly unmarkedCount = computed(() => this.draft().filter(r => !r.status || r.status === 'NOT_RECORDED').length);
   readonly attendingCount = computed(() => this.draft().filter(r => isAttending(r.status)).length);
@@ -109,6 +114,12 @@ export class AttendanceComponent {
 
   shiftDate(days: number): void {
     this.changeDate(shiftIsoDate(this.selectedDate(), days));
+  }
+
+  changeSheetPageSize(size: number): void {
+    savePageSize(SHEET_SIZE_KEY, size);
+    this.sheetPageSize.set(size);
+    this.sheetPage.set(1);
   }
 
   goToday(): void {
@@ -156,10 +167,11 @@ export class AttendanceComponent {
 
   readonly filters = signal<ClassArchiveFilters>(EMPTY_FILTERS);
   readonly archivePage = signal(1);
+  readonly archivePageSize = signal(loadPageSize(ARCHIVE_SIZE_KEY));
   readonly archiveRecords = computed(() => this.store.archive(this.selectedSection(), this.filters()));
   readonly archiveRows = computed(() => {
-    const start = (this.archivePage() - 1) * ARCHIVE_PAGE_SIZE;
-    return this.archiveRecords().slice(start, start + ARCHIVE_PAGE_SIZE);
+    const start = (this.archivePage() - 1) * this.archivePageSize();
+    return this.archiveRecords().slice(start, start + this.archivePageSize());
   });
   readonly archiveSummary = computed(() => {
     const counts: Partial<Record<StudentArchiveStatus, number>> = {};
@@ -193,6 +205,12 @@ export class AttendanceComponent {
 
   clearFilters(): void {
     this.filters.set(EMPTY_FILTERS);
+    this.archivePage.set(1);
+  }
+
+  changeArchivePageSize(size: number): void {
+    savePageSize(ARCHIVE_SIZE_KEY, size);
+    this.archivePageSize.set(size);
     this.archivePage.set(1);
   }
 

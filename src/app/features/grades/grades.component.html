@@ -86,12 +86,13 @@
         }
       </div>
       @if (scope.subjects().length > 1) {
-        <select (change)="selectSubject($any($event.target).value)" aria-label="المادة"
-          class="md:ms-auto px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700">
-          @for (subject of scope.subjects(); track subject) {
-            <option [value]="subject" [selected]="selectedSubject() === subject">{{ subject }}</option>
-          }
-        </select>
+        <mat-form-field class="field-compact md:ms-auto w-full md:w-48">
+          <mat-select [value]="selectedSubject()" (selectionChange)="selectSubject($event.value)" aria-label="المادة">
+            @for (subject of scope.subjects(); track subject) {
+              <mat-option [value]="subject">{{ subject }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
       } @else {
         <span class="md:ms-auto text-xs font-bold px-3 py-2 rounded-xl bg-slate-100 text-slate-700 w-fit">مادة {{ selectedSubject() }}</span>
       }

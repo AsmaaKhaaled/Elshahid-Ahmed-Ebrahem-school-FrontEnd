@@ -1,17 +1,37 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 
 /** "عرض 11–20 من 57" + previous / page numbers / next. Pages are 1-based. */
 @Component({
   selector: 'app-pagination',
   standalone: true,
+  imports: [MatFormFieldModule, MatSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (total() > 0) {
       <nav class="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" aria-label="التنقل بين الصفحات">
-        <span class="text-slate-500">
-          عرض <strong class="text-slate-700 tabular-nums">{{ first() }}–{{ last() }}</strong> من
-          <strong class="text-slate-700 tabular-nums">{{ total() }}</strong> {{ itemLabel() }}
-        </span>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-slate-500">
+            عرض <strong class="text-slate-700 tabular-nums">{{ first() }}–{{ last() }}</strong> من
+            <strong class="text-slate-700 tabular-nums">{{ total() }}</strong> {{ itemLabel() }}
+          </span>
+
+          <!-- Outside the page buttons: still there after picking a size that fits everything on one page -->
+          @if (pageSizeOptions().length) {
+            <div class="flex items-center gap-1.5 text-slate-500">
+              <span>عدد الصفوف</span>
+              <mat-form-field class="field-compact w-20">
+                <mat-select [value]="pageSize()" [disabled]="disabled()" (selectionChange)="changeSize($event.value)"
+                  aria-label="عدد الصفوف في الصفحة">
+                  @for (size of pageSizeOptions(); track size) {
+                    <mat-option [value]="size">{{ size }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          }
+        </div>
 
         @if (totalPages() > 1) {
           <div class="flex items-center gap-1">
@@ -47,7 +67,10 @@ export class PaginationComponent {
   readonly itemLabel = input('');
   // e.g. while the next page is loading
   readonly disabled = input(false);
+  // Empty = no size selector; the parent owns the size and goes back to page 1 when it changes
+  readonly pageSizeOptions = input<readonly number[]>([]);
   readonly pageChange = output<number>();
+  readonly pageSizeChange = output<number>();
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
   readonly first = computed(() => (this.page() - 1) * this.pageSize() + 1);
@@ -71,6 +94,13 @@ export class PaginationComponent {
   go(page: number): void {
     if (page >= 1 && page <= this.totalPages() && page !== this.page()) {
       this.pageChange.emit(page);
+    }
+  }
+
+  changeSize(value: string | number): void {
+    const size = Number(value);
+    if (this.pageSizeOptions().includes(size) && size !== this.pageSize()) {
+      this.pageSizeChange.emit(size);
     }
   }
 }

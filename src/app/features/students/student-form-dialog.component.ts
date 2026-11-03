@@ -8,7 +8,8 @@ import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { ClassesService, SchoolClass } from '../../core/services/classes.service';
 import { CreateStudentPayload, StudentsService } from '../../core/services/students.service';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
-import { Student, nextStudentCode } from './student.model';
+import { STUDENT_STATUSES, Student, nextStudentCode } from './student.model';
+import { studentFromApi } from './students.store';
 
 @Component({
   selector: 'app-student-form-dialog',
@@ -44,12 +45,8 @@ export class StudentFormDialogComponent implements OnInit {
     'الصف الثالث الإعدادي'
   ];
 
-  readonly enrollmentStatuses = [
-    'منتظم',
-    'منازل',
-    'محول',
-    'منقول'
-  ];
+  // منتظم / موقوف / منقول: the same list as the filter and the Excel template
+  readonly enrollmentStatuses = STUDENT_STATUSES;
 
   // State Signals
   readonly allClasses = signal<SchoolClass[]>([]);
@@ -253,46 +250,39 @@ export class StudentFormDialogComponent implements OnInit {
         }
       });
     } else {
-      // Update Mode
-      this.isSubmitting.set(false);
-      const selectedClass = this.allClasses().find(c => c.id === classId);
-      const gradeId = gradeLevel.includes('الأول') ? 'G1' : gradeLevel.includes('الثاني') ? 'G2' : 'G3';
-      this.saved.emit({
-        id: currentStudent.id,
-        code: studentCode,
-        nationalId,
-        name: fullNameArabic,
-        gradeId,
-        className: selectedClass?.name || currentStudent.className,
-        guardianName,
-        guardianPhone,
-        status: enrollmentStatus as any,
-        gpa: currentStudent.gpa
+      // Update Mode: PUT to Backend API, then show what the backend saved
+      this.studentsService.updateStudent(currentStudent.id, payload).subscribe({
+        next: (res) => {
+          this.isSubmitting.set(false);
+          this.saved.emit({ ...studentFromApi(res?.data ?? {}), id: currentStudent.id, gpa: currentStudent.gpa });
+        },
+        error: (err) => {
+          this.isSubmitting.set(false);
+          this.serverError.set(
+            err?.error?.message ||
+            err?.error?.errors?.[0]?.message ||
+            'تعذر حفظ تعديلات الطالب. يرجى مراجعة البيانات.'
+          );
+        }
       });
     }
   }
 
+  // The student the backend saved (its class & grade as the server resolved them), same mapper as the edit flow
   private emitSavedStudent(data: any, initialPassword?: string): void {
-    const gradeLevelStr = data.gradeLevel || this.form.get('gradeLevel')?.value || '';
-    const gradeId = gradeLevelStr.includes('الأول') ? 'G1' : gradeLevelStr.includes('الثاني') ? 'G2' : 'G3';
-    const selectedClass = this.allClasses().find(c => c.id === (data.classId || this.form.get('classId')?.value));
-    const className = data.class?.name || selectedClass?.name || '1/1';
+    const saved = studentFromApi(data);
+    // Only if the response has no class object: the class picked in the form (the one sent to the backend)
+    const className = saved.className || this.allClasses().find(c => c.id === data.classId)?.name || '';
+    const gradeNumber = Number(className[0]);
 
-    const mapped: Student = {
-      id: data.id || crypto.randomUUID(),
-      code: data.studentCode || this.form.get('studentCode')?.value,
-      nationalId: data.nationalId || this.form.get('nationalId')?.value,
-      name: data.fullNameArabic || this.form.get('fullNameArabic')?.value,
-      gradeId,
+    this.saved.emit({
+      ...saved,
+      id: saved.id || crypto.randomUUID(),
       className,
-      guardianName: data.guardianName || this.form.get('guardianName')?.value,
-      guardianPhone: data.guardianPhone || this.form.get('guardianPhone')?.value,
-      status: (data.enrollmentStatus || 'منتظم') as any,
+      gradeId: saved.gradeId || (gradeNumber ? `G${gradeNumber}` : ''),
       gpa: null,
       initialPassword: initialPassword || data.initialCredentials?.initialPassword
-    };
-
-    this.saved.emit(mapped);
+    });
   }
 
   confirmDelete(): void {

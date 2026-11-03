@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AcademicCalendarStore, today } from '../../core/academic/academic-calendar.store';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { arabicCount } from '../../shared/pipes/time-ago.pipe';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
@@ -15,7 +16,7 @@ const STATUS_STYLES = {
   selector: 'app-academic-settings',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardTableDirective, ArabicDatePipe],
+  imports: [CardTableDirective, ArabicDatePipe, DateFieldComponent],
   templateUrl: './academic-settings.component.html',
   styleUrl: './academic-settings.component.css'
 })

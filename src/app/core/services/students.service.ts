@@ -81,6 +81,14 @@ export class StudentsService {
     return this.http.get<StudentApiResponse<any[]>>(this.apiUrl);
   }
 
+  updateStudent(id: string, payload: Partial<CreateStudentPayload>): Observable<StudentApiResponse<CreatedStudentData>> {
+    return this.http.put<StudentApiResponse<CreatedStudentData>>(`${this.apiUrl}/${encodeURIComponent(id)}`, payload);
+  }
+
+  deleteStudent(id: string): Observable<StudentApiResponse<null>> {
+    return this.http.delete<StudentApiResponse<null>>(`${this.apiUrl}/${encodeURIComponent(id)}`);
+  }
+
   /**
    * رفع واستيراد ملف الإكسيل
    */

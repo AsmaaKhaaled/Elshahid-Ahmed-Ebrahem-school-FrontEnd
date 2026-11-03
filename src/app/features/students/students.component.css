@@ -1,0 +1,8 @@
+/* Desktop: a name or phone never breaks onto a second line; the table scrolls sideways instead.
+   Phones (below md) keep the card layout from styles.css, where long values may wrap. */
+@media (min-width: 768px) {
+  .students-table th,
+  .students-table td {
+    white-space: nowrap;
+  }
+}

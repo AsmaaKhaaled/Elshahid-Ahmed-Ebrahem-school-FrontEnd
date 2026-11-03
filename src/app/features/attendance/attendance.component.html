@@ -78,8 +78,7 @@
   <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
     <div class="flex flex-wrap items-center gap-2">
       <button (click)="shiftDate(-1)" type="button" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600" aria-label="اليوم السابق">→</button>
-      <input type="date" [value]="selectedDate()" (change)="changeDate($any($event.target).value)" aria-label="تاريخ الدفتر"
-        class="px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700" />
+      <app-date-field compact required class="w-48" ariaLabel="تاريخ الدفتر" [value]="selectedDate()" (valueChange)="changeDate($event)" />
       <button (click)="shiftDate(1)" type="button" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600" aria-label="اليوم التالي">←</button>
       <button (click)="goToday()" type="button" class="px-3 py-2 rounded-xl bg-primary-50 text-primary-800 hover:bg-primary-100 text-xs font-bold">اليوم</button>
       <span class="text-sm font-bold text-slate-800 ms-1">{{ selectedDate() | arabicDate:'dateOnly' }}</span>
@@ -205,7 +204,7 @@
           <tbody class="divide-y divide-slate-100 text-slate-700">
             @for (rec of sheetRows(); track rec.studentId; let idx = $index) {
               <tr class="hover:bg-slate-50/80 transition-colors" [class.bg-amber-50]="editable() && !rec.status">
-                <td class="py-3 px-4 font-mono text-xs text-slate-400">{{ (sheetPage() - 1) * sheetPageSize + idx + 1 }}</td>
+                <td class="py-3 px-4 font-mono text-xs text-slate-400">{{ (sheetPage() - 1) * sheetPageSize() + idx + 1 }}</td>
                 <td class="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">{{ rec.studentName }}</td>
                 <td class="py-3 px-4 font-mono text-xs text-slate-500">{{ rec.code }}</td>
                 <td class="py-3 px-4 text-center">
@@ -244,8 +243,8 @@
       </div>
 
       <div class="px-4 py-3 border-t border-slate-100">
-        <app-pagination [page]="sheetPage()" [pageSize]="sheetPageSize" [total]="draft().length" itemLabel="طالب"
-          (pageChange)="sheetPage.set($event)" />
+        <app-pagination [page]="sheetPage()" [pageSize]="sheetPageSize()" [total]="draft().length" itemLabel="طالب"
+          [pageSizeOptions]="pageSizeOptions" (pageChange)="sheetPage.set($event)" (pageSizeChange)="changeSheetPageSize($event)" />
       </div>
     </section>
   }
@@ -270,37 +269,27 @@
     </div>
 
     <!-- Filters -->
-    <div class="px-5 py-3 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end text-xs">
-      <label class="space-y-1 font-bold text-slate-600">
-        <span class="block">من تاريخ</span>
-        <input type="date" [value]="filters().from" (change)="setFilter('from', $any($event.target).value)"
-          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal" />
-      </label>
-      <label class="space-y-1 font-bold text-slate-600">
-        <span class="block">إلى تاريخ</span>
-        <input type="date" [value]="filters().to" (change)="setFilter('to', $any($event.target).value)"
-          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal" />
-      </label>
-      <label class="space-y-1 font-bold text-slate-600">
-        <span class="block">الطالب</span>
-        <select (change)="setFilter('studentId', $any($event.target).value)"
-          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal">
-          <option value="" [selected]="!filters().studentId">كل الطلاب</option>
+    <div class="px-5 py-3 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 lg:grid-cols-5 gap-3 items-center text-xs">
+      <app-date-field label="من تاريخ" [value]="filters().from" [max]="filters().to" (valueChange)="setFilter('from', $event)" />
+      <app-date-field label="إلى تاريخ" [value]="filters().to" [min]="filters().from" (valueChange)="setFilter('to', $event)" />
+      <mat-form-field class="w-full">
+        <mat-label>الطالب</mat-label>
+        <mat-select [value]="filters().studentId" (selectionChange)="setFilter('studentId', $event.value)">
+          <mat-option value="">كل الطلاب</mat-option>
           @for (student of studentOptions(); track student.id) {
-            <option [value]="student.id" [selected]="filters().studentId === student.id">{{ student.name }}</option>
+            <mat-option [value]="student.id">{{ student.name }}</mat-option>
           }
-        </select>
-      </label>
-      <label class="space-y-1 font-bold text-slate-600">
-        <span class="block">الحالة</span>
-        <select (change)="setFilter('status', $any($event.target).value)"
-          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal">
-          <option value="" [selected]="!filters().status">كل الحالات</option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="w-full">
+        <mat-label>الحالة</mat-label>
+        <mat-select [value]="filters().status" (selectionChange)="setFilter('status', $event.value)">
+          <mat-option value="">كل الحالات</mat-option>
           @for (opt of archiveStatusOptions; track opt.value) {
-            <option [value]="opt.value" [selected]="filters().status === opt.value">{{ opt.label }}</option>
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
           }
-        </select>
-      </label>
+        </mat-select>
+      </mat-form-field>
       @if (hasFilters()) {
         <button (click)="clearFilters()" type="button" class="px-3 py-2 rounded-xl text-slate-600 hover:bg-white font-bold w-fit">مسح الفلاتر</button>
       }
@@ -353,8 +342,8 @@
     </div>
 
     <div class="px-4 py-3 border-t border-slate-100">
-      <app-pagination [page]="archivePage()" [pageSize]="archivePageSize" [total]="archiveRecords().length" itemLabel="سجل"
-        (pageChange)="archivePage.set($event)" />
+      <app-pagination [page]="archivePage()" [pageSize]="archivePageSize()" [total]="archiveRecords().length" itemLabel="سجل"
+        [pageSizeOptions]="pageSizeOptions" (pageChange)="archivePage.set($event)" (pageSizeChange)="changeArchivePageSize($event)" />
     </div>
   </section>
 </div>
