@@ -200,7 +200,7 @@ export class AuthService {
   }
 
   /**
-   * Login for the school administration page (/auth/admin), via the unified POST /api/v1/auth/login.
+   * Login for the school administration page (/admin/login), via the unified POST /api/v1/auth/login.
    * Accounts that aren't ADMIN / SUPER_ADMIN are refused before anything is stored.
    */
   adminLogin(credentials: AdminLoginCredentials): Observable<LoginResponse> {
@@ -271,8 +271,7 @@ export class AuthService {
     localStorage.removeItem(this.USER_STORAGE_KEY);
     this.currentUser.set(null);
     this.requirePasswordChange.set(false);
-    const shouldGoToAdmin = wasAdmin && this.router.url.startsWith('/admin');
-    this.router.navigate([shouldGoToAdmin ? '/auth/admin' : '/']);
+    this.router.navigate([wasAdmin ? '/admin/login' : '/']);
   }
 
   hasRole(roles: UserRole | UserRole[]): boolean {

@@ -1,0 +1,58 @@
+:host {
+  display: block;
+}
+
+/* Crest: pops in, then floats gently while the rings turn and breathe around it */
+.logo-stage {
+  animation: logo-pop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.logo-float {
+  animation: logo-float 5s ease-in-out 0.9s infinite;
+}
+
+.logo-ring-spin {
+  animation: ring-spin 24s linear infinite;
+}
+
+.logo-ring-pulse {
+  animation: ring-pulse 3.2s ease-in-out infinite;
+}
+
+.fade-up {
+  animation: fade-up 0.7s ease-out var(--delay, 0s) both;
+}
+
+@keyframes logo-pop {
+  from { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.12); opacity: 0.15; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-stage,
+  .logo-float,
+  .logo-ring-spin,
+  .logo-ring-pulse,
+  .fade-up {
+    animation: none;
+  }
+}

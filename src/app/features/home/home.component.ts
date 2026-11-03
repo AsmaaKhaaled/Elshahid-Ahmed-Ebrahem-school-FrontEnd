@@ -1,6 +1,5 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { HonorAvatarComponent } from '../honor-roll/honor-avatar.component';
@@ -29,7 +28,7 @@ interface AcademicPillar {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, FormsModule, HonorAvatarComponent, PublicHeaderComponent, PublicFooterComponent],
+  imports: [RouterLink, HonorAvatarComponent, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -84,26 +83,19 @@ export class HomeComponent {
     }
   });
 
-  // Modal & Drawer Control Signals
-  readonly isStudentModalOpen = signal<boolean>(false);
-  readonly isTeacherModalOpen = signal<boolean>(false);
   readonly isMobileMenuOpen = signal<boolean>(false);
 
-  // Student Form Model Signals
-  readonly studentCode = signal<string>('STU-2026-001');
-  readonly studentPassword = signal<string>('Student@2026');
-  readonly studentShowPassword = signal<boolean>(false);
-  readonly studentRememberMe = signal<boolean>(true);
-  readonly studentErrorMessage = signal<string | null>(null);
-  readonly studentIsLoading = signal<boolean>(false);
-
-  // Teacher Form Model Signals
-  readonly teacherNationalId = signal<string>('28901222800962');
-  readonly teacherPassword = signal<string>('Teacher@2026');
-  readonly teacherShowPassword = signal<boolean>(false);
-  readonly teacherRememberMe = signal<boolean>(true);
-  readonly teacherErrorMessage = signal<string | null>(null);
-  readonly teacherIsLoading = signal<boolean>(false);
+  // كلمة مدير المدرسة - TODO: placeholder photo & text, replace with the principal's real photo and words
+  readonly principal = {
+    name: SCHOOL_INFO.principal,
+    title: 'مدير المدرسة',
+    photoUrl: 'images/principal-placeholder.svg',
+    message: [
+      'أبنائي الطلاب، السادة أولياء الأمور، زملائي المعلمين... أهلاً بكم في البوابة الإلكترونية لمدرستنا.',
+      'نؤمن بأن المدرسة بيت ثانٍ يصنع العقول ويبني الشخصية، ونسعى كل يوم لتقديم تعليم متميز يواكب العصر، في بيئة آمنة تحترم الطالب وتنمّي مواهبه.',
+      'ستظل أبوابنا مفتوحة دائماً لكل اقتراح يخدم أبناءنا، فالتعاون بين البيت والمدرسة هو طريقنا للتفوق والنجاح.'
+    ]
+  };
 
   // Core Pillars / Highlights Replacing Duplicates
   readonly pillars: AcademicPillar[] = [
@@ -168,21 +160,6 @@ export class HomeComponent {
     }
   ];
 
-  openStudentModal(): void {
-    this.isStudentModalOpen.set(true);
-    this.isTeacherModalOpen.set(false);
-  }
-
-  openTeacherModal(): void {
-    this.isTeacherModalOpen.set(true);
-    this.isStudentModalOpen.set(false);
-  }
-
-  closeModals(): void {
-    this.isStudentModalOpen.set(false);
-    this.isTeacherModalOpen.set(false);
-  }
-
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(v => !v);
   }
@@ -211,77 +188,5 @@ export class HomeComponent {
     } else {
       this.router.navigate(['/admin/dashboard']);
     }
-  }
-
-  fillStudentDemo(): void {
-    this.studentCode.set('STU-2026-001');
-    this.studentPassword.set('Student@2026');
-    this.studentErrorMessage.set(null);
-  }
-
-  fillTeacherDemo(): void {
-    this.teacherNationalId.set('28901222800962');
-    this.teacherPassword.set('Teacher@2026');
-    this.teacherErrorMessage.set(null);
-  }
-
-  submitStudentLogin(): void {
-    const code = this.studentCode()?.trim();
-    const pass = this.studentPassword();
-
-    if (!code || !pass) {
-      this.studentErrorMessage.set('يرجى إدخال كود الطالب المدرسي وكلمة المرور');
-      return;
-    }
-
-    this.studentIsLoading.set(true);
-    this.studentErrorMessage.set(null);
-
-    this.authService.login({
-      identifier: code,
-      password: pass,
-      rememberMe: this.studentRememberMe()
-    }).subscribe({
-      next: () => {
-        this.studentIsLoading.set(false);
-        this.closeModals();
-      },
-      error: (err) => {
-        this.studentIsLoading.set(false);
-        this.studentErrorMessage.set(
-          err?.error?.message || 'تعذر تسجيل الدخول. يرجى التأكد من كود الطالب أو الاتصال بإدارة المدرسة.'
-        );
-      }
-    });
-  }
-
-  submitTeacherLogin(): void {
-    const nid = this.teacherNationalId()?.trim();
-    const pass = this.teacherPassword();
-
-    if (!nid || !pass) {
-      this.teacherErrorMessage.set('يرجى إدخال الرقم القومي للمعلم (14 رقماً) وكلمة المرور');
-      return;
-    }
-
-    this.teacherIsLoading.set(true);
-    this.teacherErrorMessage.set(null);
-
-    this.authService.login({
-      identifier: nid,
-      password: pass,
-      rememberMe: this.teacherRememberMe()
-    }).subscribe({
-      next: () => {
-        this.teacherIsLoading.set(false);
-        this.closeModals();
-      },
-      error: (err) => {
-        this.teacherIsLoading.set(false);
-        this.teacherErrorMessage.set(
-          err?.error?.message || 'تعذر تسجيل الدخول. يرجى التأكد من الرقم القومي وكلمة المرور.'
-        );
-      }
-    });
   }
 }

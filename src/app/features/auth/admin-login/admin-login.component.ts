@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ADMIN_ROLES, AuthService, NotAdminAccountError } from '../../../core/auth/auth.service';
-import { SCHOOL_INFO } from '../../../core/constants/school.constants';
+import { AuthBrandPanelComponent } from '../../../shared/components/auth-brand-panel/auth-brand-panel.component';
 
 export const MAX_ATTEMPTS = 5;
 export const LOCK_MINUTES = 15;
@@ -19,14 +18,14 @@ interface LockState {
 }
 
 /**
- * School administration login (/auth/admin): national ID (or email) + password, generic error messages,
+ * School administration login (/admin/login): national ID (or email) + password, generic error messages,
  * temporary lock after repeated failures, and rejection of non-admin accounts.
  * The lock here is a UX courtesy only - the backend must enforce its own rate limit.
  */
 @Component({
   selector: 'app-admin-login',
   standalone: true,
-  imports: [ReactiveFormsModule, NgOptimizedImage, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AuthBrandPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-login.component.html',
   styleUrl: './admin-login.component.css'
@@ -36,7 +35,6 @@ export class AdminLoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  readonly school = SCHOOL_INFO;
   readonly maxAttempts = MAX_ATTEMPTS;
   readonly lockMinutes = LOCK_MINUTES;
 

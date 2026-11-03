@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480">
+  <!-- Temporary stand-in until the principal's real photo is added -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e2e8f0" />
+      <stop offset="1" stop-color="#cbd5e1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="480" fill="url(#bg)" />
+  <circle cx="200" cy="180" r="82" fill="#94a3b8" />
+  <path d="M40 480c0-96 72-168 160-168s160 72 160 168z" fill="#94a3b8" />
+  <path d="M168 318l32 52 32-52" fill="#1B365D" />
+</svg>

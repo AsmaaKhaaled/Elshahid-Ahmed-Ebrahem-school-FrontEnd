@@ -1,23 +1,38 @@
-<div class="bg-white/95 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl space-y-6 text-slate-800">
+<div class="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-white font-cairo text-slate-800 overflow-x-hidden">
+
+  <!-- ================= Brand Panel (Right in RTL) ================= -->
+  <app-auth-brand-panel subtitle="بوابة إدارة المدرسة" />
+
+  <!-- ================= Login Panel (Left in RTL) ================= -->
+  <section class="relative flex flex-col px-4 sm:px-8 py-6 lg:py-10">
+
+    <!-- Back to the public home page -->
+    <div class="flex justify-start">
+      <a routerLink="/home"
+        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-portal-navy hover:border-portal-navy/30 hover:bg-slate-50 text-xs font-bold transition-colors"
+        title="الصفحة الرئيسية للمدرسة">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span>الصفحة الرئيسية</span>
+      </a>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center py-6 lg:py-0">
+      <div class="w-full max-w-md space-y-6 fade-up" style="--delay: 0.2s">
   <!-- Header -->
-  <div class="text-center space-y-1.5">
-    <img
-      [ngSrc]="school.logoUrl"
-      width="80"
-      height="80"
-      priority
-      [alt]="'شعار ' + school.fullName"
-      class="mx-auto mb-2 rounded-full shadow-lg shadow-primary-900/20" />
+  <div class="text-center space-y-2">
     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-800 text-[11px] font-bold">
       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
       بوابة آمنة لإدارة المدرسة
     </span>
-    <h2 class="text-2xl font-black text-slate-900">
-      {{ mode() === 'login' ? 'دخول إدارة المدرسة' : 'استعادة كلمة المرور' }}
+    <h2 class="text-3xl sm:text-4xl font-black text-portal-navy tracking-tight">
+      {{ mode() === 'login' ? 'دخول الإدارة' : 'استعادة كلمة المرور' }}
     </h2>
-    <p class="text-xs text-slate-500">
+    <p class="text-xs sm:text-sm text-slate-500">
       @switch (mode()) {
         @case ('login') { أدخل الرقم القومي (أو البريد الإلكتروني) وكلمة المرور الخاصة بحساب الإدارة }
         @case ('forgot') { إعادة تعيين كلمة مرور حسابات الإدارة }
@@ -144,8 +159,12 @@
     }
   }
 
+
   <div class="pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
     لست من إدارة المدرسة؟
-    <a routerLink="/" class="font-bold text-primary-700 hover:text-primary-900">العودة للصفحة الرئيسية</a>
+    <a routerLink="/" class="font-bold text-primary-700 hover:text-primary-900">دخول الطلاب والمعلمين</a>
   </div>
+      </div>
+    </div>
+  </section>
 </div>

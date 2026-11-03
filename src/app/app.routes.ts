@@ -4,15 +4,18 @@ import { roleGuard } from './core/guards/role.guard';
 import { passwordChangeGuard } from './core/guards/password-change.guard';
 import { adminSectionGuard } from './core/guards/admin-section.guard';
 import { featureRedirectGuard } from './core/guards/feature-redirect.guard';
+import { guestGuard } from './core/guards/guest.guard';
 import { SUPER_ADMIN_ONLY } from './core/admin/admin-permissions';
 
 export const routes: Routes = [
-  // Home Page
+  // Landing page: student & teacher login (signed-in users go to their dashboard)
   {
     path: '',
-    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
+    loadComponent: () => import('./features/auth/portal-login/portal-login.component').then(m => m.PortalLoginComponent),
+    canActivate: [guestGuard],
     pathMatch: 'full'
   },
+  // Public school home page
   {
     path: 'home',
     loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent)
@@ -24,11 +27,8 @@ export const routes: Routes = [
     loadComponent: () => import('./layouts/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
     children: [
       { path: 'login', redirectTo: '/', pathMatch: 'full' },
-      // School administration login - reached from the small "دخول الإدارة" link, not advertised on the home page
-      {
-        path: 'admin',
-        loadComponent: () => import('./features/auth/admin-login/admin-login.component').then(m => m.AdminLoginComponent)
-      },
+      // Old address of the administration login
+      { path: 'admin', redirectTo: '/admin/login', pathMatch: 'full' },
       {
         path: 'set-initial-password', 
         loadComponent: () => import('./features/auth/set-initial-password/set-initial-password.component').then(m => m.SetInitialPasswordComponent),
@@ -36,6 +36,13 @@ export const routes: Routes = [
       },
       { path: '', redirectTo: '/', pathMatch: 'full' }
     ]
+  },
+
+  // School administration login - reached from the small "دخول الإدارة" link on the login page.
+  // Declared before the protected /admin block so its guards don't apply here.
+  {
+    path: 'admin/login',
+    loadComponent: () => import('./features/auth/admin-login/admin-login.component').then(m => m.AdminLoginComponent)
   },
 
   // Admin & School Leadership Layout & Routes

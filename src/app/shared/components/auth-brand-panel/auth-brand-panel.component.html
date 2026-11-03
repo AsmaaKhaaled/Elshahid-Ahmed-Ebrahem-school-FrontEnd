@@ -1,0 +1,26 @@
+<section
+  class="relative h-full overflow-hidden bg-portal-navy text-white flex flex-col items-center justify-center px-6 py-8 lg:py-12 lg:min-h-screen">
+
+  <div class="relative z-10 flex flex-col items-center text-center">
+    <!-- Animated school crest -->
+    <div class="logo-stage relative w-28 h-28 sm:w-36 sm:h-36 lg:w-56 lg:h-56">
+      <span class="logo-ring-spin absolute inset-0 rounded-full border-2 border-dashed border-amber-300/40"></span>
+      <span class="logo-ring-pulse absolute inset-3 lg:inset-5 rounded-full bg-white/10"></span>
+      <div class="logo-float absolute inset-4 lg:inset-7 rounded-full bg-white shadow-2xl shadow-black/40 p-2 lg:p-3 ring-4 ring-white/20">
+        <img [src]="school.logoUrl" [alt]="'شعار ' + school.name" class="w-full h-full object-contain rounded-full" />
+      </div>
+    </div>
+
+    <h1 class="fade-up mt-5 lg:mt-8 text-lg sm:text-2xl lg:text-3xl font-black tracking-tight leading-snug" style="--delay: 0.35s">
+      {{ school.name }}
+    </h1>
+    <p class="fade-up text-xs sm:text-sm lg:text-base text-slate-300 font-semibold mt-1" style="--delay: 0.5s">
+      {{ school.type }} • {{ subtitle() }}
+    </p>
+
+    <div class="hidden lg:block fade-up mt-10 space-y-2" style="--delay: 0.7s">
+      <p class="text-2xl xl:text-3xl font-black">نصنع التميز معاً</p>
+      <p class="text-lg xl:text-xl font-bold text-amber-300">في كل حصة وكل يوم دراسي</p>
+    </div>
+  </div>
+</section>

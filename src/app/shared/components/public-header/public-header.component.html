@@ -50,7 +50,7 @@
   <div class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
 
     <!-- School Identity & Crest (Right in RTL) -->
-    <a routerLink="/" class="flex items-center gap-2 sm:gap-3 shrink min-w-0 group hover:opacity-95 transition-opacity">
+    <a routerLink="/home" class="flex items-center gap-2 sm:gap-3 shrink min-w-0 group hover:opacity-95 transition-opacity">
       <img
         [src]="schoolLogo"
         alt="شعار مدرسة الشهيد أحمد إبراهيم"
@@ -70,7 +70,7 @@
     <!-- Middle Navigation Links (Desktop: Only shown on lg+ to prevent tablet collapse) -->
     <nav class="hidden lg:flex items-center justify-center gap-1.5 xl:gap-3 text-xs xl:text-sm font-bold text-slate-600 flex-1 mx-2 xl:mx-4">
       <a
-        routerLink="/"
+        routerLink="/home"
         routerLinkActive="bg-portal-navy text-white shadow-sm"
         [routerLinkActiveOptions]="{ exact: true }"
         class="px-3 xl:px-3.5 py-2 rounded-xl hover:bg-slate-100 hover:text-slate-900 whitespace-nowrap transition-all">
@@ -193,15 +193,14 @@
           <span class="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
         </a>
       } @else {
-        <!-- Quick Portal Entrance Button (Adapts on small screens) -->
-        <a routerLink="/" fragment="portal-login-section"
-          class="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold text-xs transition-colors whitespace-nowrap shrink-0">
-          <svg class="w-4 h-4 text-portal-navy shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- Login Page Button -->
+        <a routerLink="/"
+          class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-xs shadow-sm transition-colors whitespace-nowrap shrink-0">
+          <svg class="w-4 h-4 text-primary-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
           </svg>
-          <span class="hidden sm:inline">دخول البوابات</span>
-          <span class="sm:hidden">الدخول</span>
+          <span>تسجيل الدخول</span>
         </a>
       }
 
@@ -289,9 +288,9 @@
       </div>
     } @else {
       <div class="space-y-2">
-        <a routerLink="/" fragment="portal-login-section" (click)="closeMobileMenu()"
+        <a routerLink="/" (click)="closeMobileMenu()"
           class="w-full p-2.5 rounded-xl bg-portal-navy text-white font-bold text-xs text-center shadow-xs block">
-          دخول البوابات التعليمية
+          تسجيل الدخول
         </a>
       </div>
     }
@@ -300,7 +299,7 @@
   <!-- Mobile Drawer Nav Links -->
   <nav class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1.5">
     <a
-      routerLink="/"
+      routerLink="/home"
       (click)="closeMobileMenu()"
       routerLinkActive="bg-portal-navy text-white shadow-xs"
       [routerLinkActiveOptions]="{ exact: true }"
