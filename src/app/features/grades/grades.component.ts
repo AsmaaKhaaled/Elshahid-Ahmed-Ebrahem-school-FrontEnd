@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { today } from '../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
@@ -22,7 +24,7 @@ const TITLE = 'سجل رصد درجات الصف';
   selector: 'app-grades',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardTableDirective],
+  imports: [CardTableDirective, MatFormFieldModule, MatSelectModule],
   templateUrl: './grades.component.html',
   styleUrl: './grades.component.css'
 })

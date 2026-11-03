@@ -1,0 +1,142 @@
+<div class="space-y-6">
+  <div>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">فصولي الدراسية</h2>
+    <p class="text-xs text-slate-500 mt-1">الفصول التي أسندتها إليك إدارة المدرسة وقوائم طلابها</p>
+    @if (!loadingClasses() && classes().length) {
+      <span class="inline-block mt-2 px-2.5 py-1 rounded-lg bg-primary-50 text-primary-800 text-[11px] font-bold">
+        {{ classes().length }} فصول · {{ totalStudents() }} طالب
+      </span>
+    }
+  </div>
+
+  <!-- Classes -->
+  @if (loadingClasses()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="bg-white rounded-2xl p-5 border border-slate-100/80 h-36 animate-pulse"></div>
+      }
+    </div>
+  } @else if (classesError()) {
+    <div class="bg-rose-50 text-rose-800 rounded-2xl p-5 text-sm font-semibold flex items-center justify-between gap-3" role="alert">
+      <span>{{ classesError() }}</span>
+      <button (click)="loadClasses()" type="button" class="shrink-0 px-3 py-1.5 rounded-lg bg-white text-rose-700 font-bold text-xs hover:bg-rose-100">
+        إعادة المحاولة
+      </button>
+    </div>
+  } @else if (!classes().length) {
+    <div class="bg-white rounded-2xl p-10 text-center border border-slate-100/80 shadow-soft">
+      <p class="font-bold text-slate-700">لم تُسند إليك أي فصول بعد</p>
+      <p class="text-xs text-slate-500 mt-1">تواصل مع إدارة المدرسة لتحديد الفصول التي تدرّسها.</p>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      @for (cls of classes(); track cls.id) {
+        @let selected = cls.id === selectedClassId();
+        @let fill = density(cls);
+        <button type="button" (click)="selectClass(cls.id)" [attr.aria-pressed]="selected"
+          class="text-right bg-white rounded-2xl p-5 shadow-soft border-2 transition-all space-y-4 hover:shadow-md"
+          [class]="selected ? 'border-primary-700' : 'border-transparent'">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="text-[11px] font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                {{ cls.gradeLevel }}
+              </span>
+              <h3 class="text-lg font-black text-slate-800">فصل {{ cls.name }}</h3>
+              @if (cls.roomNumber) {
+                <p class="text-[11px] text-slate-400">قاعة {{ cls.roomNumber }}</p>
+              }
+            </div>
+            @if (cls.isAdvisor) {
+              <span class="shrink-0 text-amber-700 bg-amber-50 font-bold px-2 py-0.5 rounded-md text-[11px]">رائد الفصل</span>
+            }
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs text-slate-600">
+              <span>عدد الطلاب:</span>
+              <span class="font-bold text-slate-800 tabular-nums">{{ cls.studentCount }} / {{ cls.capacity }}</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500"
+                [class]="fill > 1 ? 'bg-rose-500' : fill > 0.9 ? 'bg-amber-500' : 'bg-emerald-500'"
+                [style.width.%]="fill > 1 ? 100 : fill * 100">
+              </div>
+            </div>
+          </div>
+        </button>
+      }
+    </div>
+
+    <!-- Students of the selected class -->
+    @if (selectedClass(); as cls) {
+      <section class="bg-white rounded-2xl shadow-soft border border-slate-100/80 overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-black text-slate-800">طلاب فصل {{ cls.name }}</h3>
+            <p class="text-[11px] text-slate-500">{{ cls.displayNameArabic }}</p>
+          </div>
+          <label class="sm:w-64">
+            <span class="sr-only">بحث عن طالب</span>
+            <input type="search" [value]="search()" (input)="onSearch($any($event.target).value)"
+              placeholder="ابحث بالاسم أو كود الطالب"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" />
+          </label>
+        </div>
+
+        @if (studentsError()) {
+          <p class="px-5 py-2.5 bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3" role="alert">
+            <span>{{ studentsError() }}</span>
+            <button (click)="loadStudents()" type="button" class="font-bold underline">إعادة المحاولة</button>
+          </p>
+        }
+
+        <div class="overflow-x-auto" [class.opacity-60]="loadingStudents()" [attr.aria-busy]="loadingStudents()">
+          <table appCardTable class="w-full text-right text-sm">
+            <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500">
+              <tr>
+                <th scope="col" class="py-3 px-4">#</th>
+                <th scope="col" class="py-3 px-4">كود الطالب</th>
+                <th scope="col" class="py-3 px-4">اسم الطالب</th>
+                <th scope="col" class="py-3 px-4">حالة القيد</th>
+                <th scope="col" class="py-3 px-4">ولي الأمر</th>
+                <th scope="col" class="py-3 px-4">هاتف ولي الأمر</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              @for (student of studentsPage()?.students ?? []; track student.id; let idx = $index) {
+                <tr class="hover:bg-slate-50/80">
+                  <td class="py-2.5 px-4 font-mono text-xs text-slate-400">{{ rowNumber(idx) }}</td>
+                  <td class="py-2.5 px-4 font-mono text-xs whitespace-nowrap">{{ student.studentCode }}</td>
+                  <td class="py-2.5 px-4 font-bold text-slate-800 whitespace-nowrap">{{ student.fullName }}</td>
+                  <td class="py-2.5 px-4 text-xs">{{ student.enrollmentStatus || '—' }}</td>
+                  <td class="py-2.5 px-4 text-xs">{{ student.guardianName || '—' }}</td>
+                  <td class="py-2.5 px-4 text-xs tabular-nums" dir="ltr">
+                    @if (student.guardianPhone) {
+                      <a [href]="'tel:' + student.guardianPhone" class="text-primary-700 hover:underline">{{ student.guardianPhone }}</a>
+                    } @else {
+                      —
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="py-10 text-center text-sm text-slate-400">
+                    {{ loadingStudents() ? 'جاري التحميل...' : search().trim() ? 'لا يوجد طالب يطابق البحث.' : 'لا يوجد طلاب مقيدون في هذا الفصل بعد.' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (studentsPage(); as p) {
+          <div class="px-4 py-3 border-t border-slate-100">
+            <app-pagination [page]="p.meta.page" [pageSize]="p.meta.limit" [total]="p.meta.total" itemLabel="طالب"
+              [pageSizeOptions]="pageSizeOptions" [disabled]="loadingStudents()"
+              (pageChange)="goToPage($event)" (pageSizeChange)="changePageSize($event)" />
+          </div>
+        }
+      </section>
+    }
+  }
+</div>

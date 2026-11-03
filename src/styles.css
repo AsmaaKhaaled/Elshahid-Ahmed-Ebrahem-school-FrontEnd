@@ -206,7 +206,8 @@
  * Side-by-side fields keep their own height: without this, a field next to one with a hint
  * or an error under it gets stretched to the same row height and its box looks taller.
  */
-.grid > .mat-mdc-form-field {
+.grid > .mat-mdc-form-field,
+.grid > app-date-field {
   align-self: start;
 }
 

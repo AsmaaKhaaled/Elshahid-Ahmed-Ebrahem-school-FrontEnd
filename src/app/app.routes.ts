@@ -85,7 +85,8 @@ export const routes: Routes = [
     data: { roles: ['TEACHER'] },
     children: [
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'classes', loadComponent: () => import('./features/classes/classes.component').then(m => m.ClassesComponent) },
+      // Only the classes the admin assigned to this teacher, with their students
+      { path: 'classes', loadComponent: () => import('./features/classes/my-classes.component').then(m => m.MyClassesComponent) },
       { path: 'subjects', loadComponent: () => import('./features/subjects/curriculum.component').then(m => m.CurriculumComponent) },
       { path: 'lessons', loadComponent: () => import('./features/lessons/lessons.component').then(m => m.LessonsComponent) },
       { path: 'materials', loadComponent: () => import('./features/materials/materials.component').then(m => m.MaterialsComponent) },

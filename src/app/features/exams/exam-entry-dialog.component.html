@@ -21,16 +21,8 @@
       </mat-form-field>
 
       <div class="grid grid-cols-2 gap-3">
-        <mat-form-field class="w-full">
-          <mat-label>تاريخ الامتحان</mat-label>
-          <input matInput type="date" name="date" required [(ngModel)]="draft.date" />
-          <mat-error>التاريخ مطلوب</mat-error>
-        </mat-form-field>
-        <mat-form-field class="w-full">
-          <mat-label>وقت البداية</mat-label>
-          <input matInput type="time" name="startTime" required [(ngModel)]="draft.startTime" />
-          <mat-error>الوقت مطلوب</mat-error>
-        </mat-form-field>
+        <app-date-field label="تاريخ الامتحان" name="date" required [(ngModel)]="draft.date" error="التاريخ مطلوب" />
+        <app-time-field label="وقت البداية" name="startTime" required interval="15m" [(ngModel)]="draft.startTime" error="الوقت مطلوب" />
       </div>
 
       <div class="grid grid-cols-2 gap-3">

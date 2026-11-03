@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { Holiday } from './teacher-attendance.model';
@@ -8,7 +11,7 @@ import { Holiday } from './teacher-attendance.model';
 @Component({
   selector: 'app-holiday-dialog',
   standalone: true,
-  imports: [FormsModule, PortalToBodyDirective, SubmitLockDirective],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, DateFieldComponent, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div appPortalToBody dir="rtl" class="dialog-overlay font-cairo">
@@ -23,25 +26,17 @@ import { Holiday } from './teacher-attendance.model';
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="block text-xs font-bold text-slate-600 space-y-1">
-            <span>من يوم</span>
-            <input type="date" name="startDate" [(ngModel)]="draft.startDate" required
-              class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
-          </label>
-          <label class="block text-xs font-bold text-slate-600 space-y-1">
-            <span>إلى يوم (اختياري)</span>
-            <input type="date" name="endDate" [(ngModel)]="draft.endDate" [min]="draft.startDate"
-              class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
-          </label>
+          <app-date-field label="من يوم" name="startDate" required [(ngModel)]="draft.startDate" error="اختر يوم البداية" />
+          <app-date-field label="إلى يوم (اختياري)" name="endDate" [(ngModel)]="draft.endDate" [min]="draft.startDate"
+            hint='سيبه فاضي لو الإجازة يوم واحد' />
         </div>
-        <p class="text-[11px] text-slate-400 -mt-2">سيب "إلى يوم" فاضي لو الإجازة يوم واحد.</p>
 
-        <label class="block text-xs font-bold text-slate-600 space-y-1">
-          <span>سبب الإجازة</span>
-          <input type="text" name="reason" [(ngModel)]="draft.reason" required minlength="2" maxlength="150"
-            placeholder="مثال: عيد الأضحى، انتخابات، قرار المحافظ..."
-            class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
-        </label>
+        <mat-form-field class="w-full">
+          <mat-label>سبب الإجازة</mat-label>
+          <input matInput name="reason" [(ngModel)]="draft.reason" required minlength="2" maxlength="150"
+            placeholder="مثال: عيد الأضحى، انتخابات، قرار المحافظ..." />
+          <mat-error>اكتب سبب الإجازة</mat-error>
+        </mat-form-field>
 
         @if (localError || serverError()) {
           <p class="text-xs font-semibold text-rose-700 bg-rose-50 rounded-xl px-3 py-2" role="alert">{{ localError || serverError() }}</p>

@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { GRADE_LEVELS } from '../../core/constants/school.constants';
+import { PAGE_SIZE_OPTIONS, loadPageSize, savePageSize } from '../../shared/components/pagination/page-size';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { StudentDetailsDialogComponent } from './student-details-dialog.component';
 import { exportStudents } from './student-excel';
 import { StudentFormDialogComponent } from './student-form-dialog.component';
@@ -10,6 +12,8 @@ import { StudentImportDialogComponent } from './student-import-dialog.component'
 import { STUDENT_STATUSES, Student, gradeOf } from './student.model';
 import { StudentsStore } from './students.store';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
+
+const PAGE_SIZE_KEY = 'admin-students';
 
 export interface CredentialNoticeData {
   studentName: string;
@@ -22,7 +26,7 @@ export interface CredentialNoticeData {
 @Component({
   selector: 'app-students',
   standalone: true,
-  imports: [CardTableDirective, FormsModule, MatFormFieldModule, MatSelectModule, StudentFormDialogComponent, StudentDetailsDialogComponent, StudentImportDialogComponent],
+  imports: [CardTableDirective, PaginationComponent, FormsModule, MatFormFieldModule, MatSelectModule, StudentFormDialogComponent, StudentDetailsDialogComponent, StudentImportDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './students.component.html',
   styleUrl: './students.component.css'
@@ -42,13 +46,15 @@ export class StudentsComponent implements OnInit {
   private readonly store = inject(StudentsStore);
   readonly students = this.store.students;
   readonly metrics = this.store.metrics;
+  readonly loading = this.store.loading;
+  readonly loadError = this.store.loadError;
 
   readonly showForm = signal(false);
   readonly editingStudent = signal<Student | null>(null);
   readonly viewingStudent = signal<Student | null>(null);
   readonly showImport = signal(false);
   readonly exporting = signal(false);
-  readonly notice = signal<string | null>(null);
+  readonly notice = signal<{ message: string; kind: 'success' | 'error' } | null>(null);
 
   // Instant feedback & credentials highlight for newly added student
   readonly newlyAddedStudentId = signal<string | null>(null);
@@ -69,6 +75,10 @@ export class StudentsComponent implements OnInit {
     this.store.loadFromApi();
   }
 
+  reload(): void {
+    this.store.loadFromApi();
+  }
+
   readonly filteredStudents = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
     const grade = this.selectedGrade();
@@ -83,6 +93,29 @@ export class StudentsComponent implements OnInit {
       return matchSearch && matchGrade && matchSection && matchStatus;
     });
   });
+
+  // Client-side paging of the list already loaded; GET /students and the Excel export stay on the full list
+  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
+  readonly pageSize = signal(loadPageSize(PAGE_SIZE_KEY));
+  // Back to page 1 whenever the search or a filter changes
+  readonly page = linkedSignal<unknown, number>({
+    source: () => [this.searchQuery(), this.selectedGrade(), this.selectedSection(), this.selectedStatus()],
+    computation: () => 1
+  });
+  // Never past the last page, e.g. after deleting the only student on it
+  readonly currentPage = computed(() =>
+    Math.min(this.page(), Math.max(1, Math.ceil(this.filteredStudents().length / this.pageSize())))
+  );
+  readonly pagedStudents = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.filteredStudents().slice(start, start + this.pageSize());
+  });
+
+  changePageSize(size: number): void {
+    savePageSize(PAGE_SIZE_KEY, size);
+    this.pageSize.set(size);
+    this.page.set(1);
+  }
 
   gradeLabel(student: Student): string {
     return gradeOf(student)?.label ?? '—';
@@ -145,20 +178,26 @@ export class StudentsComponent implements OnInit {
   }
 
   deleteStudent(studentId: string): void {
-    this.store.deleteStudent(studentId);
-    this.showForm.set(false);
-    this.showNotice('تم حذف قيد الطالب');
+    this.store.deleteStudent(studentId).subscribe({
+      next: () => {
+        this.showForm.set(false);
+        this.showNotice('تم حذف قيد الطالب');
+      },
+      error: err => {
+        this.showForm.set(false);
+        this.showNotice(err?.error?.message || 'تعذر حذف الطالب، حاول مرة أخرى.', 'error');
+      }
+    });
   }
 
   importStudents(students: Student[]): void {
     if (students && students.length > 0) {
-      this.store.addStudents(students);
       this.showNotice(`تم استيراد ${students.length} طالب من ملف Excel وتأسيس حساباتهم بنجاح`);
     }
     this.showImport.set(false);
+    // The imported students are already saved in the backend; reload to show them with their classes
     this.store.loadFromApi();
   }
-
   async exportExcel(): Promise<void> {
     this.exporting.set(true);
     try {
@@ -168,9 +207,10 @@ export class StudentsComponent implements OnInit {
     }
   }
 
-  private showNotice(message: string): void {
+  private showNotice(message: string, kind: 'success' | 'error' = 'success'): void {
     clearTimeout(this.noticeTimer);
-    this.notice.set(message);
-    this.noticeTimer = setTimeout(() => this.notice.set(null), 4000);
+    this.notice.set({ message, kind });
+    // Errors stay a little longer so they can be read
+    this.noticeTimer = setTimeout(() => this.notice.set(null), kind === 'error' ? 8000 : 4000);
   }
 }

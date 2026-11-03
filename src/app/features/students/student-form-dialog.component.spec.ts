@@ -143,4 +143,45 @@ describe('StudentFormDialogComponent', () => {
       initialPassword: 'Student@2026'
     }));
   });
+
+  it('emits the grade and class the backend saved for a new student (no G3 default)', () => {
+    studentsServiceMock.createStudent.and.returnValue(of({
+      status: 'success',
+      data: {
+        id: 'new-id',
+        studentCode: 'STD-2026-007',
+        fullNameArabic: 'طالبة الصف الثاني',
+        nationalId: '31102151234568',
+        gradeLevel: 'الصف الثاني الإعدادي',
+        classId: 'c2',
+        class: { name: '2/1', displayNameArabic: 'الصف الثاني الإعدادي - فصل 2/1' },
+        guardianName: 'ولي الأمر',
+        guardianPhone: '01012345678',
+        enrollmentStatus: 'منتظم'
+      }
+    }));
+    fixture.detectChanges();
+    const saved = jasmine.createSpy('saved');
+    component.saved.subscribe(saved);
+
+    component.form.patchValue({
+      fullNameArabic: 'طالبة الصف الثاني',
+      nationalId: '31102151234568',
+      studentCode: 'STD-2026-007',
+      gradeLevel: 'الصف الثاني الإعدادي',
+      classId: 'c2',
+      guardianName: 'ولي الأمر',
+      guardianPhone: '01012345678',
+      enrollmentStatus: 'منتظم'
+    });
+    component.onSubmit();
+
+    expect(saved).toHaveBeenCalledWith(jasmine.objectContaining({
+      id: 'new-id',
+      gradeId: 'G2',
+      className: '2/1',
+      status: 'منتظم',
+      gpa: null
+    }));
+  });
 });

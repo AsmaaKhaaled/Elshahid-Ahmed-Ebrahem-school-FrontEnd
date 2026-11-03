@@ -90,16 +90,23 @@
     </div>
   }
 
-  <!-- Standard Notice -->
-  @if (notice()) {
-    <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-xs font-bold text-emerald-800 flex items-center justify-between gap-3 animate-fadeIn" role="status">
-      <span>✓ {{ notice() }}</span>
-      <button (click)="notice.set(null)" type="button" class="text-emerald-600 hover:text-emerald-800">✕</button>
-    </div>
+  <!-- Standard Notice (success = green, error = red) -->
+  @if (notice(); as n) {
+    @if (n.kind === 'error') {
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800 flex items-center justify-between gap-3 animate-fadeIn" role="alert">
+        <span>⚠ {{ n.message }}</span>
+        <button (click)="notice.set(null)" type="button" class="text-rose-600 hover:text-rose-800" aria-label="إغلاق">✕</button>
+      </div>
+    } @else {
+      <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-xs font-bold text-emerald-800 flex items-center justify-between gap-3 animate-fadeIn" role="status">
+        <span>✓ {{ n.message }}</span>
+        <button (click)="notice.set(null)" type="button" class="text-emerald-600 hover:text-emerald-800" aria-label="إغلاق">✕</button>
+      </div>
+    }
   }
 
-  <!-- Quick Metrics -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+  <!-- Quick Metrics (by enrollment status) -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
       <span class="text-xs text-slate-500 block">إجمالي المقيدين</span>
       <span class="text-xl font-black text-slate-800 mt-1 block">{{ metrics().total }}</span>
@@ -109,12 +116,21 @@
       <span class="text-xl font-black text-emerald-600 mt-1 block">{{ metrics().regular }}</span>
     </div>
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
-      <span class="text-xs text-slate-500 block">متفوقون (معدل 90% فأكثر)</span>
-      <span class="text-xl font-black text-amber-600 mt-1 block">{{ metrics().honor }}</span>
+      <span class="text-xs text-slate-500 block">موقوف</span>
+      <span class="text-xl font-black text-amber-600 mt-1 block">{{ metrics().stopped }}</span>
     </div>
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
-      <span class="text-xs text-slate-500 block">موقوف / منقول</span>
-      <span class="text-xl font-black text-rose-600 mt-1 block">{{ metrics().inactive }}</span>
+      <span class="text-xs text-slate-500 block">منقول لمدرسة أخرى</span>
+      <span class="text-xl font-black text-rose-600 mt-1 block">{{ metrics().transferred }}</span>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+      <span class="text-xs text-slate-500 block">متفوقون (معدل 90% فأكثر)</span>
+      @if (metrics().honor === null) {
+        <span class="text-xl font-black text-slate-400 mt-1 block">—</span>
+        <span class="text-[11px] text-slate-400 block">لا توجد درجات بعد</span>
+      } @else {
+        <span class="text-xl font-black text-amber-600 mt-1 block">{{ metrics().honor }}</span>
+      }
     </div>
   </div>
 
@@ -176,77 +192,83 @@
     <div class="px-4 py-2.5 border-b border-slate-100 text-xs text-slate-500">
       عرض {{ filteredStudents().length }} من {{ students().length }} طالب
     </div>
-    <div class="overflow-x-auto">
-      <table appCardTable class="w-full text-right text-sm">
-        <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase">
+    @if (loadError()) {
+      <p class="px-4 py-2.5 bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3" role="alert">
+        <span>{{ loadError() }}</span>
+        <button (click)="reload()" type="button" class="font-bold underline">إعادة المحاولة</button>
+      </p>
+    }
+    <!-- Same columns & order as the Excel import template; each cell stays on one line (scrolls sideways if needed) -->
+    <div class="overflow-x-auto" [class.opacity-60]="loading()" [attr.aria-busy]="loading()">
+      <table appCardTable class="students-table w-full text-right text-[13px]">
+        <thead class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase">
           <tr>
-            <th class="py-3.5 px-4">الطالب</th>
-            <th class="py-3.5 px-4">كود القيد</th>
-            <th class="py-3.5 px-4">المرحلة والفصل</th>
-            <th class="py-3.5 px-4">ولي الأمر</th>
-            <th class="py-3.5 px-4">رقم الهاتف</th>
-            <th class="py-3.5 px-4 text-center">الحالة</th>
-            <th class="py-3.5 px-4 text-center">الإجراءات</th>
+            <th class="py-3 px-3">اسم الطالب رباعي</th>
+            <th class="py-3 px-3">الرقم القومي للطالب</th>
+            <th class="py-3 px-3">الصف الدراسي</th>
+            <th class="py-3 px-3 text-center">الفصل</th>
+            <th class="py-3 px-3">اسم ولي الأمر</th>
+            <th class="py-3 px-3">هاتف ولي الأمر</th>
+            <th class="py-3 px-3">كود الطالب</th>
+            <th class="py-3 px-3 text-center">الحالة</th>
+            <th class="py-3 px-3 text-center">الإجراءات</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
-          @for (student of filteredStudents(); track student.id) {
+          @for (student of pagedStudents(); track student.id) {
             <tr
               [class.bg-emerald-50]="student.id === newlyAddedStudentId()"
               [class.ring-2]="student.id === newlyAddedStudentId()"
               [class.ring-emerald-400]="student.id === newlyAddedStudentId()"
               class="hover:bg-slate-50/80 transition-all duration-300">
-              <td class="py-3.5 px-4">
-                <div class="flex items-center gap-3">
+              <td class="py-2 px-3">
+                <div class="flex items-center gap-2">
                   <div
                     [class.bg-emerald-600]="student.id === newlyAddedStudentId()"
                     [class.text-white]="student.id === newlyAddedStudentId()"
                     [class.bg-primary-100]="student.id !== newlyAddedStudentId()"
                     [class.text-primary-800]="student.id !== newlyAddedStudentId()"
-                    class="w-9 h-9 rounded-xl font-bold flex items-center justify-center text-xs transition-colors">
+                    class="w-7 h-7 shrink-0 rounded-lg font-bold flex items-center justify-center text-[11px] transition-colors">
                     {{ student.name.slice(0, 1) }}
                   </div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span class="font-bold text-slate-800 block">{{ student.name }}</span>
-                      @if (student.id === newlyAddedStudentId()) {
-                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300 animate-pulse">
-                          جديد ✓
-                        </span>
-                      }
-                    </div>
-                    <span class="text-xs text-slate-400 block font-mono">{{ student.nationalId }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-800">{{ student.name }}</span>
+                    @if (student.id === newlyAddedStudentId()) {
+                      <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300 animate-pulse">
+                        جديد ✓
+                      </span>
+                    }
                   </div>
                 </div>
               </td>
-              <td class="py-3.5 px-4 font-mono text-xs font-semibold text-slate-600">
+              <td class="py-2 px-3 font-mono text-xs text-slate-600 tabular-nums" dir="ltr">{{ student.nationalId || '—' }}</td>
+              <td class="py-2 px-3 text-xs font-medium text-slate-800 whitespace-nowrap">{{ gradeLabel(student) }}</td>
+              <td class="py-2 px-3 text-center text-xs font-bold text-slate-800 tabular-nums">{{ student.className || '—' }}</td>
+              <td class="py-2 px-3 text-xs font-medium">{{ student.guardianName || '—' }}</td>
+              <td class="py-2 px-3 text-xs font-mono text-slate-600 tabular-nums" dir="ltr">{{ student.guardianPhone || '—' }}</td>
+              <td class="py-2 px-3 font-mono text-xs font-semibold text-slate-600 whitespace-nowrap">
                 <span [class.text-emerald-700]="student.id === newlyAddedStudentId()" [class.font-bold]="student.id === newlyAddedStudentId()">
                   {{ student.code }}
                 </span>
               </td>
-              <td class="py-3.5 px-4">
-                <span class="block font-medium text-xs text-slate-800">{{ gradeLabel(student) }}</span>
-                <span class="block text-[11px] text-slate-500">{{ student.className }}</span>
-              </td>
-              <td class="py-3.5 px-4 text-xs font-medium">{{ student.guardianName }}</td>
-              <td class="py-3.5 px-4 text-xs font-mono text-slate-600 dir-ltr text-right">{{ student.guardianPhone }}</td>
-              <td class="py-3.5 px-4 text-center">
+              <td class="py-2 px-3 text-center">
                 <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   [class]="student.status === 'منتظم' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
                   {{ student.status }}
                 </span>
               </td>
-              <td class="py-3.5 px-4 text-center">
-                <div class="flex items-center justify-center gap-2">
+              <td class="py-2 px-3 text-center">
+                <div class="flex items-center justify-center gap-1">
                   <button (click)="viewingStudent.set(student)" type="button" title="تفاصيل الطالب" class="p-1.5 rounded-lg text-slate-400 hover:text-primary-700 hover:bg-slate-100">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   </button>
-                  <button (click)="openForm(student)" type="button" title="تعديل" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <button (click)="openForm(student)" type="button" title="تعديل" aria-label="تعديل بيانات الطالب" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100">
+                    <!-- Pencil (edit) -->
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                     </svg>
                   </button>
                 </div>
@@ -254,13 +276,19 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="text-center py-8 text-slate-400 text-xs">
-                لا توجد سجلات تطابق شروط البحث الحالية.
+              <td colspan="9" class="text-center py-8 text-slate-400 text-xs">
+                {{ loading() ? 'جاري تحميل الطلاب...' : students().length ? 'لا توجد سجلات تطابق شروط البحث الحالية.' : 'لا يوجد طلاب مسجلون بعد.' }}
               </td>
             </tr>
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="px-4 py-3 border-t border-slate-100">
+      <app-pagination [page]="currentPage()" [pageSize]="pageSize()" [total]="filteredStudents().length" itemLabel="طالب"
+        [pageSizeOptions]="pageSizeOptions" [disabled]="loading()"
+        (pageChange)="page.set($event)" (pageSizeChange)="changePageSize($event)" />
     </div>
   </div>
 

@@ -18,6 +18,10 @@ function dayOf(records: DayRecord[], change: Partial<AttendanceDay> = {}): Atten
   };
 }
 
+function meta(page: number, total: number, limit = 15) {
+  return { page, limit, pageSize: limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) };
+}
+
 describe('TeacherAttendanceComponent', () => {
   let fixture: ComponentFixture<TeacherAttendanceComponent>;
   let component: TeacherAttendanceComponent;
@@ -35,7 +39,7 @@ describe('TeacherAttendanceComponent', () => {
     fixture.detectChanges();
 
     http.expectOne(`${API}/day/${today()}`).flush({ data: { day } });
-    archiveRequest().flush({ data: { records: [], summary: {} }, meta: { page: 1, pageSize: 10, total: 0, totalPages: 1 } });
+    archiveRequest().flush({ data: { records: [], summary: {} }, meta: meta(1, 0) });
     http.expectOne(`${API}/holidays`).flush({ data: { holidays: [] } });
     fixture.detectChanges();
   }
@@ -48,20 +52,57 @@ describe('TeacherAttendanceComponent', () => {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
+  beforeEach(() => clearPageSizes());
+
   afterEach(() => {
     http.verify();
     localStorage.removeItem('sch_user_profile');
+    clearPageSizes();
   });
 
-  it('shows the day sheet 10 teachers per page', async () => {
-    await open(dayOf(Array.from({ length: 12 }, (_, i) => teacher(i + 1))));
+  function clearPageSizes(): void {
+    localStorage.removeItem('sch_page_size:teacher-attendance-sheet');
+    localStorage.removeItem('sch_page_size:teacher-attendance-archive');
+  }
 
-    expect(component.sheetRows().length).toBe(10);
-    expect(text()).toContain('عرض 1–10 من 12');
+  it('shows the day sheet 15 teachers per page', async () => {
+    await open(dayOf(Array.from({ length: 17 }, (_, i) => teacher(i + 1))));
+
+    expect(component.sheetRows().length).toBe(15);
+    expect(text()).toContain('عرض 1–15 من 17');
 
     component.sheetPage.set(2);
     fixture.detectChanges();
-    expect(component.sheetRows().map(r => r.teacherId)).toEqual(['t11', 't12']);
+    expect(component.sheetRows().map(r => r.teacherId)).toEqual(['t16', 't17']);
+  });
+
+  it('changes only the visible slice of the sheet and still saves teachers on other pages', async () => {
+    await open(dayOf(Array.from({ length: 30 }, (_, i) => teacher(i + 1))));
+    component.setStatus('t25', 'ABSENT');
+    component.sheetPage.set(2);
+
+    component.changeSheetPageSize(20);
+    fixture.detectChanges();
+    expect(component.sheetPage()).toBe(1);
+    expect(component.sheetRows().length).toBe(20);
+    expect(component.draft().length).toBe(30);
+    expect(component.dirty()).toBeTrue();
+    expect(localStorage.getItem('sch_page_size:teacher-attendance-sheet')).toBe('20');
+    // The archive keeps its own size
+    expect(component.archivePageSize()).toBe(15);
+
+    component.save();
+    const req = http.expectOne(`${API}/day/${today()}`);
+    expect(req.request.body.records.map((r: { teacherId: string }) => r.teacherId)).toEqual(['t25']);
+    req.flush({ data: { day: dayOf(Array.from({ length: 30 }, (_, i) => teacher(i + 1, i === 24 ? 'ABSENT' : null))) } });
+  });
+
+  it('remembers the sheet size and ignores a size that is no longer offered', async () => {
+    localStorage.setItem('sch_page_size:teacher-attendance-sheet', '50');
+    localStorage.setItem('sch_page_size:teacher-attendance-archive', '33');
+    await open(dayOf([teacher(1)]));
+    expect(component.sheetPageSize()).toBe(50);
+    expect(component.archivePageSize()).toBe(15);
   });
 
   it('saves only the teachers that were marked, with times only for those who came in', async () => {
@@ -106,7 +147,7 @@ describe('TeacherAttendanceComponent', () => {
       editable: false, closed: { closedAt: new Date().toISOString(), closedBy: 'المدير', autoClosed: false }
     });
     close.flush({ data: { day: closedDay } });
-    archiveRequest().flush({ data: { records: [], summary: {} }, meta: { page: 1, pageSize: 10, total: 0, totalPages: 1 } });
+    archiveRequest().flush({ data: { records: [], summary: {} }, meta: meta(1, 0) });
     fixture.detectChanges();
 
     expect(component.editable()).toBeFalse();
@@ -130,19 +171,38 @@ describe('TeacherAttendanceComponent', () => {
     let req = archiveRequest();
     expect(req.request.params.get('status')).toBe('ABSENT');
     expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('limit')).toBe('15');
+    expect(req.request.params.has('pageSize')).toBeFalse();
     expect(req.request.params.has('from')).toBeFalse();
     req.flush({
-      data: { records: [{ ...teacher(1, 'ABSENT'), id: 'r1', date: '2026-10-29' }], summary: { ABSENT: 25 } },
-      meta: { page: 1, pageSize: 10, total: 25, totalPages: 3 }
+      data: { records: [{ ...teacher(1, 'ABSENT'), id: 'r1', date: '2026-10-29' }], summary: { ABSENT: 40 } },
+      meta: meta(1, 40)
     });
     fixture.detectChanges();
-    expect(text()).toContain('عرض 1–10 من 25');
+    expect(text()).toContain('عرض 1–15 من 40');
 
     component.goToArchivePage(3);
     req = archiveRequest();
     expect(req.request.params.get('page')).toBe('3');
     expect(req.request.params.get('status')).toBe('ABSENT');
-    req.flush({ data: { records: [], summary: {} }, meta: { page: 3, pageSize: 10, total: 25, totalPages: 3 } });
+    req.flush({ data: { records: [], summary: {} }, meta: meta(3, 40) });
+  });
+
+  it('asks the server for the new archive size from page 1, keeping the filters', async () => {
+    await open(dayOf([teacher(1)]));
+    component.setFilter('status', 'LATE');
+    archiveRequest().flush({ data: { records: [], summary: {} }, meta: meta(1, 40) });
+    component.goToArchivePage(2);
+    archiveRequest().flush({ data: { records: [], summary: {} }, meta: meta(2, 40) });
+
+    component.changeArchivePageSize(50);
+    const req = archiveRequest();
+    expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('limit')).toBe('50');
+    expect(req.request.params.get('status')).toBe('LATE');
+    expect(localStorage.getItem('sch_page_size:teacher-attendance-archive')).toBe('50');
+    expect(component.sheetPageSize()).toBe(15);
+    req.flush({ data: { records: [], summary: {} }, meta: meta(1, 40, 50) });
   });
 
   it('registers a holiday and closes the dialog once saved', async () => {

@@ -1,141 +1,87 @@
 import { Injectable, computed, signal, inject } from '@angular/core';
-import { Student } from './student.model';
+import { Observable, tap } from 'rxjs';
+import { Student, StudentStatus } from './student.model';
 import { StudentsService } from '../../core/services/students.service';
 
+/** A student as returned by the backend (GET /students, POST / PUT /students/:id) */
+export function studentFromApi(s: any): Student {
+  const gradeLevel: string = s.gradeLevel || s.class?.gradeLevel || '';
+  const className: string = s.class?.name || s.className || '';
+  // Grade from the grade level text, or from the class name ("2/3" -> G2) when the level is missing
+  const gradeNumber = gradeLevel.includes('الأول') ? 1 : gradeLevel.includes('الثاني') ? 2 : gradeLevel.includes('الثالث') ? 3 : Number(className[0]) || 0;
+  return {
+    id: s.id,
+    code: s.studentCode || s.code || '',
+    nationalId: s.nationalId || '',
+    name: s.fullNameArabic || s.name || '',
+    gradeId: gradeNumber ? `G${gradeNumber}` : '',
+    className,
+    guardianName: s.guardianName || '',
+    guardianPhone: s.guardianPhone || '',
+    status: (s.enrollmentStatus || s.status || 'منتظم') as StudentStatus,
+    gpa: s.gpa ?? null
+  };
+}
+
 /**
- * Single source of truth for enrolled students.
- * Integrates with Backend StudentsService and maintains responsive local state.
+ * Single source of truth for enrolled students, loaded from the backend (GET /api/v1/students).
  */
 @Injectable({ providedIn: 'root' })
 export class StudentsStore {
   private readonly studentsService = inject(StudentsService);
 
-  readonly students = signal<Student[]>([
-    {
-      id: '1',
-      code: 'STD-2026-001',
-      nationalId: '31001011234567',
-      name: 'أحمد ياسين محمد إبراهيم',
-      gradeId: 'G1',
-      className: '1/3',
-      guardianName: 'المهندس / ياسين محمد',
-      guardianPhone: '01001234567',
-      status: 'منتظم',
-      gpa: 98.4
-    },
-    {
-      id: '2',
-      code: 'STD-2026-002',
-      nationalId: '31002021234568',
-      name: 'مازن شريف عبد المنعم',
-      gradeId: 'G1',
-      className: '1/1',
-      guardianName: 'دكتور / شريف عبد المنعم',
-      guardianPhone: '01112345678',
-      status: 'منتظم',
-      gpa: 96.2
-    },
-    {
-      id: '3',
-      code: 'STD-2026-003',
-      nationalId: '31003031234569',
-      name: 'كريم خالد مصطفى السعيد',
-      gradeId: 'G2',
-      className: '2/1',
-      guardianName: 'أ/ خالد مصطفى',
-      guardianPhone: '01223456789',
-      status: 'منتظم',
-      gpa: 91.5
-    },
-    {
-      id: '4',
-      code: 'STD-2026-004',
-      nationalId: '31004041234570',
-      name: 'نور الدين حسام حسن رضوان',
-      gradeId: 'G3',
-      className: '3/2',
-      guardianName: 'المحامي / حسام حسن',
-      guardianPhone: '01556789012',
-      status: 'منتظم',
-      gpa: 94.0
-    },
-    {
-      id: '5',
-      code: 'STD-2026-005',
-      nationalId: '31005051234571',
-      name: 'عمر طارق عبد الله خليل',
-      gradeId: 'G3',
-      className: '3/3',
-      guardianName: 'أ/ طارق عبد الله',
-      guardianPhone: '01099887766',
-      status: 'منتظم',
-      gpa: 87.8
-    }
-  ]);
+  readonly students = signal<Student[]>([]);
+  readonly loading = signal(false);
+  readonly loadError = signal<string | null>(null);
 
+  // Counted by enrollment status (not isActive), one count per status
   readonly metrics = computed(() => {
     const list = this.students();
+    const withStatus = (status: StudentStatus) => list.filter(s => s.status === status).length;
+    const graded = list.filter(s => s.gpa !== null);
     return {
       total: list.length,
-      regular: list.filter(s => s.status === 'منتظم').length,
-      honor: list.filter(s => s.gpa !== null && s.gpa >= 90).length,
-      inactive: list.filter(s => s.status !== 'منتظم').length
+      regular: withStatus('منتظم'),
+      stopped: withStatus('موقوف'),
+      transferred: withStatus('منقول'),
+      // Everyone not regular (as before) - the dashboard's "غير منتظم" figure
+      inactive: list.length - withStatus('منتظم'),
+      // null = no grades yet (the API doesn't send a GPA), so the card shows "—" rather than a misleading 0
+      honor: graded.length ? graded.filter(s => (s.gpa ?? 0) >= 90).length : null
     };
   });
 
   loadFromApi(): void {
+    this.loading.set(true);
+    this.loadError.set(null);
     this.studentsService.getAll().subscribe({
-      next: (res) => {
+      next: res => {
         const rawList = res?.data || (Array.isArray(res) ? res : []);
-        if (Array.isArray(rawList) && rawList.length > 0) {
-          const mapped: Student[] = rawList.map((s: any) => ({
-            id: s.id,
-            code: s.studentCode || s.code,
-            nationalId: s.nationalId,
-            name: s.fullNameArabic || s.name,
-            gradeId: s.gradeLevel?.includes('الأول') ? 'G1' : s.gradeLevel?.includes('الثاني') ? 'G2' : 'G3',
-            className: s.class?.name || s.className || '1/1',
-            guardianName: s.guardianName || '',
-            guardianPhone: s.guardianPhone || '',
-            status: (s.enrollmentStatus || s.status || 'منتظم') as any,
-            gpa: s.gpa ?? null
-          }));
-
-          this.students.update(current => {
-            const list = [...current];
-            mapped.forEach(dbStudent => {
-              const idx = list.findIndex(s => s.code === dbStudent.code || s.nationalId === dbStudent.nationalId || s.id === dbStudent.id);
-              if (idx >= 0) {
-                list[idx] = { ...list[idx], ...dbStudent };
-              } else {
-                list.push(dbStudent);
-              }
-            });
-            return list;
-          });
-        }
+        this.students.set(Array.isArray(rawList) ? rawList.map(studentFromApi) : []);
+        this.loading.set(false);
       },
-      error: () => {
-        // Fallback: keep current list
+      error: err => {
+        this.loadError.set(
+          err?.status === 0
+            ? 'تعذر الاتصال بالخادم. تأكد إن الباك إند شغال وحاول مرة أخرى.'
+            : err?.error?.message || 'تعذر تحميل بيانات الطلاب.'
+        );
+        this.loading.set(false);
       }
     });
   }
 
+  /** Puts a student the backend just saved into the list (new students go first). */
   saveStudent(student: Student): void {
-    this.students.update(list => {
-      const exists = list.some(s => s.id === student.id || s.code === student.code || (student.nationalId && s.nationalId === student.nationalId));
-      if (exists) {
-        return list.map(s => (s.id === student.id || s.code === student.code || (student.nationalId && s.nationalId === student.nationalId) ? student : s));
-      }
-      return [student, ...list];
-    });
+    this.students.update(list =>
+      list.some(s => s.id === student.id) ? list.map(s => (s.id === student.id ? student : s)) : [student, ...list]
+    );
   }
 
-  addStudents(students: Student[]): void {
-    this.students.update(list => [...list, ...students]);
-  }
-
-  deleteStudent(studentId: string): void {
-    this.students.update(list => list.filter(s => s.id !== studentId));
+  /** Deletes the student (and their sign-in account) in the backend, then drops them from the list. */
+  deleteStudent(studentId: string): Observable<unknown> {
+    return this.studentsService
+      .deleteStudent(studentId)
+      .pipe(tap(() => this.students.update(list => list.filter(s => s.id !== studentId))));
   }
 }

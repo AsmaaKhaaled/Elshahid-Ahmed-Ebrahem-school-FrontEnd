@@ -4,6 +4,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { today } from '../../core/academic/academic-calendar.store';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { ANNOUNCEMENT_CATEGORIES, AUDIENCES, Announcement, AnnouncementCategory, Attachment } from './announcements.store';
@@ -13,7 +14,7 @@ const MAX_ATTACHMENT_MB = 10;
 @Component({
   selector: 'app-announcement-form-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, DateFieldComponent, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './announcement-form-dialog.component.html',
   styleUrl: './announcement-form-dialog.component.css'

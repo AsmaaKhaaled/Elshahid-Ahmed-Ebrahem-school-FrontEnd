@@ -64,20 +64,22 @@
                 @let slot = draft()[key];
                 <td class="p-1.5 align-top" [class.bg-rose-50]="conflicts()[key]">
                   @if (editing()) {
-                    <select (change)="setSlot(key, { section: $any($event.target).value })"
-                      class="w-full px-1 py-1 rounded-md border border-slate-200 bg-white text-xs">
-                      <option value="" [selected]="!slot">—</option>
-                      @for (section of sections; track section) {
-                        <option [value]="section" [selected]="slot?.section === section">{{ section }}</option>
-                      }
-                    </select>
-                    @if (slot && teacher().subjects.length > 1) {
-                      <select (change)="setSlot(key, { subject: $any($event.target).value })"
-                        class="w-full mt-1 px-1 py-1 rounded-md border border-slate-200 bg-white text-[11px]">
-                        @for (subject of teacher().subjects; track subject) {
-                          <option [value]="subject" [selected]="slot.subject === subject">{{ subject }}</option>
+                    <mat-form-field class="field-compact field-cell w-full">
+                      <mat-select [value]="slot?.section ?? ''" (selectionChange)="setSlot(key, { section: $event.value })" aria-label="الفصل">
+                        <mat-option value="">—</mat-option>
+                        @for (section of sections; track section) {
+                          <mat-option [value]="section">{{ section }}</mat-option>
                         }
-                      </select>
+                      </mat-select>
+                    </mat-form-field>
+                    @if (slot && teacher().subjects.length > 1) {
+                      <mat-form-field class="field-compact field-cell w-full mt-1">
+                        <mat-select [value]="slot.subject" (selectionChange)="setSlot(key, { subject: $event.value })" aria-label="المادة">
+                          @for (subject of teacher().subjects; track subject) {
+                            <mat-option [value]="subject">{{ subject }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
                     }
                   } @else if (slot) {
                     <div class="rounded-lg bg-primary-50 px-1.5 py-1.5">

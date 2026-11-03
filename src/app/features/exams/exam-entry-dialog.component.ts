@@ -4,6 +4,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { SCHOOL_SUBJECTS } from '../../core/constants/school.constants';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
+import { TimeFieldComponent } from '../../shared/components/time-field/time-field.component';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { ExamEntry, ExamSchedule, addMinutes, formatTime, minutesOf } from './exams.store';
@@ -11,7 +13,7 @@ import { ExamEntry, ExamSchedule, addMinutes, formatTime, minutesOf } from './ex
 @Component({
   selector: 'app-exam-entry-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, PortalToBodyDirective, SubmitLockDirective],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, DateFieldComponent, TimeFieldComponent, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './exam-entry-dialog.component.html',
   styleUrl: './exam-entry-dialog.component.css'

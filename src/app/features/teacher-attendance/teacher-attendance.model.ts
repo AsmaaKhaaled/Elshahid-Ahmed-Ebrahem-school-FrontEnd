@@ -85,6 +85,8 @@ export interface ArchiveFilters {
 
 export interface PageMeta {
   page: number;
+  limit: number;
+  // Same as limit; still sent for older callers
   pageSize: number;
   total: number;
   totalPages: number;
