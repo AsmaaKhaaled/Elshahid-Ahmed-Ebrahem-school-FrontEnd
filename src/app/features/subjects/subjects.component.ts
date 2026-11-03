@@ -34,7 +34,8 @@ export type SubjectTypeFilter = 'الكل' | 'مواد أساسية مضافة �
     PublicFooterComponent
   ],
   templateUrl: './subjects.component.html',
-  styleUrl: './subjects.component.css'
+  styleUrl: './subjects.component.css',
+  host: { class: 'block min-h-screen' }
 })
 export class SubjectsComponent implements OnInit {
   readonly authService = inject(AuthService);

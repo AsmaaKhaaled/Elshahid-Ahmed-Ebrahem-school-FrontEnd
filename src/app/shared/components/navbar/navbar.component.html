@@ -93,7 +93,7 @@
           {{ userInitials() }}
         </div>
         <div class="text-right hidden md:block">
-          <span class="block text-xs font-bold text-slate-800 leading-tight">{{ authService.userName() }}</span>
+          <span class="block text-xs font-bold text-slate-800 leading-tight">{{ userTwoPartName() }}</span>
           <span class="block text-[11px] text-slate-600 font-medium">{{ roleLabel() }}</span>
         </div>
         <svg class="w-4 h-4 text-slate-400 hidden md:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,7 +106,7 @@
         <div class="fixed inset-0 z-40" (click)="isProfileMenuOpen.set(false)"></div>
         <div class="absolute left-0 mt-2 w-56 rounded-2xl bg-white shadow-elevated border border-slate-100 py-2 z-50">
           <div class="px-4 py-2 border-b border-slate-100 md:hidden">
-            <p class="text-sm font-bold text-slate-800">{{ authService.userName() }}</p>
+            <p class="text-sm font-bold text-slate-800">{{ userTwoPartName() }}</p>
             <p class="text-xs text-slate-500">{{ roleLabel() }}</p>
           </div>
 

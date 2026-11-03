@@ -3,13 +3,17 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../../core/constants/school.constants';
+import { getArabicTwoPartName, getArabicInitial } from '../../../core/utils/arabic-name.util';
 
 @Component({
   selector: 'app-public-header',
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './public-header.component.html',
-  styleUrl: './public-header.component.css'
+  styleUrl: './public-header.component.css',
+  host: {
+    class: 'sticky top-0 z-50 block w-full bg-white shadow-xs'
+  }
 })
 export class PublicHeaderComponent {
   readonly authService = inject(AuthService);
@@ -21,10 +25,15 @@ export class PublicHeaderComponent {
   readonly isMobileMenuOpen = signal<boolean>(false);
   readonly isUserMenuOpen = signal<boolean>(false);
 
-  readonly userFirstName = computed(() => {
-    const fullName = this.authService.userName()?.trim();
-    if (!fullName) return 'المستخدم';
-    return fullName.split(/\s+/)[0] || fullName;
+  readonly userTwoPartName = computed(() => {
+    return getArabicTwoPartName(this.authService.userName());
+  });
+
+  // Alias for backward compatibility
+  readonly userFirstName = this.userTwoPartName;
+
+  readonly userInitial = computed(() => {
+    return getArabicInitial(this.authService.userName());
   });
 
   readonly userAvatarUrl = computed(() => {
@@ -93,4 +102,3 @@ export class PublicHeaderComponent {
     this.authService.logout();
   }
 }
-
