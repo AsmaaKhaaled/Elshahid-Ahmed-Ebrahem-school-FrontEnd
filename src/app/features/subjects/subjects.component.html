@@ -278,11 +278,11 @@
 
 <!-- ================= Syllabus Detail Modal ================= -->
 @if (activeSyllabusModal(); as active) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
-    <div class="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-100 relative animate-in zoom-in-95 duration-200 text-right">
+  <div class="dialog-overlay">
+    <div class="dialog-panel max-w-lg p-0 space-y-0 border border-slate-100 text-right">
 
       <!-- Modal Header -->
-      <div class="bg-portal-navy text-white p-5 sm:p-6 pb-4 sm:pb-5 relative">
+      <div class="sticky top-0 z-10 bg-portal-navy text-white p-5 sm:p-6 pb-4 sm:pb-5">
         <button
           (click)="closeSyllabusModal()"
           type="button"

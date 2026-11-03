@@ -60,6 +60,156 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
+/*
+ * Dialogs: a bottom sheet on phones, a centred card from sm up.
+ * <div class="dialog-overlay"><form class="dialog-panel max-w-2xl">
+ *   <div class="dialog-head">…</div> … <div class="dialog-foot">…</div>
+ * The head and foot stay put while the body scrolls.
+ */
+@layer components {
+  .dialog-overlay {
+    @apply fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/50 backdrop-blur-sm sm:items-center sm:p-4;
+    animation: dialog-fade 0.2s ease-out;
+  }
+
+  .dialog-panel {
+    --dialog-pad: 1rem;
+    @apply relative w-full bg-white shadow-2xl space-y-4 rounded-t-3xl sm:rounded-3xl;
+    padding: var(--dialog-pad);
+    padding-bottom: calc(var(--dialog-pad) + env(safe-area-inset-bottom));
+    max-height: 92dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: dialog-sheet-up 0.25s ease-out;
+  }
+  .dialog-panel:has(> .dialog-head) {
+    padding-top: 0;
+  }
+  .dialog-panel:has(> .dialog-foot) {
+    padding-bottom: 0;
+  }
+
+  .dialog-head {
+    @apply sticky top-0 z-10 bg-white;
+    margin-inline: calc(-1 * var(--dialog-pad));
+    padding-inline: var(--dialog-pad);
+    padding-top: var(--dialog-pad);
+  }
+  /* Grab handle that says "this is a sheet" on phones */
+  .dialog-head::before {
+    content: '';
+    @apply absolute top-1.5 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-200 sm:hidden;
+  }
+
+  .dialog-foot {
+    @apply sticky bottom-0 z-10 bg-white;
+    margin-inline: calc(-1 * var(--dialog-pad));
+    padding-inline: var(--dialog-pad);
+    padding-bottom: calc(var(--dialog-pad) + env(safe-area-inset-bottom));
+  }
+
+  @media (min-width: 640px) {
+    .dialog-panel {
+      --dialog-pad: 1.5rem;
+      max-height: 100%;
+      animation-name: dialog-zoom-in;
+    }
+  }
+}
+
+/* A thin bar that stops short of the rounded corners instead of cutting through them */
+.dialog-panel::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 1.25rem;
+}
+
+@keyframes dialog-fade {
+  from { opacity: 0; }
+}
+@keyframes dialog-sheet-up {
+  from { transform: translateY(100%); }
+}
+@keyframes dialog-zoom-in {
+  from { opacity: 0; transform: scale(0.96); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog-overlay,
+  .dialog-panel {
+    animation: none;
+  }
+}
+
+/*
+ * Tables on phones
+ * - List tables (appCardTable): below md every row becomes a card, each cell labelled with its column.
+ * - Grid tables (.table-grid, e.g. day × period timetables): keep scrolling sideways, first column pinned.
+ */
+@media (max-width: 767.98px) {
+  .table-cards {
+    min-width: 0 !important;
+  }
+  .table-cards thead {
+    display: none;
+  }
+  .table-cards,
+  .table-cards tbody {
+    display: block;
+    width: 100%;
+  }
+  .table-cards tbody {
+    padding: 0.5rem;
+  }
+  .table-cards tr {
+    @apply block rounded-2xl border border-slate-200 bg-white px-3 py-1.5 shadow-sm;
+  }
+  .table-cards tr + tr {
+    margin-top: 0.625rem;
+  }
+  .table-cards td {
+    @apply flex items-center justify-between gap-3 border-0 text-start;
+    padding: 0.5rem 0 !important;
+    min-height: 2.5rem;
+  }
+  .table-cards td + td {
+    @apply border-t border-dashed border-slate-100;
+  }
+  .table-cards td::before {
+    content: attr(data-label);
+    @apply shrink-0 text-[11px] font-bold text-slate-500;
+  }
+  /* Headerless columns (actions) and full-width rows (empty / loading states) */
+  .table-cards td[data-label='']::before,
+  .table-cards td[colspan]::before {
+    display: none;
+  }
+  .table-cards td[data-label=''] {
+    justify-content: flex-end;
+  }
+  .table-cards td[colspan] {
+    justify-content: center;
+  }
+}
+
+.table-grid th:first-child,
+.table-grid td:first-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  box-shadow: -6px 0 8px -6px rgb(15 23 42 / 0.15);
+}
+.table-grid thead th:first-child {
+  background: #f8fafc;
+}
+
+/*
+ * Side-by-side fields keep their own height: without this, a field next to one with a hint
+ * or an error under it gets stretched to the same row height and its box looks taller.
+ */
+.grid > .mat-mdc-form-field {
+  align-self: start;
+}
+
 /* Dialog locked while its save / delete is in flight (SubmitLockDirective) */
 .submit-locked {
   cursor: progress;

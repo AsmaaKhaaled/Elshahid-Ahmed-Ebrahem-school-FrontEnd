@@ -8,7 +8,6 @@ import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-
 import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { FILE_ACCEPT, MAX_FILE_MB, Material, VIDEO_UPLOAD_SOON, readPickedFiles } from '../teaching/teaching.model';
 import { TeachingScope } from '../teaching/teaching-scope.service';
-import { CurriculumStore } from '../subjects/curriculum.store';
 
 @Component({
   selector: 'app-material-form-dialog',
@@ -19,7 +18,6 @@ import { CurriculumStore } from '../subjects/curriculum.store';
 })
 export class MaterialFormDialogComponent implements OnInit {
   readonly scope = inject(TeachingScope);
-  private readonly curriculumStore = inject(CurriculumStore);
 
   // null = new material
   readonly material = input<Material | null>(null);
@@ -42,19 +40,13 @@ export class MaterialFormDialogComponent implements OnInit {
     sections: [],
     files: [],
     link: '',
-    lessonId: '',
     publishedAt: ''
   };
-
-  /** Curriculum lessons of the chosen subject, to link the material to one. */
-  lessonOptions(): { id: string; title: string; unit: string }[] {
-    return this.draft.subject ? this.curriculumStore.lessonsFor(this.draft.subject) : [];
-  }
 
   ngOnInit(): void {
     const material = this.material();
     if (material) {
-      this.draft = { ...material, sections: [...material.sections], files: [...material.files], link: material.link ?? '', lessonId: material.lessonId ?? '' };
+      this.draft = { ...material, sections: [...material.sections], files: [...material.files], link: material.link ?? '' };
     } else {
       // A teacher of one subject doesn't have to pick it
       const subjects = this.scope.subjects();
@@ -82,15 +74,12 @@ export class MaterialFormDialogComponent implements OnInit {
       form.control.markAllAsTouched();
       return;
     }
-    // Drop a lesson left over from another subject
-    const lessonId = this.lessonOptions().some(l => l.id === this.draft.lessonId) ? this.draft.lessonId : undefined;
     this.lock.run(() =>
       this.saved.emit({
         ...this.draft,
         title: this.draft.title.trim(),
         description: this.draft.description.trim(),
         link: link || undefined,
-        lessonId,
         id: this.draft.id || crypto.randomUUID(),
         teacherId: this.draft.teacherId || this.scope.teacherId(),
         publishedAt: this.draft.publishedAt || new Date().toISOString()

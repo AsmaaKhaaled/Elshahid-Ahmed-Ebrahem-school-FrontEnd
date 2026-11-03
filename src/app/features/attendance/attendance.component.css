@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+/* Printed attendance report ("تصدير PDF") */
+.report {
+  font-family: 'Cairo', system-ui, sans-serif;
+  color: #0f172a;
+  font-size: 10pt;
+}
+.report h1 {
+  font-size: 16pt;
+  font-weight: 900;
+  margin: 0 0 2mm;
+}
+.report h2 {
+  font-size: 12pt;
+  font-weight: 800;
+  margin: 6mm 0 2mm;
+}
+.report-meta {
+  color: #475569;
+  margin: 0 0 4mm;
+}
+.report table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.report th,
+.report td {
+  border: 1px solid #cbd5e1;
+  padding: 1.5mm 2mm;
+  text-align: right;
+}
+.report th {
+  background: #e2e8f0;
+  font-weight: 800;
+}
+.report tr {
+  break-inside: avoid;
+}
+.report thead {
+  display: table-header-group;
+}
+.report .num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.report .signature {
+  margin-top: 10mm;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1mm;
+}

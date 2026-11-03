@@ -9,11 +9,12 @@ import { StudentFormDialogComponent } from './student-form-dialog.component';
 import { StudentImportDialogComponent } from './student-import-dialog.component';
 import { STUDENT_STATUSES, Student, gradeOf } from './student.model';
 import { StudentsStore } from './students.store';
+import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 @Component({
   selector: 'app-students',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatSelectModule, StudentFormDialogComponent, StudentDetailsDialogComponent, StudentImportDialogComponent],
+  imports: [CardTableDirective, FormsModule, MatFormFieldModule, MatSelectModule, StudentFormDialogComponent, StudentDetailsDialogComponent, StudentImportDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './students.component.html',
   styleUrl: './students.component.css'

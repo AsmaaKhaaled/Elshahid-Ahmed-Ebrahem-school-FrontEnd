@@ -9,7 +9,7 @@ import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { FILE_ACCEPT, MAX_FILE_MB, TeachingFile, readPickedFiles } from '../teaching/teaching.model';
 import { CURRICULUM_FILE_KINDS, CurriculumFile, CurriculumFileKind } from './curriculum.model';
 
-/** Uploads one official curriculum file (textbook, plan, ministry sample exams...). */
+/** Adds one piece of the ministry curriculum: an uploaded file (textbook, plan, sample exams...) or a link to it. */
 @Component({
   selector: 'app-curriculum-file-dialog',
   standalone: true,
@@ -30,7 +30,9 @@ export class CurriculumFileDialogComponent {
   kind: CurriculumFileKind = 'book';
   title = '';
   forStudents = true;
+  source: 'file' | 'link' = 'file';
   file: TeachingFile | null = null;
+  link = '';
 
   // The teacher's guide is for the teacher; everything else is shared by default
   selectKind(kind: CurriculumFileKind): void {
@@ -49,18 +51,20 @@ export class CurriculumFileDialogComponent {
 
   save(form: NgForm): void {
     if (this.lock.busy()) return;
-    if (!this.file) this.fileError.set('اختار الملف اللي هترفعه');
-    if (form.invalid || !this.file) {
+    const byLink = this.source === 'link';
+    const missingFile = !byLink && !this.file;
+    if (missingFile) this.fileError.set('اختار الملف اللي هترفعه');
+    if (form.invalid || missingFile) {
       form.control.markAllAsTouched();
       return;
     }
-    const file = this.file;
+    const content = byLink ? { link: this.link.trim() } : { file: this.file! };
     this.lock.run(() =>
       this.saved.emit({
         id: crypto.randomUUID(),
         kind: this.kind,
         title: this.title.trim(),
-        file,
+        ...content,
         forStudents: this.forStudents,
         uploadedAt: new Date().toISOString()
       })

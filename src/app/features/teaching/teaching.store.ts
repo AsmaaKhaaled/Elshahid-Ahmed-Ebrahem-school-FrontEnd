@@ -28,7 +28,7 @@ export class TeachingStore {
       id: 'm-2', title: 'ملخص الوحدة الأولى: المعادلات', description: 'كل قوانين الوحدة في ورقتين، اطبعوها قبل الحصة الجاية.',
       subject: 'الرياضيات', teacherId: '1', sections: ['3/2', '3/3'],
       files: [{ name: 'ملخص-المعادلات.pdf', size: 2.1 * MB, url: '' }, { name: 'تمارين-إضافية.docx', size: 0.3 * MB, url: '' }],
-      lessonId: 'l-1-2', publishedAt: ago(3 * HOUR)
+      publishedAt: ago(3 * HOUR)
     },
     {
       id: 'm-3', title: 'Unit 3 Vocabulary', description: 'Vocabulary list with examples.',
@@ -43,7 +43,7 @@ export class TeachingStore {
     {
       id: 'm-5', title: 'فيديو شرح حل المعادلات', description: 'شرح مبسط لخطوات حل المعادلة من الدرجة الأولى.',
       subject: 'الرياضيات', teacherId: '1', sections: ['3/2'],
-      files: [], link: 'https://www.youtube.com/', lessonId: 'l-1-1', publishedAt: ago(2 * DAY)
+      files: [], link: 'https://www.youtube.com/', publishedAt: ago(2 * DAY)
     }
   ]);
 

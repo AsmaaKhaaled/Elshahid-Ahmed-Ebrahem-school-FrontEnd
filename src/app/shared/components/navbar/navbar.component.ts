@@ -8,6 +8,7 @@ import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
 import { TimeAgoPipe, arabicCount } from '../../pipes/time-ago.pipe';
 import { AnnouncementsStore, announcementsPath } from '../../../features/announcements/announcements.store';
 import { AccountSettingsDialogComponent } from '../account-settings-dialog/account-settings-dialog.component';
+import { SidebarDrawer } from '../sidebar/sidebar-drawer.service';
 
 const NAME_TITLES = new Set(['أ', 'د', 'م', 'الأستاذ', 'الأستاذة', 'الشيخ', 'المهندس', 'الدكتور']);
 
@@ -21,6 +22,7 @@ const NAME_TITLES = new Set(['أ', 'د', 'م', 'الأستاذ', 'الأستاذ
 })
 export class NavbarComponent {
   readonly authService = inject(AuthService);
+  readonly drawer = inject(SidebarDrawer);
 
   readonly school = SCHOOL_INFO;
   private readonly calendar = inject(AcademicCalendarStore);

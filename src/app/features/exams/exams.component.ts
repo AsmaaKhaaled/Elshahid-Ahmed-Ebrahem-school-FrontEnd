@@ -8,6 +8,7 @@ import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { ExamEntryDialogComponent } from './exam-entry-dialog.component';
 import { ExamScheduleDetails, ExamScheduleDialogComponent } from './exam-schedule-dialog.component';
 import { EXAM_TYPES, ExamEntry, ExamSchedule, ExamType, ExamsStore, addMinutes, formatTime } from './exams.store';
+import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 const TYPE_STYLES: Record<ExamType, string> = {
   'تقييم شهري': 'bg-sky-50 text-sky-700',
@@ -19,7 +20,7 @@ const TYPE_STYLES: Record<ExamType, string> = {
   selector: 'app-exams',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ArabicDatePipe, MatFormFieldModule, MatSelectModule, ExamScheduleDialogComponent, ExamEntryDialogComponent],
+  imports: [CardTableDirective, ArabicDatePipe, MatFormFieldModule, MatSelectModule, ExamScheduleDialogComponent, ExamEntryDialogComponent],
   templateUrl: './exams.component.html',
   styleUrl: './exams.component.css'
 })

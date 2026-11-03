@@ -1,10 +1,87 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
+import { SidebarDrawer } from './sidebar-drawer.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 import { UserRole } from '../../../core/models/user.model';
 import { AdminRouteAccess, SUPER_ADMIN_ONLY } from '../../../core/admin/admin-permissions';
+
+/** Class sets for the sidebar's parts */
+interface SidebarTheme {
+  aside: string;
+  brand: string;
+  brandName: string;
+  brandSub: string;
+  close: string;
+  roleRow: string;
+  roleLabel: string;
+  rolePill: string;
+  linkActive: string;
+  linkIdle: string;
+  iconActive: string;
+  iconIdle: string;
+  disabled: string;
+  disabledIcon: string;
+  soonBadge: string;
+  badge: string;
+  footer: string;
+  footerText: string;
+  version: string;
+  logout: string;
+}
+
+const DARK: SidebarTheme = {
+  aside: 'bg-slate-900 text-white border-slate-800',
+  brand: 'border-slate-800/80 bg-slate-950/40',
+  brandName: 'text-white',
+  brandSub: 'text-primary-400',
+  close: 'text-slate-400 hover:text-white hover:bg-slate-800',
+  roleRow: 'bg-slate-950/20 border-slate-800/40',
+  roleLabel: 'text-slate-400',
+  rolePill: 'bg-primary-950 text-primary-300 border-primary-800/60',
+  linkActive: 'bg-primary-600 text-white shadow-lg shadow-primary-950/40 font-bold ring-1 ring-primary-400/40 border-sky-300',
+  linkIdle: 'text-slate-300 hover:text-white hover:bg-slate-800/70 font-medium border-transparent',
+  iconActive: 'text-white',
+  iconIdle: 'text-slate-400 group-hover:text-primary-300',
+  disabled: 'text-slate-500',
+  disabledIcon: 'text-slate-600',
+  soonBadge: 'bg-slate-800 text-slate-400',
+  badge: 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50',
+  footer: 'border-slate-800/80 bg-slate-950/40',
+  footerText: 'text-slate-400',
+  version: 'bg-slate-800',
+  logout: 'text-rose-300 hover:text-rose-200 hover:bg-rose-950/30 border-rose-900/20'
+};
+
+/**
+ * Teachers & students: below lg the drawer is white like the public site's menu
+ * (public-header), and from lg up it's the same dark sidebar as the admin's (the lg: half).
+ */
+const LIGHT_ON_MOBILE: SidebarTheme = {
+  aside: 'bg-white text-slate-800 border-slate-200 lg:bg-slate-900 lg:text-white lg:border-slate-800',
+  brand: 'border-slate-100 bg-slate-50 lg:border-slate-800/80 lg:bg-slate-950/40',
+  brandName: 'text-slate-900 lg:text-white',
+  brandSub: 'text-slate-500 lg:text-primary-400',
+  close: 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/60',
+  roleRow: 'bg-slate-50/50 border-slate-100 lg:bg-slate-950/20 lg:border-slate-800/40',
+  roleLabel: 'text-slate-500 lg:text-slate-400',
+  rolePill: 'bg-portal-navy/10 text-portal-navy border-portal-navy/20 lg:bg-primary-950 lg:text-primary-300 lg:border-primary-800/60',
+  linkActive: 'bg-portal-navy text-white shadow-sm font-bold border-transparent lg:bg-primary-600 lg:shadow-lg lg:shadow-primary-950/40 lg:ring-1 lg:ring-primary-400/40 lg:border-sky-300',
+  linkIdle: 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-bold border-transparent lg:font-medium lg:text-slate-300 lg:hover:text-white lg:hover:bg-slate-800/70',
+  iconActive: 'text-white',
+  iconIdle: 'text-portal-navy lg:text-slate-400 lg:group-hover:text-primary-300',
+  disabled: 'text-slate-400 lg:text-slate-500',
+  disabledIcon: 'text-slate-400 lg:text-slate-600',
+  soonBadge: 'bg-slate-100 text-slate-500 lg:bg-slate-800 lg:text-slate-400',
+  badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200 lg:bg-emerald-900/60 lg:text-emerald-300 lg:border-emerald-700/50',
+  footer: 'border-slate-100 bg-slate-50 lg:border-slate-800/80 lg:bg-slate-950/40',
+  footerText: 'text-slate-500 lg:text-slate-400',
+  version: 'bg-slate-200 lg:bg-slate-800',
+  logout: 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-transparent lg:bg-transparent lg:text-rose-300 lg:hover:text-rose-200 lg:hover:bg-rose-950/30 lg:border-rose-900/20'
+};
 
 interface NavItem {
   label: string;
@@ -13,7 +90,6 @@ interface NavItem {
 
   iconPaths: string[];
   badge?: string;
-  badgeColor?: string;
   roles: UserRole[];
   // Shown but not clickable for these roles (feature temporarily disabled)
   disabledFor?: UserRole[];
@@ -27,16 +103,28 @@ interface NavItem {
   imports: [RouterLink, RouterLinkActive, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.css'
+  styleUrl: './sidebar.component.css',
+  host: { '(document:keydown.escape)': 'drawer.close()' }
 })
 export class SidebarComponent {
   private readonly authService = inject(AuthService);
+  readonly drawer = inject(SidebarDrawer);
+
+  constructor() {
+    // On phones the drawer covers the page, so it closes once a page is picked
+    inject(Router).events.pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed())
+      .subscribe(() => this.drawer.close());
+  }
 
   readonly school = SCHOOL_INFO;
 
   readonly role = input<UserRole>('ADMIN');
 
   private readonly activeRole = computed<UserRole>(() => this.role() || this.authService.userRole() || 'ADMIN');
+
+  readonly theme = computed<SidebarTheme>(() =>
+    ['TEACHER', 'STUDENT', 'PARENT'].includes(this.activeRole()) ? LIGHT_ON_MOBILE : DARK
+  );
 
   // Each layout mounts its children under its own prefix (/admin, /teacher, /student),
   // so links must target that prefix for routerLinkActive to match the current URL.
@@ -92,9 +180,9 @@ export class SidebarComponent {
       label: 'المناهج والمواد الدراسية',
       route: '/subjects',
       iconPaths: ['M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
-      // Each teacher keeps their own subjects' curriculum; students follow their class's
-      roles: ['ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT'],
-      disabledFor: ['ADMIN', 'SUPER_ADMIN']
+      // Each teacher keeps their own subjects' curriculum; students follow their class's;
+      // the admin views every teacher's, with the plan & objectives
+      roles: ['ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT']
     },
     {
       label: 'الدروس والجدول المدرسي',
@@ -108,7 +196,6 @@ export class SidebarComponent {
       route: '/assignments',
       iconPaths: ['M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'],
       badge: 'مهمة',
-      badgeColor: 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50',
       // Assignments are the teachers' own work; the admin panel doesn't follow them
       roles: ['TEACHER', 'STUDENT']
     },
@@ -135,7 +222,7 @@ export class SidebarComponent {
       roles: ['TEACHER', 'STUDENT']
     },
     {
-      label: 'الاختبارات والتقييم',
+      label: 'جدول الاختبارات والتقييمات',
       route: '/exams',
       access: 'exams',
       iconPaths: ['M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
@@ -170,7 +257,7 @@ export class SidebarComponent {
       roles: ['ADMIN', 'SUPER_ADMIN']
     },
     {
-      label: 'النتائج وكشوف الدرجات',
+      label: 'سجل رصد الدرجات',
       route: '/grades',
       iconPaths: ['M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z', 'M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z'],
       roles: ['ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT'],

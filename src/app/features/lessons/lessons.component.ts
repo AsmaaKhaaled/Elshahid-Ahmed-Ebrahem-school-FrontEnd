@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed, inject } from '@angular/core';
+import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
+import { DAILY_PERIODS, SCHOOL_DAYS } from '../../core/constants/school.constants';
+import { ScheduleSlot, WeeklySchedule, slotKey } from '../teachers/teacher.model';
+import { TeachersStore } from '../teachers/teachers.store';
+import { TeachingScope } from '../teaching/teaching-scope.service';
 
 interface Lesson {
   id: string;
@@ -11,6 +16,39 @@ interface Lesson {
   topic: string;
 }
 
+/** One period of the teacher's day: a class to teach, or free (null) */
+interface TeacherPeriod {
+  period: number;
+  slot: ScheduleSlot | null;
+}
+
+/**
+ * A demo week for teachers the admin hasn't scheduled yet, so the page isn't empty
+ * before the schedules come from the backend: their own classes & subject, a few free periods a day.
+ */
+function demoSchedule(sections: string[], subject: string): WeeklySchedule {
+  const schedule: WeeklySchedule = {};
+  if (!sections.length) return schedule;
+  for (let day = 0; day < SCHOOL_DAYS.length; day++) {
+    for (let period = 0; period < DAILY_PERIODS; period++) {
+      if ((day + period) % 3 === 0) continue;
+      schedule[slotKey(day, period)] = { subject, section: sections[(day + period) % sections.length] };
+    }
+  }
+  return schedule;
+}
+
+/** Today's index in SCHOOL_DAYS (Sunday-Thursday); the weekend shows Sunday. */
+function todayIndex(): number {
+  const day = new Date().getDay();
+  return day < SCHOOL_DAYS.length ? day : 0;
+}
+
+/**
+ * الدروس والجدول المدرسي
+ * - Teacher: their own weekly schedule, as the admin set it in هيئة التدريس (same data as the school timetable).
+ * - Student: their class's lessons of the day.
+ */
 @Component({
   selector: 'app-lessons',
   standalone: true,
@@ -19,7 +57,56 @@ interface Lesson {
   styleUrl: './lessons.component.css'
 })
 export class LessonsComponent {
-  readonly days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+  readonly scope = inject(TeachingScope);
+  private readonly teachersStore = inject(TeachersStore);
+  private readonly calendar = inject(AcademicCalendarStore);
+
+  constructor() {
+    this.scope.ensureLoaded();
+  }
+
+  readonly days = SCHOOL_DAYS;
+  readonly periods = Array.from({ length: DAILY_PERIODS }, (_, i) => i);
+  readonly todayIndex = todayIndex();
+  readonly currentTerm = this.calendar.currentTerm;
+
+  // ---- Teacher: own schedule ----
+
+  private readonly assigned = computed<WeeklySchedule>(
+    () => this.teachersStore.schedules()[this.calendar.currentTermId()]?.[this.scope.teacherId()] ?? {}
+  );
+
+  /** True while the admin hasn't set this teacher's schedule (the demo week is shown). */
+  readonly isDemoSchedule = computed(() => !Object.keys(this.assigned()).length);
+
+  readonly mySchedule = computed<WeeklySchedule>(() =>
+    this.isDemoSchedule() ? demoSchedule(this.scope.sections(), this.scope.subjects()[0] ?? '') : this.assigned()
+  );
+
+  readonly selectedDayIndex = signal(this.todayIndex);
+
+  readonly dayPeriods = computed<TeacherPeriod[]>(() => {
+    const day = this.selectedDayIndex();
+    const schedule = this.mySchedule();
+    return this.periods.map(period => ({ period: period + 1, slot: schedule[slotKey(day, period)] ?? null }));
+  });
+
+  readonly weekStats = computed(() => {
+    const slots = Object.values(this.mySchedule());
+    const today = this.periods.filter(p => this.mySchedule()[slotKey(this.todayIndex, p)]).length;
+    return { weekly: slots.length, classes: new Set(slots.map(s => s.section)).size, today };
+  });
+
+  periodsOn(day: number): number {
+    return this.periods.filter(p => this.mySchedule()[slotKey(day, p)]).length;
+  }
+
+  slotAt(day: number, period: number): ScheduleSlot | null {
+    return this.mySchedule()[slotKey(day, period)] ?? null;
+  }
+
+  // ---- Student: the class's lessons (mock until the class timetable comes from the backend) ----
+
   readonly selectedDay = signal<string>('الأحد');
 
   readonly lessons = signal<Lesson[]>([
@@ -79,4 +166,3 @@ export class LessonsComponent {
     return this.lessons().filter(l => l.day === this.selectedDay());
   });
 }
-

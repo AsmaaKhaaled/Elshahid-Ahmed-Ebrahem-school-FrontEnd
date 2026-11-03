@@ -48,8 +48,6 @@ export interface Material {
   sections: string[];
   files: TeachingFile[];
   link?: string;
-  // The curriculum lesson it explains (see subjects/curriculum.store.ts), if linked
-  lessonId?: string;
   publishedAt: string;
 }
 

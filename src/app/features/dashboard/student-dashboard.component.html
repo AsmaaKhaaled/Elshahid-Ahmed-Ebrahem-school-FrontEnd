@@ -84,26 +84,27 @@
       </ul>
     </section>
 
-    <!-- Curricula progress -->
+    <!-- The class's curricula (the ministry files their teachers uploaded) -->
     <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100/80 space-y-4">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
         <h3 class="font-bold text-slate-800 text-base">مناهج موادي</h3>
         <a routerLink="/student/subjects" class="text-xs font-bold text-primary-700 hover:text-primary-900">كل المناهج ←</a>
       </div>
-      <ul class="space-y-4">
+      <ul class="space-y-3">
         @for (cur of curricula(); track cur.id) {
-          @let progress = progressOf(cur);
-          @let last = lastTaught(cur);
-          <li class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs">
+          @let latest = latestFileOf(cur);
+          <li class="space-y-1">
+            <div class="flex items-center justify-between gap-2 text-xs">
               <span class="font-bold text-slate-800">{{ cur.subject }}</span>
-              <span class="font-black text-primary-700">{{ progress.percent }}%</span>
+              <span class="text-slate-400 shrink-0">{{ cur.files.length }} ملف</span>
             </div>
-            <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div class="h-full rounded-full bg-gradient-to-l from-emerald-500 to-primary-600" [style.width.%]="progress.percent"></div>
+            <div class="flex flex-wrap gap-1">
+              @for (kind of kindsOf(cur); track kind.id) {
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ kind.icon }} {{ kind.label }}</span>
+              }
             </div>
-            @if (last) {
-              <p class="text-[11px] text-slate-500 truncate">آخر درس: {{ last.title }}</p>
+            @if (latest) {
+              <p class="text-[11px] text-slate-500 truncate">آخر إضافة: {{ latest.title }} · {{ latest.uploadedAt | timeAgo }}</p>
             }
           </li>
         } @empty {

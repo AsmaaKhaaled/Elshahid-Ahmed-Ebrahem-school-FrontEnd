@@ -1,8 +1,8 @@
-<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 font-cairo">
+<div appPortalToBody dir="rtl" class="dialog-overlay font-cairo">
   <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()"
-    class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-full overflow-y-auto p-4 sm:p-6 space-y-4">
-    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-      <h3 class="font-black text-slate-800 text-lg">رفع ملف منهج</h3>
+    class="dialog-panel max-w-lg">
+    <div class="dialog-head flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-black text-slate-800 text-lg">إضافة من منهج الوزارة</h3>
       <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
     </div>
 
@@ -15,19 +15,38 @@
       </mat-select>
     </mat-form-field>
 
-    <div class="space-y-2">
-      <label class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-700 cursor-pointer transition-colors">
-        📎 {{ file ? 'تغيير الملف' : 'اختيار الملف (PDF، Word، صور...)' }}
-        <input type="file" class="hidden" [accept]="accept" (change)="onFileSelected($event)" />
-      </label>
-      <p class="text-[11px] text-slate-400">حتى {{ maxMb }} ميجا</p>
-      @if (file) {
-        <app-teaching-files [files]="[file]" />
-      }
-      @if (fileError()) {
-        <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
-      }
+    <!-- File or link -->
+    <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-100" role="radiogroup" aria-label="طريقة الإضافة">
+      <button type="button" role="radio" [attr.aria-checked]="source === 'file'" (click)="source = 'file'; fileError.set('')"
+        [class]="source === 'file' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+        class="py-2 rounded-lg text-xs font-bold transition-all">📎 رفع ملف</button>
+      <button type="button" role="radio" [attr.aria-checked]="source === 'link'" (click)="source = 'link'; fileError.set('')"
+        [class]="source === 'link' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+        class="py-2 rounded-lg text-xs font-bold transition-all">🔗 لينك</button>
     </div>
+
+    @if (source === 'file') {
+      <div class="space-y-2">
+        <label class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-700 cursor-pointer transition-colors">
+          📎 {{ file ? 'تغيير الملف' : 'اختيار الملف (PDF، Word، صور...)' }}
+          <input type="file" class="hidden" [accept]="accept" (change)="onFileSelected($event)" />
+        </label>
+        <p class="text-[11px] text-slate-400">حتى {{ maxMb }} ميجا</p>
+        @if (file) {
+          <app-teaching-files [files]="[file]" />
+        }
+        @if (fileError()) {
+          <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
+        }
+      </div>
+    } @else {
+      <mat-form-field class="w-full">
+        <mat-label>اللينك</mat-label>
+        <input matInput type="url" name="link" dir="ltr" required pattern="https?://.+" [(ngModel)]="link" placeholder="https://" />
+        <mat-hint>موقع الوزارة، بنك المعرفة، درايف...</mat-hint>
+        <mat-error>حط لينك صحيح بيبدأ بـ https://</mat-error>
+      </mat-form-field>
+    }
 
     <mat-form-field class="w-full">
       <mat-label>العنوان</mat-label>
@@ -43,10 +62,10 @@
       </span>
     </label>
 
-    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+    <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
       <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
       <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
-        رفع الملف
+        {{ source === 'link' ? 'إضافة اللينك' : 'رفع الملف' }}
       </button>
     </div>
   </form>

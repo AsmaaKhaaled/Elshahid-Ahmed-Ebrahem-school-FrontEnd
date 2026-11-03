@@ -5,6 +5,7 @@ import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
 import { teacherDisplayName } from '../teachers/teacher.model';
 import { TeachersStore } from '../teachers/teachers.store';
 import { ActivityEvent, ActivityKind, ActorType, PlatformActivityStore, presenceOf } from './platform-activity.store';
+import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 type Presence = ReturnType<typeof presenceOf>;
 type PresenceFilter = 'ALL' | 'online' | 'inactive';
@@ -47,7 +48,7 @@ const KIND_ICONS: Record<ActivityKind, string> = {
   selector: 'app-platform-activity',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ArabicDatePipe, TimeAgoPipe],
+  imports: [CardTableDirective, FormsModule, ArabicDatePipe, TimeAgoPipe],
   templateUrl: './platform-activity.component.html',
   styleUrl: './platform-activity.component.css'
 })

@@ -1,1 +1,33 @@
+/* Announcements ticker in the top bar */
+.ticker {
+  overflow: hidden;
+  /* Fade the text in and out at both edges */
+  mask-image: linear-gradient(to left, transparent, #000 1.5rem, #000 calc(100% - 1.5rem), transparent);
+}
 
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll linear infinite;
+}
+
+/* Stop so it can be read or clicked */
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+
+/* The track holds the list twice: sliding by one copy lands exactly where it started */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+  .ticker {
+    overflow-x: auto;
+  }
+}

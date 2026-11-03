@@ -26,6 +26,7 @@ import {
   statusOption
 } from './teacher-attendance.model';
 import { TeacherAttendanceService } from './teacher-attendance.service';
+import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 const SHEET_PAGE_SIZE = 10;
 const ARCHIVE_PAGE_SIZE = 10;
@@ -35,7 +36,7 @@ const EMPTY_FILTERS: ArchiveFilters = { from: '', to: '', teacherId: '', status:
   selector: 'app-teacher-attendance',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ArabicDatePipe, PaginationComponent, HolidayDialogComponent],
+  imports: [CardTableDirective, ArabicDatePipe, PaginationComponent, HolidayDialogComponent],
   templateUrl: './teacher-attendance.component.html',
   styleUrl: './teacher-attendance.component.css'
 })

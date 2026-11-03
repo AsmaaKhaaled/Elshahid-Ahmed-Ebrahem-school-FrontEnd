@@ -4,6 +4,7 @@ import { AdminAccount } from '../../core/admin/admin-account.model';
 import { AdminAccountsStore } from '../../core/admin/admin-accounts.store';
 import { permissionLabel } from '../../core/admin/admin-permissions';
 import { AdminFormDialogComponent, AdminFormResult } from './admin-form-dialog.component';
+import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 // Permission chips shown per row before collapsing into "+N"
 const VISIBLE_PERMISSIONS = 3;
@@ -12,7 +13,7 @@ const VISIBLE_PERMISSIONS = 3;
 @Component({
   selector: 'app-admins',
   standalone: true,
-  imports: [AdminFormDialogComponent],
+  imports: [CardTableDirective, AdminFormDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admins.component.html',
   styleUrl: './admins.component.css'

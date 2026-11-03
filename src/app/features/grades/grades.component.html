@@ -1,85 +1,290 @@
+@if (scope.isStudent()) {
+<!-- ================= Student: my marks, every subject, view only ================= -->
 <div class="space-y-6">
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <h2 class="text-2xl font-black text-slate-800 tracking-tight">كشوف الدرجات والشهادات المدرسية</h2>
-      <p class="text-xs text-slate-500 mt-1">شهادات التقييم الفصلي، كشوف أعمال السنة، واعتماد نتائج الكنترول</p>
-    </div>
-
-    <button
-      type="button"
-      class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-      </svg>
-      <span>طباعة الشهادة الرسمية</span>
-    </button>
+  <div>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">درجاتي</h2>
+    <p class="text-xs text-slate-500 mt-1">فصل {{ scope.studentSection() }} · درجات الأسابيع اللي المدرسين رصدوها، ومتوسط كل شهر</p>
   </div>
 
-  <!-- Student Certificate Card -->
-  <div class="bg-white rounded-3xl p-6 md:p-8 shadow-card border border-slate-100 space-y-6">
-    <!-- Certificate Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-100 gap-4">
-      <div class="flex items-center gap-4">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary-800 to-primary-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-primary-900/20">
-          أ
-        </div>
-        <div>
-          <span class="text-xs text-slate-400 font-semibold">شهادة بيان درجات الطالب</span>
-          <h3 class="text-xl font-black text-slate-800">أحمد ياسين محمد إبراهيم</h3>
-          <p class="text-xs text-slate-500 mt-0.5">الصف الأول الإعدادي - فصل 1/3 | كود: STD-2026-001</p>
-        </div>
-      </div>
+  <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="الشهر">
+    @for (m of months(); track m.index) {
+      <button type="button" role="tab" [attr.aria-selected]="selectedMonthIndex() === m.index" (click)="selectMonthForStudent(m.index)"
+        [class]="selectedMonthIndex() === m.index ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+        class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+        {{ m.label }}
+      </button>
+    }
+  </div>
 
-      <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-        <div class="text-center">
-          <span class="text-[11px] text-slate-400 block font-semibold">المجموع الكلي</span>
-          <span class="text-xl font-black text-primary-800">{{ totalScore() }} / {{ maxTotalScore() }}</span>
-        </div>
-        <div class="w-px h-8 bg-slate-200"></div>
-        <div class="text-center">
-          <span class="text-[11px] text-slate-400 block font-semibold">النسبة المئوية</span>
-          <span class="text-xl font-black text-emerald-600">{{ overallPercentage() }}%</span>
-        </div>
-        <div class="w-px h-8 bg-slate-200"></div>
-        <div class="text-center">
-          <span class="text-[11px] text-slate-400 block font-semibold">الترتيب بالفصل</span>
-          <span class="text-xl font-black text-amber-600">الأول 🥇</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Grades Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-right text-sm">
-        <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
-          <tr>
-            <th class="py-3 px-4 rounded-r-xl">المادة الدراسية</th>
-            <th class="py-3 px-4 text-center">أعمال السنة والمشاريع (20%)</th>
-            <th class="py-3 px-4 text-center">اختبار نصف العام (30%)</th>
-            <th class="py-3 px-4 text-center">امتحان نهاية الفصل (50%)</th>
-            <th class="py-3 px-4 text-center">المجموع الكلي</th>
-            <th class="py-3 px-4 rounded-l-xl text-center">التقدير العام</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 text-slate-700">
-          @for (item of grades(); track item.subject) {
-            <tr class="hover:bg-slate-50/70 transition-colors">
-              <td class="py-3.5 px-4 font-bold text-slate-800">{{ item.subject }}</td>
-              <td class="py-3.5 px-4 text-center font-mono">{{ item.coursework }}</td>
-              <td class="py-3.5 px-4 text-center font-mono">{{ item.midterm }}</td>
-              <td class="py-3.5 px-4 text-center font-mono">{{ item.finalExam }}</td>
-              <td class="py-3.5 px-4 text-center font-mono font-bold text-primary-800">
-                {{ item.coursework + item.midterm + item.finalExam }} / {{ item.maxScore }}
-              </td>
-              <td class="py-3.5 px-4 text-center">
-                <span class="px-2.5 py-0.5 rounded-full font-bold text-xs bg-emerald-50 text-emerald-700">
-                  {{ item.evaluation }}
-                </span>
-              </td>
-            </tr>
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+    @for (s of mySubjects(); track s.subject) {
+      <section class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+          <h3 class="font-black text-slate-800">{{ s.subject }}</h3>
+          @if (s.average.total != null) {
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-primary-50 text-primary-800">المتوسط {{ s.average.total }} / {{ weekMax }}</span>
           }
-        </tbody>
-      </table>
-    </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table appCardTable class="w-full text-right text-sm">
+            <thead class="bg-slate-50 text-xs font-bold text-slate-500">
+              <tr>
+                <th scope="col" class="py-2.5 px-3">الأسبوع</th>
+                @for (c of criteria; track c.key) {
+                  <th scope="col" class="py-2.5 px-3 text-center">{{ c.label }} ({{ c.max }})</th>
+                }
+                <th scope="col" class="py-2.5 px-3 text-center">المجموع ({{ weekMax }})</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (w of s.weeks; track w.week; let i = $index) {
+                <tr>
+                  <td class="py-2.5 px-3 text-xs font-semibold text-slate-600 whitespace-nowrap">الأسبوع {{ i + 1 }} · {{ weekLabel(w.week) }}</td>
+                  @for (c of criteria; track c.key) {
+                    <td class="py-2.5 px-3 text-center tabular-nums">{{ w.marks?.[c.key] ?? '—' }}</td>
+                  }
+                  <td class="py-2.5 px-3 text-center font-black tabular-nums text-slate-800">{{ weekTotal(w.marks) ?? '—' }}</td>
+                </tr>
+              }
+              <tr class="bg-primary-50/50">
+                <td class="py-2.5 px-3 text-xs font-black text-primary-800">متوسط الشهر</td>
+                <td class="py-2.5 px-3 text-center font-bold tabular-nums">{{ s.average.weekly ?? '—' }}</td>
+                <td class="py-2.5 px-3 text-center font-bold tabular-nums">{{ s.average.homework ?? '—' }}</td>
+                <td class="py-2.5 px-3 text-center font-bold tabular-nums">{{ s.average.behavior ?? '—' }}</td>
+                <td class="py-2.5 px-3 text-center font-black tabular-nums text-primary-800">{{ s.average.total ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @empty {
+      <p class="col-span-full text-center py-10 text-sm text-slate-400">لسه مفيش درجات مرصودة.</p>
+    }
   </div>
 </div>
+} @else {
+<!-- ================= Teacher: the class register ================= -->
+<div class="space-y-5">
+  <div class="no-print">
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">سجل رصد الدرجات</h2>
+    <p class="text-xs text-slate-500 mt-1">
+      كل أسبوع: {{ criteria[0].label }} ({{ criteria[0].max }}) + {{ criteria[1].label }} ({{ criteria[1].max }}) +
+      {{ criteria[2].label }} ({{ criteria[2].max }}) = {{ weekMax }}، وفي آخر الشهر المتوسط بيتحسب لوحده
+    </p>
+  </div>
+
+  <!-- Which register -->
+  <div class="bg-white p-3 sm:p-4 rounded-2xl shadow-soft border border-slate-100 space-y-3 no-print">
+    <div class="flex flex-col md:flex-row md:items-center gap-3">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="الفصل">
+        @for (section of scope.sections(); track section) {
+          <button type="button" role="tab" [attr.aria-selected]="selectedSection() === section" (click)="selectSection(section)"
+            [class]="selectedSection() === section ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+            class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+            فصل {{ section }}
+          </button>
+        }
+      </div>
+      @if (scope.subjects().length > 1) {
+        <select (change)="selectSubject($any($event.target).value)" aria-label="المادة"
+          class="md:ms-auto px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700">
+          @for (subject of scope.subjects(); track subject) {
+            <option [value]="subject" [selected]="selectedSubject() === subject">{{ subject }}</option>
+          }
+        </select>
+      } @else {
+        <span class="md:ms-auto text-xs font-bold px-3 py-2 rounded-xl bg-slate-100 text-slate-700 w-fit">مادة {{ selectedSubject() }}</span>
+      }
+    </div>
+    <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="الشهر">
+      @for (m of months(); track m.index) {
+        <button type="button" role="tab" [attr.aria-selected]="selectedMonthIndex() === m.index" (click)="selectMonth(m.index)"
+          [class]="selectedMonthIndex() === m.index ? 'bg-primary-50 text-primary-800 border-primary-200' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200/60'"
+          class="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border">
+          {{ m.label }} <span class="opacity-70">({{ weekLabel(m.weeks[0]).slice(5) }} – {{ weekLabel(m.weeks[m.weeks.length - 1]).slice(5) }})</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+    <div class="text-xs">
+      @if (notice()) {
+        <span class="font-bold text-emerald-700" role="status">✓ {{ notice() }}</span>
+      } @else if (dirty()) {
+        <span class="font-bold text-amber-700">• فيه درجات لسه ما اتحفظتش</span>
+      } @else {
+        <span class="text-slate-500">الأسابيع الجاية بتتفتح للرصد لما ييجي ميعادها.</span>
+      }
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      @if (dirty()) {
+        <button (click)="discard()" type="button" class="px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">تراجع</button>
+      }
+      <button (click)="save()" [disabled]="!dirty()" type="button"
+        class="px-4 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow disabled:opacity-50">حفظ الدرجات</button>
+      <button (click)="exportExcel()" [disabled]="exporting()" type="button"
+        class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs disabled:opacity-50">
+        {{ exporting() ? 'جاري التصدير...' : 'تصدير Excel' }}
+      </button>
+      <button (click)="print()" type="button"
+        class="hidden lg:block px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs">طباعة</button>
+    </div>
+  </div>
+  @if (error()) {
+    <p class="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2 no-print" role="alert">{{ error() }}</p>
+  }
+
+  @if (month(); as m) {
+    <!-- ===== Phones & tablets: one week at a time ===== -->
+    <section class="lg:hidden print:hidden bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+      <div class="flex gap-1.5 overflow-x-auto no-scrollbar p-2 border-b border-slate-100" role="tablist" aria-label="الأسبوع">
+        @for (week of m.weeks; track week; let i = $index) {
+          <button type="button" role="tab" [attr.aria-selected]="selectedWeekIndex() === i" (click)="selectedWeekIndex.set(i)"
+            [class]="selectedWeekIndex() === i ? 'bg-primary-800 text-white' : 'bg-slate-50 text-slate-600'"
+            class="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold leading-tight text-center">
+            الأسبوع {{ i + 1 }}<br /><span class="opacity-75 font-semibold">{{ weekLabel(week).slice(5) }}</span>
+          </button>
+        }
+        <button type="button" role="tab" [attr.aria-selected]="selectedWeekIndex() === m.weeks.length" (click)="selectedWeekIndex.set(m.weeks.length)"
+          [class]="selectedWeekIndex() === m.weeks.length ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-800'"
+          class="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold leading-tight">متوسط<br />الشهر</button>
+      </div>
+
+      @if (selectedWeekIndex() < m.weeks.length) {
+        @let week = m.weeks[selectedWeekIndex()];
+        @let locked = isFutureWeek(week);
+        @if (locked) {
+          <p class="px-4 py-2.5 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100">الأسبوع ده لسه ماجاش.</p>
+        }
+        <table appCardTable class="w-full text-right text-sm">
+          <thead class="bg-slate-50 text-xs font-bold text-slate-500">
+            <tr>
+              <th scope="col" class="py-2.5 px-3">اسم الطالب</th>
+              @for (c of criteria; track c.key) {
+                <th scope="col" class="py-2.5 px-3 text-center">{{ c.label }} ({{ c.max }})</th>
+              }
+              <th scope="col" class="py-2.5 px-3 text-center">المجموع ({{ weekMax }})</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (s of students(); track s.id) {
+              <tr>
+                <td class="py-2 px-3 font-bold text-slate-800">{{ s.name }}</td>
+                @for (c of criteria; track c.key) {
+                  <td class="py-2 px-3 text-center">
+                    <input type="number" inputmode="decimal" min="0" [max]="c.max" step="0.5" [disabled]="locked"
+                      [value]="markOf(week, s.id, c.key) ?? ''" (input)="setMark(week, s.id, c.key, $any($event.target).value)"
+                      [attr.aria-label]="c.label + ' - ' + s.name"
+                      [class]="isInvalid(week, s.id, c.key) ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-slate-200'"
+                      class="w-16 px-2 py-1.5 rounded-lg border text-center text-sm font-bold tabular-nums disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+                  </td>
+                }
+                <td class="py-2 px-3 text-center font-black tabular-nums text-primary-800">{{ weekTotal(marksOf(week, s.id)) ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <table appCardTable class="w-full text-right text-sm">
+          <thead class="bg-slate-50 text-xs font-bold text-slate-500">
+            <tr>
+              <th scope="col" class="py-2.5 px-3">اسم الطالب</th>
+              @for (c of criteria; track c.key) {
+                <th scope="col" class="py-2.5 px-3 text-center">{{ c.short }}</th>
+              }
+              <th scope="col" class="py-2.5 px-3 text-center">متوسط المجموع</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (s of students(); track s.id) {
+              @let avg = averageOf(s.id);
+              <tr>
+                <td class="py-2 px-3 font-bold text-slate-800">{{ s.name }}</td>
+                <td class="py-2 px-3 text-center tabular-nums">{{ avg.weekly ?? '—' }}</td>
+                <td class="py-2 px-3 text-center tabular-nums">{{ avg.homework ?? '—' }}</td>
+                <td class="py-2 px-3 text-center tabular-nums">{{ avg.behavior ?? '—' }}</td>
+                <td class="py-2 px-3 text-center font-black tabular-nums text-emerald-700">{{ avg.total ?? '—' }} / {{ weekMax }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+    <!-- ===== Wide screens & printing: the whole month, like the paper register ===== -->
+    <section class="hidden lg:block print:block print-area bg-white rounded-2xl shadow-soft border border-slate-100 p-4 space-y-3">
+      <div class="hidden print:flex items-start justify-between text-xs font-bold text-slate-800">
+        <div>
+          <p>{{ school.fullName }}</p>
+          <p class="mt-1">{{ title }} · {{ m.label }}</p>
+        </div>
+        <div class="text-left">
+          <p>فصل {{ selectedSection() }} · مادة {{ selectedSubject() }}</p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-100">
+        <table class="table-grid w-full text-xs text-center border-collapse">
+          <thead class="text-slate-600 font-bold">
+            <tr class="bg-slate-50">
+              <th scope="col" rowspan="2" class="py-2 px-3 text-right min-w-44 border-b border-slate-200">اسم الطالب</th>
+              @for (week of m.weeks; track week; let i = $index) {
+                <th scope="colgroup" [attr.colspan]="criteria.length + 1" class="py-2 px-2 border-b border-s border-slate-200">
+                  الأسبوع {{ i + 1 }} <span class="block font-semibold text-slate-400 tabular-nums">{{ weekLabel(week) }}</span>
+                </th>
+              }
+              <th scope="colgroup" [attr.colspan]="criteria.length + 1" class="py-2 px-2 border-b border-s border-slate-200 bg-emerald-50 text-emerald-800">متوسط الشهر</th>
+            </tr>
+            <tr class="bg-slate-50/60 text-[10px]">
+              @for (week of m.weeks; track week) {
+                @for (c of criteria; track c.key; let first = $first) {
+                  <th scope="col" class="py-1.5 px-1 border-b border-slate-200" [class.border-s]="first">{{ c.short }}<br />{{ c.max }}</th>
+                }
+                <th scope="col" class="py-1.5 px-1 border-b border-slate-200 text-primary-800">المجموع<br />{{ weekMax }}</th>
+              }
+              @for (c of criteria; track c.key; let first = $first) {
+                <th scope="col" class="py-1.5 px-1 border-b border-slate-200 bg-emerald-50/60" [class.border-s]="first">{{ c.short }}</th>
+              }
+              <th scope="col" class="py-1.5 px-1 border-b border-slate-200 bg-emerald-50/60 text-emerald-800">المجموع</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (s of students(); track s.id) {
+              <tr class="hover:bg-slate-50/60">
+                <th scope="row" class="py-1.5 px-3 text-right font-bold text-slate-800 whitespace-nowrap">{{ s.name }}</th>
+                @for (week of m.weeks; track week) {
+                  @let locked = isFutureWeek(week);
+                  @for (c of criteria; track c.key; let first = $first) {
+                    <td class="py-1 px-0.5" [class.border-s]="first" [class.border-slate-100]="first">
+                      <input type="number" inputmode="decimal" min="0" [max]="c.max" step="0.5" [disabled]="locked"
+                        [value]="markOf(week, s.id, c.key) ?? ''" (input)="setMark(week, s.id, c.key, $any($event.target).value)"
+                        [attr.aria-label]="c.label + ' - ' + s.name"
+                        [class]="isInvalid(week, s.id, c.key) ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-transparent hover:border-slate-200'"
+                        class="grade-input w-11 px-0.5 py-1 rounded-md border text-center text-xs font-bold tabular-nums disabled:bg-slate-50/80 focus:outline-none focus:border-primary-400 focus:bg-white" />
+                    </td>
+                  }
+                  <td class="py-1 px-1 font-black tabular-nums text-primary-800 bg-primary-50/30">{{ weekTotal(marksOf(week, s.id)) ?? '' }}</td>
+                }
+                @let avg = averageOf(s.id);
+                <td class="py-1 px-1 tabular-nums bg-emerald-50/30 border-s border-slate-100">{{ avg.weekly ?? '' }}</td>
+                <td class="py-1 px-1 tabular-nums bg-emerald-50/30">{{ avg.homework ?? '' }}</td>
+                <td class="py-1 px-1 tabular-nums bg-emerald-50/30">{{ avg.behavior ?? '' }}</td>
+                <td class="py-1 px-1 font-black tabular-nums text-emerald-800 bg-emerald-50/60">{{ avg.total ?? '' }}</td>
+              </tr>
+            } @empty {
+              <tr><td [attr.colspan]="1 + (m.weeks.length + 1) * (criteria.length + 1)" class="py-10 text-slate-400">لا يوجد طلاب في الفصل ده.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="hidden print:flex justify-between pt-6 text-xs font-bold text-slate-700">
+        <span>توقيع المعلم: ....................</span>
+        <span>يعتمد،، مدير المدرسة: {{ school.principal }}</span>
+      </div>
+    </section>
+  }
+</div>
+}

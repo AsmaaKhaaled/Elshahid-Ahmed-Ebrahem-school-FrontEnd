@@ -32,7 +32,7 @@ export class CurriculumFormDialogComponent implements OnInit {
   readonly lock = submitLock();
   readonly duplicateError = signal(false);
 
-  draft: Curriculum = { id: '', teacherId: '', subject: '', gradeId: '', sections: [], description: '', units: [], files: [], updatedAt: '' };
+  draft: Curriculum = { id: '', teacherId: '', subject: '', gradeId: '', sections: [], description: '', files: [], plan: [], updatedAt: '' };
 
   /** Grades the teacher has classes in (all grades if their classes aren't known). */
   grades(): typeof GRADE_LEVELS {

@@ -1,132 +1,424 @@
+@if (scope.isStudent()) {
+<!-- ================= Student: their own record, view only (the teacher takes attendance) ================= -->
 <div class="space-y-6">
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <h2 class="text-2xl font-black text-slate-800 tracking-tight">دفتر الحضور والغياب اليومي</h2>
-      <p class="text-xs text-slate-500 mt-1">رصد الحضور الصباحي والتأخيرات وإرسال إشعارات فورية لأولياء الأمور</p>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <button
-        (click)="markAllPresent()"
-        type="button"
-        class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-emerald-700 border border-emerald-200 font-bold text-xs flex items-center gap-2 transition-all">
-        <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <span>تسجيل الكل حضور</span>
-      </button>
-
-      <button
-        (click)="saveAttendance()"
-        type="button"
-        class="px-5 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all">
-        <span>حفظ واعتماد الدفتر</span>
-      </button>
-    </div>
+  <div>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">سجل حضوري وغيابي</h2>
+    <p class="text-xs text-slate-500 mt-1">
+      فصل {{ scope.studentSection() }} · المدرس بيسجّل الحضور كل يوم، واليوم بيظهر هنا بعد ما يتعتمد
+    </p>
   </div>
 
-  <!-- Attendance Stats Strip -->
+  @let c = myCounts();
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-soft">
+      <span class="text-xs text-emerald-600 block">نسبة الحضور</span>
+      <span class="text-xl font-black text-emerald-700 mt-1 block">{{ c.rate }}%</span>
+      <div class="h-1.5 rounded-full bg-emerald-100 mt-2 overflow-hidden">
+        <div class="h-full bg-emerald-500 rounded-full" [style.width.%]="c.rate"></div>
+      </div>
+    </div>
     <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
-      <span class="text-xs text-slate-500 block">إجمالي الطلاب بالفصل</span>
-      <span class="text-xl font-black text-slate-800 mt-1 block">{{ records().length }} طالب</span>
+      <span class="text-xs text-slate-500 block">أيام الحضور</span>
+      <span class="text-xl font-black text-slate-800 mt-1 block">{{ c.present }} من {{ c.total }}</span>
     </div>
-    <div class="bg-white p-4 rounded-2xl border border-emerald-100 shadow-soft bg-emerald-50/20">
-      <span class="text-xs text-emerald-600 block">الحاضرون</span>
-      <span class="text-xl font-black text-emerald-700 mt-1 block">{{ presentCount() }} ({{ attendanceRate() }}%)</span>
+    <div class="bg-white p-4 rounded-2xl border border-rose-100 shadow-soft">
+      <span class="text-xs text-rose-600 block">الغياب</span>
+      <span class="text-xl font-black text-rose-700 mt-1 block">{{ c.absent }} {{ c.absent === 1 ? 'يوم' : 'أيام' }}</span>
     </div>
-    <div class="bg-white p-4 rounded-2xl border border-rose-100 shadow-soft bg-rose-50/20">
-      <span class="text-xs text-rose-600 block">الغياب بدون إذن</span>
-      <span class="text-xl font-black text-rose-700 mt-1 block">{{ absentCount() }}</span>
-    </div>
-    <div class="bg-white p-4 rounded-2xl border border-amber-100 shadow-soft bg-amber-50/20">
-      <span class="text-xs text-amber-600 block">تأخير / إذن رسمي</span>
-      <span class="text-xl font-black text-amber-700 mt-1 block">{{ lateCount() + excusedCount() }}</span>
+    <div class="bg-white p-4 rounded-2xl border border-amber-100 shadow-soft">
+      <span class="text-xs text-amber-600 block">تأخير / بعذر</span>
+      <span class="text-xl font-black text-amber-700 mt-1 block">{{ c.late }} / {{ c.excused }}</span>
     </div>
   </div>
 
-  <!-- Controls: Date & Class Selector -->
-  <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-wrap items-center justify-between gap-4">
-    <mat-form-field class="w-full sm:w-72">
-      <mat-label>الفصل الدراسي</mat-label>
-      <mat-select [(value)]="selectedSection">
-        @for (grade of grades; track grade.id) {
-          <mat-optgroup [label]="grade.label">
-            @for (section of grade.sections; track section) {
-              <mat-option [value]="section">فصل {{ section }}</mat-option>
+  <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
+    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+      <h3 class="font-bold text-slate-800 text-sm">الأيام المعتمدة</h3>
+      <span class="text-[11px] text-slate-400">للعرض فقط</span>
+    </div>
+    <ul class="divide-y divide-slate-100">
+      @for (day of myDays(); track day.id) {
+        @let opt = statusOption(day.status) ?? notRecorded;
+        <li class="px-4 py-3 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-slate-800">{{ day.date | arabicDate:'dateOnly' }}</p>
+            @if (day.note) {
+              <p class="text-xs text-slate-500 mt-0.5">{{ day.note }}</p>
             }
-          </mat-optgroup>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <div class="flex items-center gap-2 text-xs text-slate-500">
-      <span>تاريخ اليوم:</span>
-      <strong class="text-slate-800">{{ today | arabicDate:'full' }}</strong>
-    </div>
-  </div>
-
-  <!-- Attendance Table -->
-  <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-x-auto">
-    <table class="w-full min-w-[640px] text-right text-sm">
-      <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase">
-        <tr>
-          <th class="py-3.5 px-4">#</th>
-          <th class="py-3.5 px-4">اسم الطالب</th>
-          <th class="py-3.5 px-4">كود القيد</th>
-          <th class="py-3.5 px-4 text-center">حالة الحضور</th>
-          <th class="py-3.5 px-4">ملاحظات</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100 text-slate-700">
-        @for (rec of records(); track rec.studentId; let idx = $index) {
-          <tr class="hover:bg-slate-50/80 transition-colors">
-            <td class="py-3.5 px-4 font-mono text-xs text-slate-400">{{ idx + 1 }}</td>
-            <td class="py-3.5 px-4 font-bold text-slate-800">{{ rec.name }}</td>
-            <td class="py-3.5 px-4 font-mono text-xs text-slate-500">{{ rec.code }}</td>
-            <td class="py-3.5 px-4 text-center">
-              <div class="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  (click)="setStatus(rec.studentId, 'PRESENT')"
-                  [class]="rec.status === 'PRESENT' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-emerald-700'"
-                  class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all">
-                  حاضر
-                </button>
-                <button
-                  type="button"
-                  (click)="setStatus(rec.studentId, 'ABSENT')"
-                  [class]="rec.status === 'ABSENT' ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-600 hover:text-rose-700'"
-                  class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all">
-                  غائب
-                </button>
-                <button
-                  type="button"
-                  (click)="setStatus(rec.studentId, 'LATE')"
-                  [class]="rec.status === 'LATE' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:text-amber-700'"
-                  class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all">
-                  متأخر
-                </button>
-                <button
-                  type="button"
-                  (click)="setStatus(rec.studentId, 'EXCUSED')"
-                  [class]="rec.status === 'EXCUSED' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-blue-700'"
-                  class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all">
-                  إذن
-                </button>
-              </div>
-            </td>
-            <td class="py-3.5 px-4">
-              <input
-                type="text"
-                [(ngModel)]="rec.note"
-                placeholder="ملاحظة أو سبب الغياب..."
-                class="w-full px-2 py-1 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-primary-500"
-              />
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+          </div>
+          <span [class]="opt.badgeClass" class="shrink-0 px-3 py-1 rounded-lg text-xs font-bold">{{ opt.label }}</span>
+        </li>
+      } @empty {
+        <li class="px-4 py-10 text-center text-sm text-slate-400">لسه مفيش أيام متعتمدة.</li>
+      }
+    </ul>
   </div>
 </div>
+} @else {
+<!-- ================= Teacher: one class's attendance book (same flow as the teachers' book) ================= -->
+<div class="space-y-6 no-print">
+  <!-- Header -->
+  <div>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">دفتر الحضور والغياب</h2>
+    <p class="text-xs text-slate-500 mt-1">سجّل غياب الفصل اللي عندك فيه حصة. كل فصل ليه دفتر لوحده.</p>
+  </div>
+
+  <!-- The teacher's classes -->
+  <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="الفصل">
+    @for (section of scope.sections(); track section) {
+      <button type="button" role="tab" [attr.aria-selected]="selectedSection() === section" (click)="changeSection(section)"
+        [class]="selectedSection() === section ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+        class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+        فصل {{ section }}
+      </button>
+    }
+  </div>
+
+  <!-- Date bar -->
+  <div class="bg-white p-4 rounded-2xl shadow-soft border border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-2">
+      <button (click)="shiftDate(-1)" type="button" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600" aria-label="اليوم السابق">→</button>
+      <input type="date" [value]="selectedDate()" (change)="changeDate($any($event.target).value)" aria-label="تاريخ الدفتر"
+        class="px-3 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700" />
+      <button (click)="shiftDate(1)" type="button" class="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600" aria-label="اليوم التالي">←</button>
+      <button (click)="goToday()" type="button" class="px-3 py-2 rounded-xl bg-primary-50 text-primary-800 hover:bg-primary-100 text-xs font-bold">اليوم</button>
+      <span class="text-sm font-bold text-slate-800 ms-1">{{ selectedDate() | arabicDate:'dateOnly' }}</span>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+      @if (dayType() === 'WEEKEND') {
+        <span class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600">إجازة أسبوعية</span>
+      } @else if (dayType() === 'FUTURE') {
+        <span class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600">يوم قادم</span>
+      } @else if (closed()) {
+        <span class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800">✓ دفتر معتمد</span>
+      } @else {
+        <span class="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800">• مفتوح للتسجيل</span>
+      }
+    </div>
+  </div>
+
+  @if (notice()) {
+    <p class="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-2.5 text-xs font-bold text-emerald-800" role="status">✓ {{ notice() }}</p>
+  }
+
+  <!-- Daily sheet -->
+  @if (dayType() === 'WEEKEND') {
+    <div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-soft space-y-1">
+      <p class="text-base font-black text-slate-700">الجمعة والسبت إجازة أسبوعية</p>
+      <p class="text-xs text-slate-500">لا يوجد دفتر حضور لهذا اليوم.</p>
+    </div>
+  } @else if (dayType() === 'FUTURE') {
+    <div class="bg-white rounded-2xl p-8 text-center border border-slate-100 shadow-soft text-sm text-slate-500">
+      لا يمكن تسجيل الحضور ليوم لم يأتِ بعد.
+    </div>
+  } @else {
+    <!-- Stats strip -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-slate-500 block">طلاب الفصل</span>
+        <span class="text-xl font-black text-slate-800 mt-1 block">{{ draft().length }}</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-emerald-700 block">الحاضرون</span>
+        <span class="text-xl font-black text-emerald-700 mt-1 block">{{ attendingCount() }} ({{ attendanceRate() }}%)</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-rose-700 block">الغياب</span>
+        <span class="text-xl font-black text-rose-700 mt-1 block">{{ countOf('ABSENT') }}</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-blue-700 block">بعذر</span>
+        <span class="text-xl font-black text-blue-700 mt-1 block">{{ countOf('EXCUSED') }}</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-soft">
+        <span class="text-xs text-slate-500 block">لم يُسجلوا بعد</span>
+        <span class="text-xl font-black mt-1 block" [class]="unmarkedCount() ? 'text-amber-700' : 'text-slate-800'">{{ unmarkedCount() }}</span>
+      </div>
+    </div>
+
+    <section class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden" aria-label="دفتر اليوم">
+      <!-- Sheet toolbar -->
+      <div class="px-4 py-3 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        @if (closed(); as c) {
+          <div class="text-xs text-slate-600">
+            <span class="font-bold text-emerald-800">✓ تم اعتماد دفتر فصل {{ selectedSection() }}</span>
+            بواسطة {{ c.closedBy }} — {{ c.closedAt | arabicDate:'full' }}
+          </div>
+          <p class="text-[11px] text-slate-500">لتعديل يوم معتمد ارجع لإدارة المدرسة.</p>
+        } @else {
+          @if (selectedDate() < today) {
+            <p class="text-xs font-semibold text-amber-800">ده يوم فات ولسه ما اتعتمدش. اعتمده لما تخلص.</p>
+          } @else {
+            <p class="text-xs text-slate-500">احفظ أول بأول، واعتمد الدفتر لما تخلص الحصة.</p>
+          }
+          <div class="flex flex-wrap items-center gap-2">
+            <button (click)="markUnmarkedPresent()" [disabled]="!unmarkedCount()" type="button"
+              class="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-emerald-700 border border-emerald-200 font-bold text-xs disabled:opacity-50">
+              ✓ تسجيل غير المسجلين حضور
+            </button>
+            @if (dirty()) {
+              <button (click)="discardChanges()" type="button" class="px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">تراجع</button>
+            }
+            <button (click)="save()" [disabled]="!dirty()" type="button"
+              class="px-4 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow disabled:opacity-50">
+              حفظ
+            </button>
+            <button (click)="confirmingClose.set(true)" type="button"
+              class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow">
+              اعتماد دفتر اليوم
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (confirmingClose()) {
+        <div class="px-4 py-3 bg-emerald-50/70 border-b border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs" role="alertdialog">
+          <span class="text-emerald-900 font-semibold">
+            بعد الاعتماد الدفتر هيتقفل ويتنقل للأرشيف.
+            @if (unmarkedCount()) {
+              <strong>{{ unmarkedCount() }} طالب</strong> لسه ماتسجلوش وهيتسجلوا "لم يُسجل".
+            }
+          </span>
+          <div class="flex items-center gap-2">
+            <button (click)="confirmingClose.set(false)" type="button" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white font-bold">إلغاء</button>
+            <button (click)="closeDay()" type="button" class="px-4 py-1.5 rounded-lg bg-emerald-700 text-white font-bold">تأكيد الاعتماد</button>
+          </div>
+        </div>
+      }
+
+      @if (actionError()) {
+        <p class="px-4 py-2.5 bg-rose-50 text-rose-800 text-xs font-semibold border-b border-rose-100" role="alert">{{ actionError() }}</p>
+      }
+
+      <div class="overflow-x-auto">
+        <table appCardTable class="w-full text-right text-sm">
+          <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500">
+            <tr>
+              <th scope="col" class="py-3.5 px-4">#</th>
+              <th scope="col" class="py-3.5 px-4">اسم الطالب</th>
+              <th scope="col" class="py-3.5 px-4">كود القيد</th>
+              <th scope="col" class="py-3.5 px-4 text-center">الحالة</th>
+              <th scope="col" class="py-3.5 px-4">ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (rec of sheetRows(); track rec.studentId; let idx = $index) {
+              <tr class="hover:bg-slate-50/80 transition-colors" [class.bg-amber-50]="editable() && !rec.status">
+                <td class="py-3 px-4 font-mono text-xs text-slate-400">{{ (sheetPage() - 1) * sheetPageSize + idx + 1 }}</td>
+                <td class="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">{{ rec.studentName }}</td>
+                <td class="py-3 px-4 font-mono text-xs text-slate-500">{{ rec.code }}</td>
+                <td class="py-3 px-4 text-center">
+                  @if (editable()) {
+                    <div class="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl" role="group" [attr.aria-label]="'حالة ' + rec.studentName">
+                      @for (opt of statusOptions; track opt.value) {
+                        <button type="button" (click)="setStatus(rec.studentId, $any(opt.value))" [attr.aria-pressed]="rec.status === opt.value"
+                          [class]="rec.status === opt.value ? opt.activeClass + ' text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                          class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap">
+                          {{ opt.label }}
+                        </button>
+                      }
+                    </div>
+                  } @else {
+                    @let opt = statusOption(rec.status) ?? notRecorded;
+                    <span [class]="opt.badgeClass" class="px-2.5 py-1 rounded-lg text-[11px] font-bold">{{ opt.label }}</span>
+                  }
+                </td>
+                <td class="py-3 px-4">
+                  @if (editable()) {
+                    <input type="text" [value]="rec.note" (input)="setNote(rec.studentId, $any($event.target).value)"
+                      placeholder="ملاحظة أو سبب الغياب..." maxlength="300" aria-label="ملاحظة"
+                      class="w-full min-w-[140px] px-2 py-1 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-primary-500" />
+                  } @else {
+                    <span class="text-xs text-slate-500">{{ rec.note || '—' }}</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="py-10 text-center text-sm text-slate-400">لا يوجد طلاب مقيدين في الفصل ده.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="px-4 py-3 border-t border-slate-100">
+        <app-pagination [page]="sheetPage()" [pageSize]="sheetPageSize" [total]="draft().length" itemLabel="طالب"
+          (pageChange)="sheetPage.set($event)" />
+      </div>
+    </section>
+  }
+
+  <!-- Archive -->
+  <section class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden" aria-label="أرشيف الحضور">
+    <div class="px-5 py-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div>
+        <h3 class="font-bold text-slate-800 text-base">سجل الأيام المعتمدة · فصل {{ selectedSection() }}</h3>
+        <p class="text-xs text-slate-500 mt-0.5">كل يوم بيتنقل هنا بعد اعتماده، ويفضل محفوظ للرجوع له في أي وقت.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button (click)="exportExcel()" [disabled]="!!exporting() || !archiveRecords().length" type="button"
+          class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs disabled:opacity-50">
+          {{ exporting() === 'excel' ? 'جاري التصدير...' : 'تصدير Excel' }}
+        </button>
+        <button (click)="exportPdf()" [disabled]="!!exporting() || !archiveRecords().length" type="button"
+          class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs disabled:opacity-50">
+          تصدير PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="px-5 py-3 bg-slate-50/60 border-b border-slate-100 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end text-xs">
+      <label class="space-y-1 font-bold text-slate-600">
+        <span class="block">من تاريخ</span>
+        <input type="date" [value]="filters().from" (change)="setFilter('from', $any($event.target).value)"
+          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal" />
+      </label>
+      <label class="space-y-1 font-bold text-slate-600">
+        <span class="block">إلى تاريخ</span>
+        <input type="date" [value]="filters().to" (change)="setFilter('to', $any($event.target).value)"
+          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal" />
+      </label>
+      <label class="space-y-1 font-bold text-slate-600">
+        <span class="block">الطالب</span>
+        <select (change)="setFilter('studentId', $any($event.target).value)"
+          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal">
+          <option value="" [selected]="!filters().studentId">كل الطلاب</option>
+          @for (student of studentOptions(); track student.id) {
+            <option [value]="student.id" [selected]="filters().studentId === student.id">{{ student.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="space-y-1 font-bold text-slate-600">
+        <span class="block">الحالة</span>
+        <select (change)="setFilter('status', $any($event.target).value)"
+          class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-normal">
+          <option value="" [selected]="!filters().status">كل الحالات</option>
+          @for (opt of archiveStatusOptions; track opt.value) {
+            <option [value]="opt.value" [selected]="filters().status === opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </label>
+      @if (hasFilters()) {
+        <button (click)="clearFilters()" type="button" class="px-3 py-2 rounded-xl text-slate-600 hover:bg-white font-bold w-fit">مسح الفلاتر</button>
+      }
+    </div>
+
+    @if (archiveRecords().length) {
+      <div class="px-5 py-3 flex flex-wrap gap-2 text-[11px] font-bold border-b border-slate-100">
+        @for (opt of archiveStatusOptions; track opt.value) {
+          @if (summaryCount(opt.value)) {
+            <span [class]="opt.badgeClass" class="px-2.5 py-1 rounded-lg">{{ opt.label }}: {{ summaryCount(opt.value) }}</span>
+          }
+        }
+      </div>
+    }
+
+    @if (archiveError()) {
+      <p class="px-5 py-2.5 bg-rose-50 text-rose-800 text-xs font-semibold" role="alert">{{ archiveError() }}</p>
+    }
+
+    <div class="overflow-x-auto">
+      <table appCardTable class="w-full text-right text-sm">
+        <thead class="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500">
+          <tr>
+            <th scope="col" class="py-3 px-4">التاريخ</th>
+            <th scope="col" class="py-3 px-4">اسم الطالب</th>
+            <th scope="col" class="py-3 px-4">كود القيد</th>
+            <th scope="col" class="py-3 px-4 text-center">الحالة</th>
+            <th scope="col" class="py-3 px-4">ملاحظات</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-slate-700">
+          @for (rec of archiveRows(); track rec.id) {
+            @let opt = statusOption(rec.status) ?? notRecorded;
+            <tr class="hover:bg-slate-50/80">
+              <td class="py-2.5 px-4 text-xs whitespace-nowrap">{{ rec.date | arabicDate:'dateOnly' }}</td>
+              <td class="py-2.5 px-4 font-bold text-slate-800 whitespace-nowrap">{{ rec.studentName }}</td>
+              <td class="py-2.5 px-4 font-mono text-xs text-slate-500">{{ rec.code }}</td>
+              <td class="py-2.5 px-4 text-center"><span [class]="opt.badgeClass" class="px-2.5 py-1 rounded-lg text-[11px] font-bold">{{ opt.label }}</span></td>
+              <td class="py-2.5 px-4 text-xs text-slate-500">{{ rec.note || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="py-10 text-center text-sm text-slate-400">
+                {{ hasFilters() ? 'لا توجد سجلات تطابق الفلاتر.' : 'لا توجد أيام معتمدة بعد.' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="px-4 py-3 border-t border-slate-100">
+      <app-pagination [page]="archivePage()" [pageSize]="archivePageSize" [total]="archiveRecords().length" itemLabel="سجل"
+        (pageChange)="archivePage.set($event)" />
+    </div>
+  </section>
+</div>
+
+<!-- Printable report for "تصدير PDF" (rendered only while printing) -->
+@if (printRecords(); as records) {
+  <div class="print-area print-only" dir="rtl">
+    <div class="report">
+      <h1>دفتر حضور وغياب فصل {{ selectedSection() }}</h1>
+      <p class="report-meta">{{ school.fullName }} — {{ periodLabel() }} — {{ records.length }} سجل</p>
+
+      <h2>ملخص الطلاب</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>الطالب</th>
+            <th>كود القيد</th>
+            @for (opt of archiveStatusOptions; track opt.value) {
+              <th>{{ opt.label }}</th>
+            }
+            <th>الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of printSummary(); track row.code) {
+            <tr>
+              <td>{{ row.studentName }}</td>
+              <td class="num">{{ row.code }}</td>
+              @for (opt of archiveStatusOptions; track opt.value) {
+                <td class="num">{{ row.counts[opt.value] || 0 }}</td>
+              }
+              <td class="num">{{ row.total }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <h2>السجل اليومي</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>التاريخ</th>
+            <th>الطالب</th>
+            <th>الحالة</th>
+            <th>ملاحظات</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (rec of records; track rec.id) {
+            <tr>
+              <td class="num">{{ rec.date }}</td>
+              <td>{{ rec.studentName }}</td>
+              <td>{{ (statusOption(rec.status) ?? notRecorded).label }}</td>
+              <td>{{ rec.note }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="signature">
+        <span>توقيع المعلم</span>
+        <strong>{{ scope.studentName() }}</strong>
+      </div>
+    </div>
+  </div>
+}
+}

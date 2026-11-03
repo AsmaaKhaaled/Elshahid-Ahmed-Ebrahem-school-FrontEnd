@@ -1,8 +1,21 @@
-<!-- Always fixed on the right: an icon rail on phones/tablets, the full menu from lg up -->
-<aside class="shrink-0 h-screen w-16 sm:w-20 lg:w-72 bg-slate-900 text-white flex flex-col border-l border-slate-800">
+<!-- Fixed on the right from lg up; below that a drawer opened from the navbar's menu button -->
+@let t = theme();
+@if (drawer.open()) {
+  <div (click)="drawer.close()" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden" aria-hidden="true"></div>
+}
+<!-- invisible while closed so its links aren't reachable with Tab off-screen -->
+<aside
+  id="app-sidebar"
+  [class]="t.aside"
+  [class.translate-x-full]="!drawer.open()"
+  [class.invisible]="!drawer.open()"
+  [class.shadow-2xl]="drawer.open()"
+  class="fixed inset-y-0 right-0 z-50 w-72 max-w-[85vw] h-[100dvh] transition-[transform,visibility] duration-300 ease-out
+    lg:static lg:z-auto lg:max-w-none lg:h-screen lg:translate-x-0 lg:visible lg:shadow-none
+    shrink-0 flex flex-col border-l">
 
   <!-- Brand Header -->
-  <div class="h-18 lg:h-20 flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-6 border-b border-slate-800/80 bg-slate-950/40">
+  <div [class]="t.brand" class="h-18 lg:h-20 flex items-center gap-3 px-4 lg:px-6 border-b">
     <img
       [ngSrc]="school.logoUrl"
       width="48"
@@ -10,55 +23,58 @@
       priority
       [alt]="'شعار ' + school.fullName"
       class="shrink-0 w-10 h-10 lg:w-12 lg:h-12 rounded-full ring-2 ring-white/15 shadow-lg shadow-primary-900/40" />
-    <div class="hidden lg:flex flex-col min-w-0">
-      <span class="font-bold text-sm tracking-tight text-white leading-tight">{{ school.name }}</span>
-      <span class="text-[11px] text-primary-400 font-medium">{{ school.type }} - {{ school.category }}</span>
+    <div class="flex flex-col min-w-0 flex-1">
+      <span [class]="t.brandName" class="font-bold text-sm tracking-tight leading-tight truncate">{{ school.name }}</span>
+      <span [class]="t.brandSub" class="text-[11px] font-medium truncate">{{ school.type }} - {{ school.category }}</span>
     </div>
+    <button (click)="drawer.close()" type="button" aria-label="إغلاق القائمة"
+      [class]="t.close" class="lg:hidden shrink-0 p-2 rounded-xl transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
   </div>
 
   <!-- User Role Pill Indicator -->
-  <div class="hidden lg:flex px-6 py-3 bg-slate-950/20 border-b border-slate-800/40 items-center justify-between text-xs">
-    <span class="text-slate-400">بوابة الدخول:</span>
-    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary-950 text-primary-300 border border-primary-800/60">
+  <div [class]="t.roleRow" class="flex px-4 lg:px-6 py-3 border-b items-center justify-between text-xs">
+    <span [class]="t.roleLabel">بوابة الدخول:</span>
+    <span [class]="t.rolePill" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border">
       {{ roleTitle() }}
     </span>
   </div>
 
   <!-- Navigation Links -->
-  <nav class="flex-1 overflow-y-auto overflow-x-hidden px-2 sm:px-3 lg:px-4 py-4 space-y-1.5 scrollbar-thin">
+  <nav class="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 lg:px-4 py-4 space-y-1.5 scrollbar-thin">
     @for (item of visibleNavItems(); track item.route) {
       @if (isDisabled(item)) {
         <div
           aria-disabled="true"
           [title]="item.label + ' - غير متاح حالياً'"
-          class="flex items-center justify-center lg:justify-between px-2 lg:px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-500 lg:border-r-4 border-transparent cursor-not-allowed opacity-60">
+          [class]="t.disabled"
+          class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium border-r-4 border-transparent cursor-not-allowed opacity-60">
           <div class="flex items-center gap-3">
-            <span class="w-5 h-5 shrink-0 flex items-center justify-center text-slate-600">
+            <span [class]="t.disabledIcon" class="w-5 h-5 shrink-0 flex items-center justify-center">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 @for (d of item.iconPaths; track $index) {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="d" />
                 }
               </svg>
             </span>
-            <span class="hidden lg:inline">{{ item.label }}</span>
+            <span>{{ item.label }}</span>
           </div>
-          <span class="hidden lg:inline text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400">قريباً</span>
+          <span [class]="t.soonBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold">قريباً</span>
         </div>
       } @else {
       <a
         [routerLink]="basePath() + item.route"
         routerLinkActive
         #rla="routerLinkActive"
-        [title]="item.label"
-        [attr.aria-label]="item.label"
         [attr.aria-current]="rla.isActive ? 'page' : null"
-        [class]="rla.isActive
-          ? 'bg-primary-600 text-white shadow-lg shadow-primary-950/40 font-bold ring-1 ring-primary-400/40 lg:border-r-4 border-sky-300'
-          : 'text-slate-300 hover:text-white hover:bg-slate-800/70 font-medium lg:border-r-4 border-transparent'"
-        class="group flex items-center justify-center lg:justify-between px-2 lg:px-3.5 py-2.5 rounded-xl transition-all text-sm">
+        [class]="rla.isActive ? t.linkActive : t.linkIdle"
+        class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all text-sm border-r-4">
         <div class="flex items-center gap-3 min-w-0">
           <span
-            [class]="rla.isActive ? 'text-white' : 'text-slate-400 group-hover:text-primary-300'"
+            [class]="rla.isActive ? t.iconActive : t.iconIdle"
             class="w-5 h-5 shrink-0 flex items-center justify-center transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               @for (d of item.iconPaths; track $index) {
@@ -66,10 +82,10 @@
               }
             </svg>
           </span>
-          <span class="hidden lg:inline">{{ item.label }}</span>
+          <span>{{ item.label }}</span>
         </div>
         @if (item.badge) {
-          <span [class]="item.badgeColor || 'bg-slate-800 text-slate-300'" class="hidden lg:inline text-[10px] px-2 py-0.5 rounded-full font-bold">
+          <span [class]="t.badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold">
             {{ item.badge }}
           </span>
         }
@@ -79,21 +95,20 @@
   </nav>
 
   <!-- Sidebar Footer -->
-  <div class="p-2 sm:p-3 lg:p-4 border-t border-slate-800/80 bg-slate-950/40 space-y-2">
-    <div class="hidden lg:flex items-center justify-between px-2 text-[11px] text-slate-400">
+  <div [class]="t.footer" class="p-4 border-t space-y-2" style="padding-bottom: max(1rem, env(safe-area-inset-bottom))">
+    <div [class]="t.footerText" class="flex items-center justify-between px-2 text-[11px]">
       <span>نظام الإدارة المدرسية</span>
-      <span class="font-mono bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">v1.0.0</span>
+      <span [class]="t.version" class="font-mono px-1.5 py-0.5 rounded text-[10px]">v1.0.0</span>
     </div>
     <button
       (click)="logout()"
       type="button"
-      title="تسجيل الخروج"
-      aria-label="تسجيل الخروج"
-      class="w-full flex items-center justify-center gap-2 py-2 px-2 lg:px-3 rounded-xl text-rose-300 hover:text-rose-200 hover:bg-rose-950/30 border border-rose-900/20 text-xs font-semibold transition-colors">
-      <svg class="w-4 h-4 shrink-0 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      [class]="t.logout"
+      class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition-colors">
+      <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
       </svg>
-      <span class="hidden lg:inline">تسجيل الخروج</span>
+      <span>تسجيل الخروج</span>
     </button>
   </div>
 </aside>

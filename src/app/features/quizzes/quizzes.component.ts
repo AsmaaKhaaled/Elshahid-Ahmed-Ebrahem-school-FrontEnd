@@ -12,7 +12,7 @@ type KindFilter = 'الكل' | AssessmentKind;
 
 /**
  * Quizzes & short exams set by the teacher - solved online (auto-graded) or as an uploaded paper.
- * The official term exams stay in "الاختبارات والتقييم" (scheduled by the administration).
+ * The official term exams stay in "جدول الاختبارات والتقييمات" (scheduled by the administration).
  */
 @Component({
   selector: 'app-quizzes',

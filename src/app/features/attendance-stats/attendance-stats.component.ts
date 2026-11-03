@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/c
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { GRADE_LEVELS, SCHOOL_INFO } from '../../core/constants/school.constants';
+import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 type StatsPeriod = 'TODAY' | 'WEEK' | 'MONTH' | 'TERM';
 
@@ -26,7 +27,7 @@ const PERIOD_FACTORS: Record<StatsPeriod, number> = { TODAY: 1, WEEK: 1.15, MONT
 @Component({
   selector: 'app-attendance-stats',
   standalone: true,
-  imports: [MatFormFieldModule, MatSelectModule],
+  imports: [CardTableDirective, MatFormFieldModule, MatSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './attendance-stats.component.html',
   styleUrl: './attendance-stats.component.css'

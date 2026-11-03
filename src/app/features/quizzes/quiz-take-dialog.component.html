@@ -1,155 +1,346 @@
-<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 font-cairo">
-  <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-4 sm:p-6 space-y-4">
-    @let item = quiz();
-    <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
-      <div>
-        <span class="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full">{{ item.kind }} · {{ item.subject }}</span>
-        <h3 class="font-black text-slate-800 text-lg mt-2">{{ item.title }}</h3>
-        <p class="text-xs text-slate-500 mt-1">
-          {{ item.totalMarks }} درجة
-          @if (item.mode === 'online') {
-            · {{ item.questions.length }} سؤال
-            @if (item.durationMinutes) { · {{ item.durationMinutes }} دقيقة }
-          }
-          · متاح لحد {{ item.closesAt | arabicDate:'full' }}
-        </p>
-      </div>
-      <div class="flex items-center gap-3">
-        @if (started() && !attempt() && secondsLeft() != null) {
-          <span class="font-mono font-black text-sm px-3 py-1 rounded-xl"
-            [class]="secondsLeft()! < 60 ? 'bg-rose-50 text-rose-700 animate-pulse' : 'bg-slate-100 text-slate-700'">
-            ⏱ {{ timeLabel() }}
-          </span>
-        }
-        <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
-      </div>
-    </div>
+@let item = quiz();
 
-    @if (item.instructions) {
-      <p class="text-sm text-slate-600 whitespace-pre-line">{{ item.instructions }}</p>
-    }
+@if (examMode()) {
+  <!-- ================= Full-screen exam view ================= -->
+  <div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] bg-slate-50 font-cairo flex flex-col">
 
-    @if (attempt(); as done) {
-      <!-- Result -->
-      <div class="rounded-2xl border p-4 space-y-1"
-        [class]="done.score != null ? 'border-emerald-200 bg-emerald-50/60' : 'border-primary-100 bg-primary-50/40'">
-        <p class="text-xs font-bold text-slate-600">✅ سلّمت يوم {{ done.submittedAt | arabicDate:'full' }}</p>
-        @if (done.score != null) {
-          <p class="text-lg font-black text-emerald-700">درجتك: {{ done.score }} من {{ item.totalMarks }}</p>
-        } @else {
-          <p class="text-sm font-bold text-primary-700">مستني تصحيح المدرس</p>
-        }
-      </div>
-      @if (done.file) {
-        <app-teaching-files [files]="[done.file]" />
-      }
-
-      @if (item.mode === 'online') {
-        <ol class="space-y-2">
-          @for (q of item.questions; track q.id; let n = $index) {
-            @let correct = isCorrect(q.id, done);
-            <li class="rounded-xl border p-3 text-sm" [class]="correct ? 'border-emerald-200' : 'border-rose-200'">
-              <p class="font-semibold text-slate-800">{{ n + 1 }}. {{ q.text }}</p>
-              <p class="text-xs mt-1" [class]="correct ? 'text-emerald-700' : 'text-rose-600'">
-                {{ correct ? '✓' : '✗' }} إجابتك: {{ done.answers[q.id] || '—' }}
-                <span class="text-slate-400">({{ correct ? q.points : 0 }} / {{ q.points }})</span>
-              </p>
-              @if (!correct && showAnswers()) {
-                <p class="text-xs text-emerald-700 mt-0.5">الإجابة الصح: {{ q.answer }}</p>
-              }
-            </li>
-          }
-        </ol>
-        @if (!showAnswers()) {
-          <p class="text-[11px] text-slate-400">الإجابات الصح بتظهر بعد ما الكويز يقفل.</p>
-        }
-      }
-    } @else if (closedForAnswers()) {
-      <p class="text-sm font-bold text-rose-600">انتهى ميعاد {{ item.kind }} ومسلّمتش.</p>
-    } @else if (item.mode === 'file') {
-      <!-- File quiz: download the paper, upload the answer sheet -->
-      <div class="space-y-3">
-        @if (item.file) {
-          <div class="space-y-1.5">
-            <span class="text-xs font-bold text-slate-500">ورقة الأسئلة</span>
-            <app-teaching-files [files]="[item.file]" />
+    <!-- Top bar: what's being solved, time left, how much is answered -->
+    <header class="bg-white border-b border-slate-200 shrink-0">
+      <div class="max-w-6xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <span class="text-[11px] font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full">{{ item.kind }} · {{ item.subject }}</span>
+          <h1 class="font-black text-slate-800 text-sm sm:text-lg mt-1 truncate">{{ item.title }}</h1>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div class="hidden sm:block text-center px-3 py-1.5 rounded-xl bg-slate-100">
+            <p class="text-sm font-black text-slate-800">{{ answeredCount() }} / {{ item.questions.length }}</p>
+            <p class="text-[10px] font-semibold text-slate-500">تمت الإجابة</p>
           </div>
-        }
-        <label class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-700 cursor-pointer transition-colors">
-          📎 {{ answerFile ? 'تغيير ورقة الحل' : 'ارفع ورقة الحل (صورة أو PDF)' }}
-          <input type="file" class="hidden" [accept]="accept" (change)="onFileSelected($event)" />
-        </label>
-        @if (answerFile) {
-          <app-teaching-files [files]="[answerFile]" />
-        }
-        @if (fileError()) {
-          <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
-        }
-      </div>
-    } @else if (!started()) {
-      <div class="text-center py-6 space-y-3">
-        <p class="text-sm text-slate-600">
-          {{ item.questions.length }} سؤال
-          @if (item.durationMinutes) {
-            ، والوقت <strong>{{ item.durationMinutes }} دقيقة</strong> بيبدأ أول ما تضغط ابدأ وبيتسلم لوحده لما يخلص
+          @if (secondsLeft() != null) {
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-white"
+              [class]="secondsLeft()! < 60 ? 'bg-rose-600 animate-pulse' : 'bg-portal-navy'" role="timer" aria-live="off">
+              <svg class="w-5 h-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="text-center leading-tight">
+                <p class="font-mono font-black text-base sm:text-lg" dir="ltr">{{ timeLabel() }}</p>
+                <p class="text-[9px] sm:text-[10px] font-semibold opacity-80">الوقت المتبقي</p>
+              </div>
+            </div>
           }
-        </p>
-        <button type="button" (click)="start()" class="px-6 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-sm shadow">ابدأ الحل</button>
+        </div>
       </div>
-    } @else {
-      <!-- Online questions -->
-      <ol class="space-y-3">
-        @for (q of item.questions; track q.id; let n = $index) {
-          <li class="rounded-2xl border border-slate-200 p-4 space-y-2.5">
-            <p class="font-bold text-slate-800 text-sm">
-              {{ n + 1 }}. {{ q.text }}
-              <span class="text-[11px] font-semibold text-slate-400">({{ q.points }} {{ q.points === 1 ? 'درجة' : 'درجات' }})</span>
-            </p>
+      <div class="h-1 bg-slate-100">
+        <div class="h-full bg-emerald-500 transition-all duration-300" [style.width.%]="progress()"></div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto overscroll-contain">
+      <div class="max-w-6xl mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 sm:gap-6 items-start">
+
+        <!-- The current question -->
+        @if (question(); as q) {
+          @let n = current();
+          @let isFlagged = flagged().has(q.id);
+          <section class="bg-white rounded-2xl border border-slate-200 shadow-soft p-4 sm:p-6 space-y-5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-black text-white bg-primary-800 px-3 py-1 rounded-full">السؤال {{ n + 1 }} من {{ item.questions.length }}</span>
+                <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">{{ q.points }} {{ q.points === 1 ? 'درجة' : 'درجات' }}</span>
+              </div>
+              <button type="button" (click)="toggleFlag(q.id)" [attr.aria-pressed]="isFlagged"
+                [class]="isFlagged ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors">
+                <span>{{ isFlagged ? '🚩' : '⚑' }}</span>
+                <span>{{ isFlagged ? 'متعلّم للمراجعة' : 'علّم للمراجعة' }}</span>
+              </button>
+            </div>
+
+            <p class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed">{{ q.text }}</p>
+
             @switch (q.type) {
-              @case ('mcq') {
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  @for (option of q.options; track option) {
-                    <label class="flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer text-sm transition-colors"
-                      [class]="answers[q.id] === option ? 'border-primary-500 bg-primary-50' : 'border-slate-200 hover:bg-slate-50'">
-                      <input type="radio" [name]="'ans-' + q.id" [checked]="answers[q.id] === option" (change)="answers[q.id] = option; formError.set('')" class="w-4 h-4 accent-primary-700" />
-                      {{ option }}
-                    </label>
-                  }
-                </div>
-              }
-              @case ('truefalse') {
-                <div class="flex gap-2">
-                  @for (option of trueFalse; track option) {
-                    <label class="flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer text-sm transition-colors"
-                      [class]="answers[q.id] === option ? 'border-primary-500 bg-primary-50' : 'border-slate-200 hover:bg-slate-50'">
-                      <input type="radio" [name]="'ans-' + q.id" [checked]="answers[q.id] === option" (change)="answers[q.id] = option; formError.set('')" class="w-4 h-4 accent-primary-700" />
-                      {{ option }}
-                    </label>
-                  }
-                </div>
-              }
               @case ('short') {
-                <input type="text" [name]="'ans-' + q.id" [(ngModel)]="answers[q.id]" (ngModelChange)="formError.set('')" placeholder="اكتب إجابتك"
-                  class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+                <textarea rows="3" [value]="answers()[q.id] || ''" (input)="answer(q.id, $any($event.target).value)" placeholder="اكتب إجابتك هنا"
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400"></textarea>
+              }
+              @default {
+                @let options = q.type === 'truefalse' ? trueFalse : q.options;
+                <div class="space-y-2.5" role="radiogroup" [attr.aria-label]="'إجابة السؤال ' + (n + 1)">
+                  @for (option of options; track option; let i = $index) {
+                    @let selected = answers()[q.id] === option;
+                    <label class="flex items-center gap-3 px-3 sm:px-4 py-3 rounded-xl border-2 cursor-pointer transition-all"
+                      [class]="selected ? 'border-primary-600 bg-primary-50 shadow-sm' : 'border-slate-200 hover:border-primary-200 hover:bg-slate-50'">
+                      <input type="radio" class="sr-only" [name]="'ans-' + q.id" [checked]="selected" (change)="answer(q.id, option)" />
+                      <span class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-sm font-black transition-colors"
+                        [class]="selected ? 'bg-primary-700 text-white' : 'bg-slate-100 text-slate-600'">{{ letters[i] }}</span>
+                      <span class="flex-1 text-sm sm:text-base font-semibold text-slate-800">{{ option }}</span>
+                      @if (selected) {
+                        <svg class="w-5 h-5 text-primary-700 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                      }
+                    </label>
+                  }
+                </div>
               }
             }
-          </li>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button type="button" (click)="goTo(n - 1)" [disabled]="n === 0"
+                class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                → السؤال السابق
+              </button>
+              @if (n < item.questions.length - 1) {
+                <button type="button" (click)="goTo(n + 1)"
+                  class="px-5 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow">
+                  السؤال التالي ←
+                </button>
+              } @else {
+                <button type="button" (click)="confirming.set(true)"
+                  class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow">
+                  مراجعة وتسليم ✓
+                </button>
+              }
+            </div>
+          </section>
         }
-      </ol>
-    }
 
-    @if (formError()) {
-      <p class="text-xs text-rose-600 font-semibold">{{ formError() }}</p>
-    }
+        <!-- Question map & hand-in -->
+        <aside class="space-y-4 lg:sticky lg:top-0">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-soft p-4 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-black text-slate-800">خريطة الأسئلة</span>
+              <span class="font-bold text-slate-500">{{ progress() }}% مكتمل</span>
+            </div>
+            <div class="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-5 gap-2">
+              @for (q of item.questions; track q.id; let i = $index) {
+                @let answered = isAnswered(q.id);
+                @let isFlagged = flagged().has(q.id);
+                <button type="button" (click)="goTo(i)"
+                  [attr.aria-label]="'السؤال ' + (i + 1) + (answered ? '، تمت الإجابة' : '، بدون إجابة') + (isFlagged ? '، متعلّم للمراجعة' : '')"
+                  [attr.aria-current]="current() === i ? 'step' : null"
+                  [class]="isFlagged ? 'bg-amber-400 text-white border-amber-400'
+                    : answered ? 'bg-emerald-500 text-white border-emerald-500'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
+                  [class.ring-2]="current() === i"
+                  class="relative aspect-square rounded-lg border text-xs font-black transition-all ring-primary-700 ring-offset-2">
+                  {{ i + 1 }}
+                </button>
+              }
+            </div>
+            <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-500 pt-1">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span> اتجاوب</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-amber-400"></span> للمراجعة</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-slate-200"></span> لسه</span>
+            </div>
+          </div>
 
-    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إغلاق</button>
-      @if (!attempt() && !closedForAnswers() && (item.mode === 'file' || started())) {
-        <button type="button" (click)="submit()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
-          تسليم {{ item.kind }}
-          @if (item.mode === 'online') { ({{ answeredCount() }} / {{ item.questions.length }}) }
-        </button>
+          @if (item.instructions) {
+            <div class="rounded-2xl border border-rose-100 bg-rose-50/70 p-4 space-y-1">
+              <p class="text-xs font-black text-rose-800">تعليمات {{ item.kind }}</p>
+              <p class="text-xs text-rose-700 leading-relaxed whitespace-pre-line">{{ item.instructions }}</p>
+              @if (item.durationMinutes) {
+                <p class="text-[11px] text-rose-600 font-semibold pt-1">لما الوقت يخلص، اللي جاوبته بيتسلّم لوحده.</p>
+              }
+            </div>
+          }
+
+          <button type="button" (click)="confirming.set(true)"
+            class="w-full py-3 rounded-xl bg-portal-navy hover:bg-slate-900 text-white font-black text-sm shadow-lg flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            إنهاء وتسليم {{ item.kind }}
+          </button>
+          <button type="button" (click)="closed.emit()" class="w-full py-2 text-xs font-bold text-slate-400 hover:text-slate-600">
+            خروج من غير تسليم
+          </button>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- Hand-in summary -->
+  @if (confirming()) {
+    <div appPortalToBody dir="rtl" class="dialog-overlay !z-[110] font-cairo" (click)="confirming.set(false)">
+      <div class="dialog-panel max-w-md" role="alertdialog" aria-labelledby="confirm-title" (click)="$event.stopPropagation()">
+        <div class="dialog-head flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <span class="w-9 h-9 rounded-xl bg-primary-50 text-primary-700 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+            <div>
+              <h3 id="confirm-title" class="font-black text-slate-800">تأكيد تسليم {{ item.kind }}</h3>
+              <p class="text-[11px] text-slate-500">راجع ملخص إجاباتك قبل التسليم النهائي</p>
+            </div>
+          </div>
+          <button (click)="confirming.set(false)" type="button" class="text-slate-400 hover:text-slate-600" aria-label="إغلاق">✕</button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="rounded-xl bg-emerald-50 border border-emerald-100 py-3">
+            <p class="text-xl font-black text-emerald-700">{{ answeredCount() }}</p>
+            <p class="text-[10px] font-bold text-emerald-800">تمت الإجابة</p>
+          </div>
+          <div class="rounded-xl bg-amber-50 border border-amber-100 py-3">
+            <p class="text-xl font-black text-amber-700">{{ flagged().size }}</p>
+            <p class="text-[10px] font-bold text-amber-800">للمراجعة</p>
+          </div>
+          <div class="rounded-xl py-3 border" [class]="unansweredCount() ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'">
+            <p class="text-xl font-black" [class]="unansweredCount() ? 'text-rose-700' : 'text-slate-500'">{{ unansweredCount() }}</p>
+            <p class="text-[10px] font-bold" [class]="unansweredCount() ? 'text-rose-800' : 'text-slate-500'">بدون إجابة</p>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs space-y-1">
+          <p class="text-slate-500">{{ item.kind }}: <strong class="text-slate-800">{{ item.title }}</strong></p>
+          @if (secondsLeft() != null) {
+            <p class="text-slate-500">الوقت المتبقي: <strong class="text-slate-800 font-mono" dir="ltr">{{ timeLabel() }}</strong></p>
+          }
+        </div>
+
+        @if (unansweredCount()) {
+          <p class="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl p-3">
+            ⚠ فيه {{ unansweredCount() }} سؤال من غير إجابة، وهيتحسبوا صفر لو سلّمت دلوقتي.
+          </p>
+        }
+        <p class="text-[11px] text-slate-500">بعد التسليم مش هتقدر تعدّل إجاباتك.</p>
+
+        <div class="dialog-foot pt-4 flex items-center gap-3 border-t border-slate-100">
+          <button type="button" (click)="submit()" class="flex-1 py-2.5 rounded-xl bg-portal-navy hover:bg-slate-900 text-white font-bold text-xs shadow">
+            تأكيد التسليم النهائي
+          </button>
+          <button type="button" (click)="confirming.set(false)" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs">
+            رجوع للمراجعة
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+} @else {
+  <!-- ================= Before starting, file quizzes & the result ================= -->
+  <div appPortalToBody dir="rtl" class="dialog-overlay font-cairo">
+    <div class="dialog-panel max-w-2xl">
+      <div class="dialog-head flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+        <div>
+          <span class="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full">{{ item.kind }} · {{ item.subject }}</span>
+          <h3 class="font-black text-slate-800 text-lg mt-2">{{ item.title }}</h3>
+          <p class="text-xs text-slate-500 mt-1">
+            {{ item.totalMarks }} درجة
+            @if (item.mode === 'online') {
+              · {{ item.questions.length }} سؤال
+              @if (item.durationMinutes) { · {{ item.durationMinutes }} دقيقة }
+            }
+            · متاح لحد {{ item.closesAt | arabicDate:'full' }}
+          </p>
+        </div>
+        <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      @if (item.instructions) {
+        <p class="text-sm text-slate-600 whitespace-pre-line">{{ item.instructions }}</p>
       }
+
+      @if (attempt(); as done) {
+        <!-- Result -->
+        <div class="rounded-2xl border p-4 space-y-1"
+          [class]="done.score != null ? 'border-emerald-200 bg-emerald-50/60' : 'border-primary-100 bg-primary-50/40'">
+          <p class="text-xs font-bold text-slate-600">✅ سلّمت يوم {{ done.submittedAt | arabicDate:'full' }}</p>
+          @if (done.score != null) {
+            <p class="text-lg font-black text-emerald-700">درجتك: {{ done.score }} من {{ item.totalMarks }}</p>
+          } @else {
+            <p class="text-sm font-bold text-primary-700">مستني تصحيح المدرس</p>
+          }
+        </div>
+        @if (done.file) {
+          <app-teaching-files [files]="[done.file]" />
+        }
+
+        @if (item.mode === 'online') {
+          <ol class="space-y-2">
+            @for (q of item.questions; track q.id; let n = $index) {
+              @let correct = isCorrect(q.id, done);
+              <li class="rounded-xl border p-3 text-sm" [class]="correct ? 'border-emerald-200' : 'border-rose-200'">
+                <p class="font-semibold text-slate-800">{{ n + 1 }}. {{ q.text }}</p>
+                <p class="text-xs mt-1" [class]="correct ? 'text-emerald-700' : 'text-rose-600'">
+                  {{ correct ? '✓' : '✗' }} إجابتك: {{ done.answers[q.id] || '—' }}
+                  <span class="text-slate-400">({{ correct ? q.points : 0 }} / {{ q.points }})</span>
+                </p>
+                @if (!correct && showAnswers()) {
+                  <p class="text-xs text-emerald-700 mt-0.5">الإجابة الصح: {{ q.answer }}</p>
+                }
+              </li>
+            }
+          </ol>
+          @if (!showAnswers()) {
+            <p class="text-[11px] text-slate-400">الإجابات الصح بتظهر بعد ما الكويز يقفل.</p>
+          }
+        }
+      } @else if (closedForAnswers()) {
+        <p class="text-sm font-bold text-rose-600">انتهى ميعاد {{ item.kind }} ومسلّمتش.</p>
+      } @else if (item.mode === 'file') {
+        <!-- File quiz: download the paper, upload the answer sheet -->
+        <div class="space-y-3">
+          @if (item.file) {
+            <div class="space-y-1.5">
+              <span class="text-xs font-bold text-slate-500">ورقة الأسئلة</span>
+              <app-teaching-files [files]="[item.file]" />
+            </div>
+          }
+          <label class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-700 cursor-pointer transition-colors">
+            📎 {{ answerFile ? 'تغيير ورقة الحل' : 'ارفع ورقة الحل (صورة أو PDF)' }}
+            <input type="file" class="hidden" [accept]="accept" (change)="onFileSelected($event)" />
+          </label>
+          @if (answerFile) {
+            <app-teaching-files [files]="[answerFile]" />
+          }
+          @if (fileError()) {
+            <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
+          }
+        </div>
+      } @else {
+        <!-- Online quiz, not started: what to expect -->
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="rounded-xl bg-slate-50 border border-slate-100 py-3">
+            <p class="text-lg font-black text-slate-800">{{ item.questions.length }}</p>
+            <p class="text-[10px] font-bold text-slate-500">سؤال</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 border border-slate-100 py-3">
+            <p class="text-lg font-black text-slate-800">{{ item.totalMarks }}</p>
+            <p class="text-[10px] font-bold text-slate-500">درجة</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 border border-slate-100 py-3">
+            <p class="text-lg font-black text-slate-800">{{ item.durationMinutes ?? '∞' }}</p>
+            <p class="text-[10px] font-bold text-slate-500">{{ item.durationMinutes ? 'دقيقة' : 'من غير وقت' }}</p>
+          </div>
+        </div>
+        @if (item.durationMinutes) {
+          <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-3">
+            ⏱ الوقت بيبدأ أول ما تضغط "ابدأ الحل"، ولما يخلص اللي جاوبته بيتسلّم لوحده.
+          </p>
+        }
+      }
+
+      @if (formError()) {
+        <p class="text-xs text-rose-600 font-semibold">{{ formError() }}</p>
+      }
+
+      <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+        <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إغلاق</button>
+        @if (!attempt() && !closedForAnswers()) {
+          @if (item.mode === 'file') {
+            <button type="button" (click)="submit()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
+              تسليم {{ item.kind }}
+            </button>
+          } @else {
+            <button type="button" (click)="start()" class="px-6 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow">
+              ابدأ الحل
+            </button>
+          }
+        }
+      </div>
     </div>
   </div>
-</div>
+}

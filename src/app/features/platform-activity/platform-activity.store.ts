@@ -110,7 +110,7 @@ export class PlatformActivityStore {
       ),
       ...this.curriculumStore.curricula().flatMap(c =>
         c.files.map(f =>
-          teacherEvent(`curriculum-file-${f.id}`, 'curriculum', 'رفع ملف منهج', `${f.title} — منهج ${c.subject}`, c.teacherId, f.uploadedAt)
+          teacherEvent(`curriculum-file-${f.id}`, 'curriculum', f.link ? 'إضافة لينك منهج' : 'رفع ملف منهج', `${f.title} — منهج ${c.subject}`, c.teacherId, f.uploadedAt)
         )
       )
     ];

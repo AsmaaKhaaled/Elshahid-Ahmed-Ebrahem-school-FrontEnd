@@ -1,15 +1,12 @@
 <div class="space-y-6">
   @if (selected(); as cur) {
     <!-- ================= One curriculum ================= -->
-    @let progress = progressOf(cur);
-    @let last = lastTaught(cur);
-
     <button type="button" (click)="back()" class="text-xs font-bold text-primary-700 hover:text-primary-900 flex items-center gap-1">
       <span>→</span> <span>كل المناهج</span>
     </button>
 
     <!-- Header -->
-    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100 space-y-4">
+    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100">
       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div class="space-y-1 min-w-0">
           <div class="flex flex-wrap items-center gap-2">
@@ -20,13 +17,18 @@
           @if (cur.description) {
             <p class="text-sm text-slate-500">{{ cur.description }}</p>
           }
-          <p class="text-[11px] text-slate-400">آخر تحديث {{ cur.updatedAt | timeAgo }}</p>
+          <p class="text-[11px] text-slate-400">
+            @if (!scope.isTeacher() && !scope.isStudent() && teacherName(cur.teacherId)) {
+              {{ teacherName(cur.teacherId) }} ·
+            }
+            {{ cur.files.length }} ملف · آخر تحديث {{ cur.updatedAt | timeAgo }}
+          </p>
         </div>
 
         @if (scope.isTeacher()) {
           <div class="flex flex-wrap items-center gap-2 text-xs shrink-0">
             @if (isPendingDelete('curriculum', cur.id)) {
-              <span class="text-slate-500">تحذف المنهج بكل وحداته وملفاته؟</span>
+              <span class="text-slate-500">تحذف المنهج بكل ملفاته؟</span>
               <button type="button" (click)="confirmDelete()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">حذف</button>
               <button type="button" (click)="pendingDelete.set(null)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">إلغاء</button>
             } @else {
@@ -36,30 +38,16 @@
           </div>
         }
       </div>
-
-      <!-- Progress -->
-      <div class="space-y-1.5">
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span class="font-bold text-slate-700">{{ scope.isTeacher() ? 'اتشرح' : 'المدرس شرح' }} {{ progress.done }} من {{ progress.total }} درس</span>
-          <span class="font-black text-primary-700">{{ progress.percent }}%</span>
-        </div>
-        <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden" role="progressbar" [attr.aria-valuenow]="progress.percent" aria-valuemin="0" aria-valuemax="100">
-          <div class="h-full rounded-full bg-gradient-to-l from-emerald-500 to-primary-600 transition-all" [style.width.%]="progress.percent"></div>
-        </div>
-        @if (last) {
-          <p class="text-[11px] text-slate-500">آخر درس اتشرح: <strong class="text-slate-700">{{ last.title }}</strong> ({{ last.doneAt! | timeAgo }})</p>
-        }
-      </div>
     </div>
 
-    <!-- Official files -->
+    <!-- The ministry's files -->
     <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h3 class="font-black text-slate-800">ملفات المنهج</h3>
         @if (scope.isTeacher()) {
           <button type="button" (click)="fileDialogOpen.set(true)"
             class="px-3.5 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md transition-all">
-            📤 رفع ملف منهج
+            📤 رفع ملف أو لينك
           </button>
         }
       </div>
@@ -77,7 +65,16 @@
                       <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">ليك انت بس</span>
                     }
                   </p>
-                  <app-teaching-files [files]="[f.file]" />
+                  @if (f.file) {
+                    <app-teaching-files [files]="[f.file]" />
+                  }
+                  @if (f.link) {
+                    <a [href]="f.link" target="_blank" rel="noopener"
+                      class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-semibold text-primary-700 hover:underline">
+                      <span aria-hidden="true">🔗</span>
+                      <span class="truncate" dir="ltr">{{ f.link }}</span>
+                    </a>
+                  }
                 </div>
                 @if (scope.isTeacher()) {
                   <div class="flex items-center gap-2 text-xs shrink-0">
@@ -95,104 +92,67 @@
           </ul>
         </div>
       } @empty {
-        <p class="text-sm text-slate-400 text-center py-4">
-          @if (scope.isTeacher()) {
-            لسه مرفعتش ملفات للمنهج ده. ارفع كتاب الوزارة وتوزيع المنهج ونماذج الامتحانات.
-          } @else {
-            مفيش ملفات منهج متاحة لسه.
-          }
-        </p>
+        <div class="text-center py-8 space-y-2">
+          <p class="text-3xl" aria-hidden="true">📚</p>
+          <p class="text-sm text-slate-400">
+            @if (scope.isTeacher()) {
+              لسه مرفعتش حاجة للمنهج ده. ارفع كتاب الوزارة وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات.
+            } @else {
+              مفيش ملفات منهج متاحة لسه.
+            }
+          </p>
+        </div>
       }
     </section>
 
-    <!-- Units & lessons -->
-    <section class="space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="font-black text-slate-800">الوحدات والدروس</h3>
-        @if (scope.isTeacher()) {
-          <button type="button" (click)="openUnit(null)"
-            class="px-3.5 py-2 rounded-xl border border-dashed border-primary-300 text-primary-800 hover:bg-primary-50 text-xs font-bold transition-colors">
-            + وحدة جديدة
-          </button>
-        }
-      </div>
-      @if (scope.isTeacher() && cur.units.length) {
-        <p class="text-[11px] text-slate-500">علّم على الدرس لما تخلص شرحه، والطلاب هيعرفوا وصلت لحد فين.</p>
-      }
-
-      @for (unit of cur.units; track unit.id) {
-        <div class="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-          <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
-            <div class="min-w-0">
-              <h4 class="font-bold text-slate-800 text-sm">{{ unit.title }}</h4>
-              <p class="text-[11px] text-slate-500">{{ unitDone(unit) }} من {{ unit.lessons.length }} درس</p>
-            </div>
-            @if (scope.isTeacher()) {
-              <div class="flex items-center gap-2 text-xs">
-                @if (isPendingDelete('unit', unit.id)) {
-                  <button type="button" (click)="confirmDelete()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">تأكيد الحذف</button>
-                  <button type="button" (click)="pendingDelete.set(null)" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold border border-slate-200">إلغاء</button>
-                } @else {
-                  <button type="button" (click)="openUnit(unit)" class="px-3 py-1.5 rounded-xl bg-white hover:bg-primary-50 hover:text-primary-800 text-slate-700 font-bold border border-slate-200 transition-colors">تعديل</button>
-                  <button type="button" (click)="pendingDelete.set({ type: 'unit', id: unit.id })" class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold">حذف</button>
-                }
-              </div>
-            }
+    <!-- The plan & objectives: the teacher's and the administration's only -->
+    @if (showPlan()) {
+      <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="font-black text-slate-800">خطة المنهج والأهداف</h3>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">للمعلم والإدارة بس</span>
           </div>
+          @if (scope.isTeacher()) {
+            <button type="button" (click)="planDialogOpen.set(true)"
+              class="px-3.5 py-2 rounded-xl border border-primary-200 text-primary-800 hover:bg-primary-50 font-bold text-xs transition-colors">
+              ✎ {{ cur.plan.length || cur.planFile ? 'تعديل الخطة' : 'كتابة الخطة' }}
+            </button>
+          }
+        </div>
 
-          <ul class="divide-y divide-slate-100">
-            @for (lesson of unit.lessons; track lesson.id) {
-              @let linked = materialsByLesson().get(lesson.id) ?? [];
-              <li class="px-4 py-3 flex items-start gap-3">
-                @if (scope.isTeacher()) {
-                  <input type="checkbox" [checked]="!!lesson.doneAt" (change)="toggleLesson(lesson.id)"
-                    [attr.aria-label]="'تم شرح ' + lesson.title"
-                    class="mt-1 w-4 h-4 shrink-0 rounded accent-emerald-600 cursor-pointer" />
-                } @else {
-                  <span class="mt-0.5 w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold"
-                    [class]="lesson.doneAt ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'">
-                    {{ lesson.doneAt ? '✓' : '' }}
-                  </span>
-                }
-                <div class="flex-1 min-w-0 space-y-1.5">
-                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span class="text-sm font-semibold" [class]="lesson.doneAt ? 'text-slate-800' : 'text-slate-600'">{{ lesson.title }}</span>
-                    @if (lesson.week) {
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">الأسبوع {{ lesson.week }}</span>
-                    }
-                    @if (lesson.doneAt) {
-                      <span class="text-[10px] font-bold text-emerald-600">اتشرح {{ lesson.doneAt | timeAgo }}</span>
-                    }
-                  </div>
-                  @for (m of linked; track m.id) {
-                    <div class="flex flex-wrap items-center gap-2 text-[11px]">
-                      <span class="font-bold text-primary-700">📎 {{ m.title }}</span>
-                      @if (m.files.length) {
-                        <app-teaching-files [files]="m.files" />
-                      }
-                      @if (m.link) {
-                        <a [href]="m.link" target="_blank" rel="noopener" class="font-bold text-primary-700 hover:underline">🔗 فتح الرابط</a>
-                      }
-                    </div>
-                  }
+        @if (cur.planFile) {
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="font-bold text-slate-500">ملف الخطة:</span>
+            <app-teaching-files [files]="[cur.planFile]" />
+          </div>
+        }
+
+        @if (cur.plan.length) {
+          <ol class="space-y-2.5">
+            @for (w of cur.plan; track w.id) {
+              <li class="rounded-xl border border-slate-100 bg-slate-50/50 p-3 space-y-1.5">
+                <div class="flex items-start gap-2">
+                  <span class="shrink-0 text-[10px] font-black text-primary-800 bg-primary-50 px-2 py-0.5 rounded-full mt-0.5">الأسبوع {{ w.week }}</span>
+                  <p class="text-sm font-bold text-slate-800">{{ w.topic }}</p>
                 </div>
+                @if (w.objectives.length) {
+                  <ul class="ps-4 space-y-0.5 list-disc marker:text-primary-400">
+                    @for (o of w.objectives; track $index) {
+                      <li class="text-xs text-slate-600">{{ o }}</li>
+                    }
+                  </ul>
+                }
               </li>
             }
-          </ul>
-        </div>
-      } @empty {
-        <div class="bg-white rounded-2xl border border-dashed border-slate-200 text-center py-8 text-sm text-slate-400">
-          @if (scope.isTeacher()) {
-            ضيف وحدات المنهج ودروسها عشان تتابع انت والطلاب الشرح ماشي لحد فين.
-          } @else {
-            المدرس لسه مضافش وحدات المنهج.
-          }
-        </div>
-      }
-      @if (scope.isTeacher() && cur.units.length) {
-        <p class="text-[11px] text-slate-500">💡 لما ترفع مادة في "المواد التعليمية والملفات" تقدر تربطها بدرس، فتظهر هنا تحت الدرس.</p>
-      }
-    </section>
+          </ol>
+        } @else if (!cur.planFile) {
+          <p class="text-sm text-slate-400 text-center py-4">
+            {{ scope.isTeacher() ? 'لسه مكتبتش خطة المنهج والأهداف. اكتبها أسبوع بأسبوع أو ارفع ملف الخطة.' : 'المعلم لسه مكتبش خطة المنهج.' }}
+          </p>
+        }
+      </section>
+    }
   } @else {
     <!-- ================= All curricula ================= -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -200,9 +160,11 @@
         <h2 class="text-2xl font-black text-slate-800 tracking-tight">المناهج والمواد الدراسية</h2>
         <p class="text-xs text-slate-500 mt-1">
           @if (scope.isTeacher()) {
-            منهج الوزارة لكل مادة بتدرّسها: الوحدات والدروس، وكتاب الوزارة وتوزيع المنهج ونماذج الامتحانات
+            ارفع منهج الوزارة لكل مادة بتدرّسها: الكتاب وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات، واكتب خطة المنهج والأهداف
+          } @else if (scope.isStudent()) {
+            مناهج مواد فصل {{ scope.studentSection() }}: كتب الوزارة وتوزيع المنهج ونماذج الامتحانات
           } @else {
-            مناهج مواد فصل {{ scope.studentSection() }}، والمدرس وصل لحد فين، وكتب الوزارة
+            مناهج كل المعلمين: ملفات الوزارة اللي رفعوها، وخطة المنهج والأهداف لكل مادة
           }
         </p>
       </div>
@@ -220,7 +182,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
       @for (cur of curricula(); track cur.id) {
-        @let progress = progressOf(cur);
+        @let kinds = kindsOf(cur);
         <button type="button" (click)="open(cur.id)"
           class="text-right bg-white rounded-2xl p-5 shadow-soft border border-slate-100 hover:border-primary-200 hover:shadow-md transition-all flex flex-col gap-4">
           <div class="flex items-start justify-between gap-2 w-full">
@@ -228,22 +190,23 @@
               <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-block mb-1 bg-primary-50 text-primary-700">{{ gradeLabel(cur.gradeId) }}</span>
               <h3 class="text-base font-black text-slate-800">{{ cur.subject }}</h3>
               <p class="text-xs text-slate-400">فصل {{ sectionsLabel(cur.sections) }}</p>
+              @if (!scope.isTeacher() && !scope.isStudent() && teacherName(cur.teacherId)) {
+                <p class="text-[11px] text-slate-500 mt-0.5">{{ teacherName(cur.teacherId) }}</p>
+              }
             </div>
             <span class="text-2xl" aria-hidden="true">📚</span>
           </div>
 
-          <div class="w-full space-y-1.5">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-500">{{ progress.done }} من {{ progress.total }} درس</span>
-              <span class="font-black text-primary-700">{{ progress.percent }}%</span>
-            </div>
-            <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div class="h-full rounded-full bg-gradient-to-l from-emerald-500 to-primary-600" [style.width.%]="progress.percent"></div>
-            </div>
+          <div class="w-full flex flex-wrap gap-1.5">
+            @for (kind of kinds; track kind.id) {
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ kind.icon }} {{ kind.label }}</span>
+            } @empty {
+              <span class="text-[11px] text-slate-400">لسه مفيش ملفات</span>
+            }
           </div>
 
           <div class="w-full pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span class="text-slate-500">{{ cur.units.length }} وحدة · {{ cur.files.length }} ملف</span>
+            <span class="text-slate-500">{{ cur.files.length }} ملف · {{ cur.updatedAt | timeAgo }}</span>
             <span class="font-bold text-primary-700">فتح المنهج ←</span>
           </div>
         </button>
@@ -254,8 +217,8 @@
         <button type="button" (click)="openForm(null, subject)"
           class="text-right rounded-2xl p-5 border-2 border-dashed border-slate-200 hover:border-primary-300 hover:bg-primary-50/40 transition-all flex flex-col justify-center gap-1 min-h-40">
           <span class="text-base font-black text-slate-700">{{ subject }}</span>
-          <span class="text-xs text-slate-500">لسه مفيش منهج للمادة دي</span>
-          <span class="text-xs font-bold text-primary-700 mt-2">+ ابدأ المنهج</span>
+          <span class="text-xs text-slate-500">لسه مرفعتش منهج المادة دي</span>
+          <span class="text-xs font-bold text-primary-700 mt-2">+ ارفع المنهج</span>
         </button>
       }
 
@@ -263,8 +226,10 @@
         <div class="col-span-full text-center py-10 text-slate-400 text-sm">
           @if (scope.isTeacher()) {
             اضغط "منهج مادة جديد" عشان تبدأ.
-          } @else {
+          } @else if (scope.isStudent()) {
             مدرسين فصلك لسه منزلوش المناهج.
+          } @else {
+            المعلمين لسه منزلوش مناهج.
           }
         </div>
       }
@@ -276,9 +241,9 @@
   <app-curriculum-form-dialog [curriculum]="editingCurriculum()" [subject]="presetSubject()"
     (saved)="saveCurriculum($event)" (closed)="formOpen.set(false)" />
 }
-@if (unitDialogOpen()) {
-  <app-curriculum-unit-dialog [unit]="editingUnit()" (saved)="saveUnit($event)" (closed)="unitDialogOpen.set(false)" />
-}
 @if (fileDialogOpen()) {
   <app-curriculum-file-dialog (saved)="addFile($event)" (closed)="fileDialogOpen.set(false)" />
+}
+@if (planDialogOpen() && selected(); as cur) {
+  <app-curriculum-plan-dialog [curriculum]="cur" (saved)="savePlan($event)" (closed)="planDialogOpen.set(false)" />
 }

@@ -7,7 +7,7 @@ import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
 import { AnnouncementsStore } from '../announcements/announcements.store';
 import { AssignmentsStore } from '../assignments/assignments.store';
-import { curriculumProgress, lastTaughtLesson } from '../subjects/curriculum.model';
+import { curriculumKinds, latestCurriculumFile } from '../subjects/curriculum.model';
 import { CurriculumStore } from '../subjects/curriculum.store';
 import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { isClosed } from '../teaching/teaching.model';
@@ -44,8 +44,8 @@ export class StudentDashboardComponent {
 
   readonly school = SCHOOL_INFO;
   readonly today = new Date();
-  readonly progressOf = curriculumProgress;
-  readonly lastTaught = lastTaughtLesson;
+  readonly kindsOf = curriculumKinds;
+  readonly latestFileOf = latestCurriculumFile;
 
   /** Assignments not handed in and quizzes not taken yet, soonest deadline first. */
   readonly dueItems = computed<DueItem[]>(() => {

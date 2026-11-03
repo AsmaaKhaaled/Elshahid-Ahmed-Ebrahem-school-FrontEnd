@@ -24,8 +24,7 @@ describe('CurriculumComponent', () => {
   function curriculum(overrides: Partial<Curriculum>): Curriculum {
     return {
       id: 'c', teacherId: 'x', subject: 'الرياضيات', gradeId: 'G3', sections: ['3/2'], description: '',
-      units: [{ id: 'u', title: 'الوحدة', lessons: [{ id: 'l', title: 'درس', week: 1, doneAt: null }] }],
-      files: [], updatedAt: new Date().toISOString(), ...overrides
+      files: [], plan: [], updatedAt: new Date().toISOString(), ...overrides
     };
   }
 
@@ -46,14 +45,35 @@ describe('CurriculumComponent', () => {
     expect(component.subjectsWithoutCurriculum()).not.toContain(component.scope.subjects()[0]);
   });
 
-  it('marks a lesson as taught', () => {
+  it('lets the teacher add the ministry curriculum as files or links, grouped by kind', () => {
     loginAs('TEACHER');
     const store = TestBed.inject(CurriculumStore);
     create();
     store.save(curriculum({ id: 'mine', teacherId: component.scope.teacherId() }));
     component.open('mine');
-    component.toggleLesson('l');
-    expect(component.progressOf(component.selected()!).percent).toBe(100);
+
+    component.addFile({ id: 'b', kind: 'book', title: 'الكتاب', file: { name: 'book.pdf', size: 1, url: '' }, forStudents: true, uploadedAt: '' });
+    component.addFile({ id: 'k', kind: 'other', title: 'بنك المعرفة', link: 'https://www.ekb.eg/', forStudents: true, uploadedAt: '' });
+
+    expect(component.fileGroups().map(g => g.kind.id)).toEqual(['book', 'other']);
+    expect(component.selected()!.files.find(f => f.id === 'k')!.link).toBe('https://www.ekb.eg/');
+    expect(component.kindsOf(component.selected()!).map(k => k.id)).toEqual(['book', 'other']);
+  });
+
+  it('keeps the plan & objectives for the teacher and the administration, never the students', () => {
+    loginAs('TEACHER');
+    const store = TestBed.inject(CurriculumStore);
+    create();
+    store.save(curriculum({ id: 'mine', teacherId: component.scope.teacherId() }));
+    component.open('mine');
+    expect(component.showPlan()).toBeTrue();
+    component.savePlan({ plan: [{ id: 'w1', week: 1, topic: 'المعادلات', objectives: ['يحل المعادلة'] }] });
+    expect(component.selected()!.plan.map(w => w.topic)).toEqual(['المعادلات']);
+
+    loginAs('STUDENT');
+    store.save(curriculum({ id: 'theirs', sections: [component.scope.studentSection()], plan: [{ id: 'w', week: 1, topic: 'سر', objectives: [] }] }));
+    expect(component.showPlan()).toBeFalse();
+    expect(component.curricula().find(c => c.id === 'theirs')!.plan).toEqual([]);
   });
 
   it('shows a student their class curricula without the teacher-only files', () => {

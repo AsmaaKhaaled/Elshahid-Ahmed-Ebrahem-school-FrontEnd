@@ -3,13 +3,14 @@ import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.di
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { ImportRow, downloadImportTemplate, parseStudentsFile } from './student-excel';
 import { Student, gradeOf } from './student.model';
+import { CardTableDirective } from '../../shared/directives/card-table.directive';
 
 type ImportStep = 'pick' | 'reading' | 'review';
 
 @Component({
   selector: 'app-student-import-dialog',
   standalone: true,
-  imports: [PortalToBodyDirective, SubmitLockDirective],
+  imports: [CardTableDirective, PortalToBodyDirective, SubmitLockDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './student-import-dialog.component.html',
   styleUrl: './student-import-dialog.component.css'

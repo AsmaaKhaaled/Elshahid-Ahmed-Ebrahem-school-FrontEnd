@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+/* Mark boxes: no spinner arrows, they only take room in the narrow cells */
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* The printed register reads like the paper one: plain numbers in ruled cells */
+@media print {
+  .grade-input {
+    border: 0 !important;
+    background: transparent !important;
+  }
+  table th,
+  table td {
+    border: 1px solid #cbd5e1 !important;
+  }
+}

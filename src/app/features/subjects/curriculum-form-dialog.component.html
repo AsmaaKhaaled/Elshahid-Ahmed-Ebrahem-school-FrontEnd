@@ -1,7 +1,7 @@
-<div appPortalToBody dir="rtl" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 font-cairo">
+<div appPortalToBody dir="rtl" class="dialog-overlay font-cairo">
   <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()"
-    class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto p-4 sm:p-6 space-y-4">
-    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+    class="dialog-panel max-w-2xl">
+    <div class="dialog-head flex items-center justify-between pb-3 border-b border-slate-100">
       <h3 class="font-black text-slate-800 text-lg">{{ curriculum() ? 'تعديل بيانات المنهج' : 'منهج مادة جديد' }}</h3>
       <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
     </div>
@@ -53,7 +53,7 @@
       }
     </div>
 
-    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+    <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
       <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
       <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
         {{ curriculum() ? 'حفظ التعديلات' : 'إنشاء المنهج' }}

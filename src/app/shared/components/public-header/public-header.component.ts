@@ -3,6 +3,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../../core/constants/school.constants';
+import { AUDIENCES, AnnouncementsStore, isExpired } from '../../../features/announcements/announcements.store';
 
 @Component({
   selector: 'app-public-header',
@@ -16,6 +17,24 @@ export class PublicHeaderComponent {
   readonly academicYear = inject(AcademicCalendarStore).currentYear;
   readonly academicTerm = inject(AcademicCalendarStore).currentTerm;
   private readonly router = inject(Router);
+  private readonly announcementsStore = inject(AnnouncementsStore);
+
+  /**
+   * The top-bar ticker: active announcements addressed to everyone (it's a public page),
+   * pinned first. Comes from the announcements store, so it follows the API once that's wired.
+   */
+  readonly tickerItems = computed(() =>
+    this.announcementsStore.announcements()
+      .filter(a => !isExpired(a) && a.audiences.length === AUDIENCES.length)
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.publishedAt.localeCompare(a.publishedAt))
+      .slice(0, 5)
+  );
+
+  /** Longer text gets more time, so the speed stays readable (~4 characters a second). */
+  readonly tickerDuration = computed(() => {
+    const chars = this.tickerItems().reduce((sum, a) => sum + a.title.length + 10, 0);
+    return `${Math.max(15, Math.round(chars / 4))}s`;
+  });
 
   readonly schoolLogo = SCHOOL_INFO.logoUrl;
   readonly isMobileMenuOpen = signal<boolean>(false);

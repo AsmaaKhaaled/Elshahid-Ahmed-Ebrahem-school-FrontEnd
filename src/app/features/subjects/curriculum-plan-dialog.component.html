@@ -1,0 +1,58 @@
+<div appPortalToBody dir="rtl" class="dialog-overlay font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()" class="dialog-panel max-w-2xl">
+    <div class="dialog-head flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+      <div>
+        <h3 class="font-black text-slate-800 text-lg">خطة المنهج والأهداف</h3>
+        <p class="text-[11px] text-slate-500 mt-0.5">{{ curriculum().subject }} · ليك وللإدارة بس، الطلاب مش بيشوفوها</p>
+      </div>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600" aria-label="إغلاق">✕</button>
+    </div>
+
+    <!-- The plan document -->
+    <div class="space-y-2">
+      <span class="text-xs font-bold text-slate-600">ملف الخطة (اختياري)</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-700 cursor-pointer transition-colors">
+          📎 {{ planFile ? 'تغيير الملف' : 'رفع ملف الخطة (Word، PDF...)' }}
+          <input type="file" class="hidden" [accept]="accept" (change)="onFileSelected($event)" />
+        </label>
+        @if (planFile) {
+          <app-teaching-files [files]="[planFile]" [removable]="true" (removed)="planFile = undefined" />
+        }
+      </div>
+      @if (fileError()) {
+        <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
+      }
+    </div>
+
+    <!-- Week by week -->
+    <div class="space-y-3">
+      <span class="text-xs font-bold text-slate-600">الخطة أسبوع بأسبوع</span>
+      @for (w of weeks; track w.id; let i = $index) {
+        <div class="rounded-2xl border border-slate-200 p-3 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-black text-primary-800 bg-primary-50 px-2.5 py-1 rounded-full">الأسبوع {{ i + 1 }}</span>
+            <button type="button" (click)="removeWeek(i)" class="text-xs font-bold text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg">حذف</button>
+          </div>
+          <input type="text" [name]="'topic-' + w.id" [(ngModel)]="w.topic" maxlength="160" placeholder="موضوع الأسبوع / الدرس"
+            [attr.aria-label]="'موضوع الأسبوع ' + (i + 1)"
+            class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
+          <textarea [name]="'objectives-' + w.id" [(ngModel)]="w.objectives" rows="3" placeholder="الأهداف: كل هدف في سطر"
+            [attr.aria-label]="'أهداف الأسبوع ' + (i + 1)"
+            class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"></textarea>
+        </div>
+      }
+      <button type="button" (click)="addWeek()"
+        class="w-full py-2.5 rounded-xl border border-dashed border-primary-300 text-primary-800 hover:bg-primary-50 text-xs font-bold">+ أسبوع جديد</button>
+    </div>
+
+    @if (formError()) {
+      <p class="text-xs text-rose-600 font-semibold">{{ formError() }}</p>
+    }
+
+    <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+      <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">حفظ الخطة</button>
+    </div>
+  </form>
+</div>

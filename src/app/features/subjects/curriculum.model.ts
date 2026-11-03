@@ -1,7 +1,9 @@
 import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { TeachingFile } from '../teaching/teaching.model';
 
-// ---- The ministry curriculum of one subject, kept by the teacher who teaches it ----
+// ---- The ministry curriculum of one subject, as the teacher who teaches it uploads it ----
+// The teacher doesn't write the curriculum: it comes from the ministry (the textbook, the plan,
+// sample exams...) and the teacher uploads those files, or links to them.
 
 export type CurriculumFileKind = 'book' | 'guide' | 'plan' | 'exams' | 'other';
 
@@ -17,25 +19,24 @@ export interface CurriculumFile {
   id: string;
   kind: CurriculumFileKind;
   title: string;
-  file: TeachingFile;
+  // An uploaded file, or a link (the ministry's site, Drive...) - one of the two
+  file?: TeachingFile;
+  link?: string;
   // false = the teacher's own reference (e.g. the teacher's guide), hidden from students
   forStudents: boolean;
   uploadedAt: string;
 }
 
-export interface CurriculumLesson {
+/**
+ * One week of the teacher's curriculum plan (خطة المنهج): what's taught and its objectives.
+ * Written by the teacher for themselves and the administration - students don't see the plan.
+ */
+export interface CurriculumPlanWeek {
   id: string;
-  title: string;
-  // Week of the term in the curriculum plan (توزيع المنهج), if set
-  week: number | null;
-  // When the teacher marked it as taught; null = not yet
-  doneAt: string | null;
-}
-
-export interface CurriculumUnit {
-  id: string;
-  title: string;
-  lessons: CurriculumLesson[];
+  // Week of the term, 1, 2, 3...
+  week: number;
+  topic: string;
+  objectives: string[];
 }
 
 export interface Curriculum {
@@ -47,8 +48,10 @@ export interface Curriculum {
   // The teacher's classes in that grade that follow this curriculum
   sections: string[];
   description: string;
-  units: CurriculumUnit[];
   files: CurriculumFile[];
+  // The plan & objectives: written week by week, and/or the teacher's own plan document
+  plan: CurriculumPlanWeek[];
+  planFile?: TeachingFile;
   updatedAt: string;
 }
 
@@ -61,18 +64,12 @@ export function gradeOfSection(section: string): string {
   return GRADE_LEVELS.find(grade => grade.sections.includes(section))?.id ?? '';
 }
 
-export function curriculumProgress(curriculum: Curriculum): { done: number; total: number; percent: number } {
-  const lessons = curriculum.units.flatMap(unit => unit.lessons);
-  const done = lessons.filter(lesson => lesson.doneAt).length;
-  return { done, total: lessons.length, percent: lessons.length ? Math.round((done / lessons.length) * 100) : 0 };
+/** The kinds a curriculum has files for, in the CURRICULUM_FILE_KINDS order (e.g. for the card's icons). */
+export function curriculumKinds(curriculum: Curriculum): typeof CURRICULUM_FILE_KINDS {
+  return CURRICULUM_FILE_KINDS.filter(kind => curriculum.files.some(f => f.kind === kind.id));
 }
 
-/** The last lesson marked as taught (where the class has reached). */
-export function lastTaughtLesson(curriculum: Curriculum): CurriculumLesson | null {
-  return (
-    curriculum.units
-      .flatMap(unit => unit.lessons)
-      .filter(lesson => lesson.doneAt)
-      .sort((a, b) => b.doneAt!.localeCompare(a.doneAt!))[0] ?? null
-  );
+/** The most recently uploaded file of a curriculum. */
+export function latestCurriculumFile(curriculum: Curriculum): CurriculumFile | null {
+  return [...curriculum.files].sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt))[0] ?? null;
 }

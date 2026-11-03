@@ -5,7 +5,6 @@ import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { Material, sectionsLabel } from '../teaching/teaching.model';
 import { TeachingScope } from '../teaching/teaching-scope.service';
 import { TeachingStore } from '../teaching/teaching.store';
-import { CurriculumStore } from '../subjects/curriculum.store';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 
 const ALL_SUBJECTS = 'الكل';
@@ -20,17 +19,11 @@ const ALL_SUBJECTS = 'الكل';
 })
 export class MaterialsComponent {
   private readonly store = inject(TeachingStore);
-  private readonly curriculumStore = inject(CurriculumStore);
   readonly scope = inject(TeachingScope);
 
   constructor() {
     this.scope.ensureLoaded();
   }
-
-  // lessonId -> lesson title, for the "درس من المنهج" line
-  readonly lessonTitles = computed(
-    () => new Map(this.curriculumStore.curricula().flatMap(c => c.units.flatMap(u => u.lessons.map(l => [l.id, l.title] as const))))
-  );
 
   readonly sectionsLabel = sectionsLabel;
   readonly allSubjects = ALL_SUBJECTS;

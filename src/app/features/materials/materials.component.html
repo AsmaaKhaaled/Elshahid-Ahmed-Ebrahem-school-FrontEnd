@@ -49,9 +49,6 @@
           @if (item.description) {
             <p class="text-sm text-slate-500 leading-relaxed">{{ item.description }}</p>
           }
-          @if (item.lessonId && lessonTitles().get(item.lessonId); as lesson) {
-            <p class="text-xs text-slate-500">📘 درس: <strong class="text-slate-700">{{ lesson }}</strong></p>
-          }
           @if (scope.isTeacher()) {
             <p class="text-xs text-slate-500">منشورة لـ: <strong class="text-slate-700">فصل {{ sectionsLabel(item.sections) }}</strong></p>
           }
