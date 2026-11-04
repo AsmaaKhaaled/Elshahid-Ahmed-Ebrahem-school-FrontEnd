@@ -71,7 +71,12 @@ export class StudentDashboardComponent {
 
   readonly latestMaterials = computed(() => this.teachingStore.visibleMaterials().slice(0, 4));
 
-  readonly curricula = this.curriculumStore.visible;
+  // The latest few; "كل المناهج" opens the full, paged list
+  readonly curricula = computed(() => this.curriculumStore.recent().slice(0, 6));
+
+  constructor() {
+    this.curriculumStore.ensureLoaded();
+  }
 
   /** Average of the marks the student got back (graded assignments & quizzes), in %. */
   readonly averageMark = computed<{ percent: number; count: number } | null>(() => {

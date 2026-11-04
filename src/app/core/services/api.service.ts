@@ -23,6 +23,11 @@ export class ApiService {
     return this.http.get<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, { params: httpParams });
   }
 
+  /** A file from the API (e.g. a download that needs the sign-in token). */
+  getBlob(endpoint: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, { responseType: 'blob' });
+  }
+
   post<T>(endpoint: string, body: any, headers?: HttpHeaders): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, body, { headers });
   }

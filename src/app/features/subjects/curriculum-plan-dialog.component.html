@@ -46,13 +46,15 @@
         class="w-full py-2.5 rounded-xl border border-dashed border-primary-300 text-primary-800 hover:bg-primary-50 text-xs font-bold">+ أسبوع جديد</button>
     </div>
 
-    @if (formError()) {
-      <p class="text-xs text-rose-600 font-semibold">{{ formError() }}</p>
+    @if (formError() || serverError()) {
+      <p class="text-xs text-rose-600 font-semibold" role="alert">{{ formError() || serverError() }}</p>
     }
 
     <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
       <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
-      <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">حفظ الخطة</button>
+      <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+        {{ lock.busy() ? 'جاري الحفظ...' : 'حفظ الخطة' }}
+      </button>
     </div>
   </form>
 </div>

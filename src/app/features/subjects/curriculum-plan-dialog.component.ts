@@ -14,8 +14,9 @@ interface DraftWeek {
 }
 
 export interface CurriculumPlan {
-  plan: CurriculumPlanWeek[];
-  planFile?: TeachingFile;
+  weeks: Pick<CurriculumPlanWeek, 'topic' | 'objectives'>[];
+  // A new plan document to upload, null to remove the current one, undefined to keep it
+  planFile?: File | null;
 }
 
 /** The teacher writes the curriculum plan & objectives week by week, and/or uploads their plan document. */
@@ -28,11 +29,13 @@ export interface CurriculumPlan {
 })
 export class CurriculumPlanDialogComponent implements OnInit {
   readonly curriculum = input.required<Curriculum>();
+  readonly saving = input(false);
+  readonly serverError = input<string | null>(null);
   readonly saved = output<CurriculumPlan>();
   readonly closed = output<void>();
 
   readonly accept = FILE_ACCEPT;
-  readonly lock = submitLock();
+  readonly lock = submitLock({ saving: this.saving, error: this.serverError });
   readonly fileError = signal('');
   readonly formError = signal('');
 
@@ -42,7 +45,7 @@ export class CurriculumPlanDialogComponent implements OnInit {
   ngOnInit(): void {
     const { plan, planFile } = this.curriculum();
     this.weeks = plan.map(w => ({ id: w.id, topic: w.topic, objectives: w.objectives.join('\n') }));
-    this.planFile = planFile;
+    this.planFile = planFile ?? undefined;
     if (!this.weeks.length) this.addWeek();
   }
 
@@ -70,12 +73,12 @@ export class CurriculumPlanDialogComponent implements OnInit {
       return;
     }
     this.formError.set('');
-    const plan: CurriculumPlanWeek[] = weeks.map((w, i) => ({
-      id: w.id,
-      week: i + 1,
+    const plan = weeks.map(w => ({
       topic: w.topic.trim(),
       objectives: w.objectives.split('\n').map(o => o.trim()).filter(Boolean)
     }));
-    this.lock.run(() => this.saved.emit({ plan, planFile: this.planFile }));
+    // A picked file is uploaded; a removed one is deleted; the one already on the server is kept
+    const planFile = this.planFile?.blob ?? (this.planFile ? undefined : this.curriculum().planFile ? null : undefined);
+    this.lock.run(() => this.saved.emit({ weeks: plan, planFile }));
   }
 }

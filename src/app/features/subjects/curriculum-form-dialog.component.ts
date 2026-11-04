@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -7,8 +7,7 @@ import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { TeachingScope } from '../teaching/teaching-scope.service';
-import { Curriculum, gradeOfSection } from './curriculum.model';
-import { CurriculumStore } from './curriculum.store';
+import { Curriculum, CurriculumDraft, gradeOfSection } from './curriculum.model';
 
 /** Starts (or edits) the curriculum of one of the teacher's subjects for one grade. */
 @Component({
@@ -20,19 +19,21 @@ import { CurriculumStore } from './curriculum.store';
 })
 export class CurriculumFormDialogComponent implements OnInit {
   readonly scope = inject(TeachingScope);
-  private readonly store = inject(CurriculumStore);
 
   // null = new curriculum
   readonly curriculum = input<Curriculum | null>(null);
   // Pre-selected subject for a new one
   readonly subject = input('');
-  readonly saved = output<Curriculum>();
+  readonly saving = input(false);
+  // From the server, e.g. one curriculum per subject & grade
+  readonly serverError = input<string | null>(null);
+  readonly saved = output<CurriculumDraft>();
   readonly closed = output<void>();
 
-  readonly lock = submitLock();
-  readonly duplicateError = signal(false);
+  // Locked from the click until the page closes the dialog (or the request fails)
+  readonly lock = submitLock({ saving: this.saving, error: this.serverError });
 
-  draft: Curriculum = { id: '', teacherId: '', subject: '', gradeId: '', sections: [], description: '', files: [], plan: [], updatedAt: '' };
+  draft: CurriculumDraft = { subject: '', gradeId: '', sections: [], description: '' };
 
   /** Grades the teacher has classes in (all grades if their classes aren't known). */
   grades(): typeof GRADE_LEVELS {
@@ -52,7 +53,8 @@ export class CurriculumFormDialogComponent implements OnInit {
   ngOnInit(): void {
     const curriculum = this.curriculum();
     if (curriculum) {
-      this.draft = { ...curriculum, sections: [...curriculum.sections] };
+      const { subject, gradeId, sections, description } = curriculum;
+      this.draft = { subject, gradeId, sections: [...sections], description };
       return;
     }
     const subjects = this.scope.subjects();
@@ -65,29 +67,14 @@ export class CurriculumFormDialogComponent implements OnInit {
   selectGrade(gradeId: string): void {
     this.draft.gradeId = gradeId;
     this.draft.sections = this.sectionOptions();
-    this.duplicateError.set(false);
   }
 
   save(form: NgForm): void {
     if (this.lock.busy()) return;
-    const teacherId = this.draft.teacherId || this.scope.teacherId();
-    // One curriculum per subject & grade for the same teacher
-    this.duplicateError.set(
-      this.store.curricula().some(
-        c => c.id !== this.draft.id && c.teacherId === teacherId && c.subject === this.draft.subject && c.gradeId === this.draft.gradeId
-      )
-    );
-    if (form.invalid || this.duplicateError()) {
+    if (form.invalid) {
       form.control.markAllAsTouched();
       return;
     }
-    this.lock.run(() =>
-      this.saved.emit({
-        ...this.draft,
-        description: this.draft.description.trim(),
-        id: this.draft.id || crypto.randomUUID(),
-        teacherId
-      })
-    );
+    this.lock.run(() => this.saved.emit({ ...this.draft, description: this.draft.description.trim() }));
   }
 }

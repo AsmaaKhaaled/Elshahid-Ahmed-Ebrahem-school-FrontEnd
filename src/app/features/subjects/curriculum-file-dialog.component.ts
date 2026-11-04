@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -7,7 +7,7 @@ import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.di
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { FILE_ACCEPT, MAX_FILE_MB, TeachingFile, readPickedFiles } from '../teaching/teaching.model';
-import { CURRICULUM_FILE_KINDS, CurriculumFile, CurriculumFileKind } from './curriculum.model';
+import { CURRICULUM_FILE_KINDS, CurriculumFileKind, NewCurriculumFile } from './curriculum.model';
 
 /** Adds one piece of the ministry curriculum: an uploaded file (textbook, plan, sample exams...) or a link to it. */
 @Component({
@@ -18,13 +18,16 @@ import { CURRICULUM_FILE_KINDS, CurriculumFile, CurriculumFileKind } from './cur
   templateUrl: './curriculum-file-dialog.component.html'
 })
 export class CurriculumFileDialogComponent {
-  readonly saved = output<CurriculumFile>();
+  // While the file uploads, and the server's answer if it fails
+  readonly saving = input(false);
+  readonly serverError = input<string | null>(null);
+  readonly saved = output<NewCurriculumFile>();
   readonly closed = output<void>();
 
   readonly kinds = CURRICULUM_FILE_KINDS;
   readonly accept = FILE_ACCEPT;
   readonly maxMb = MAX_FILE_MB;
-  readonly lock = submitLock();
+  readonly lock = submitLock({ saving: this.saving, error: this.serverError });
   readonly fileError = signal('');
 
   kind: CurriculumFileKind = 'book';
@@ -52,22 +55,13 @@ export class CurriculumFileDialogComponent {
   save(form: NgForm): void {
     if (this.lock.busy()) return;
     const byLink = this.source === 'link';
-    const missingFile = !byLink && !this.file;
+    const missingFile = !byLink && !this.file?.blob;
     if (missingFile) this.fileError.set('اختار الملف اللي هترفعه');
     if (form.invalid || missingFile) {
       form.control.markAllAsTouched();
       return;
     }
-    const content = byLink ? { link: this.link.trim() } : { file: this.file! };
-    this.lock.run(() =>
-      this.saved.emit({
-        id: crypto.randomUUID(),
-        kind: this.kind,
-        title: this.title.trim(),
-        ...content,
-        forStudents: this.forStudents,
-        uploadedAt: new Date().toISOString()
-      })
-    );
+    const content = byLink ? { link: this.link.trim() } : { file: this.file!.blob };
+    this.lock.run(() => this.saved.emit({ kind: this.kind, title: this.title.trim(), forStudents: this.forStudents, ...content }));
   }
 }

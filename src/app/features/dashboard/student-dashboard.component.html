@@ -96,7 +96,7 @@
           <li class="space-y-1">
             <div class="flex items-center justify-between gap-2 text-xs">
               <span class="font-bold text-slate-800">{{ cur.subject }}</span>
-              <span class="text-slate-400 shrink-0">{{ cur.files.length }} ملف</span>
+              <span class="text-slate-400 shrink-0">{{ cur.fileCount }} ملف</span>
             </div>
             <div class="flex flex-wrap gap-1">
               @for (kind of kindsOf(cur); track kind.id) {

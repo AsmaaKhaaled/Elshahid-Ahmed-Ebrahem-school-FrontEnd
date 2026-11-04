@@ -1,160 +1,218 @@
 <div class="space-y-6">
-  @if (selected(); as cur) {
+  @if (selectedId()) {
     <!-- ================= One curriculum ================= -->
     <button type="button" (click)="back()" class="text-xs font-bold text-primary-700 hover:text-primary-900 flex items-center gap-1">
       <span>→</span> <span>كل المناهج</span>
     </button>
 
-    <!-- Header -->
-    <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100">
-      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div class="space-y-1 min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700">{{ gradeLabel(cur.gradeId) }}</span>
-            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">فصل {{ sectionsLabel(cur.sections) }}</span>
+    @if (detailError()) {
+      <p class="px-4 py-3 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3" role="alert">
+        <span>{{ detailError() }}</span>
+        <button (click)="loadDetail()" type="button" class="font-bold underline">إعادة المحاولة</button>
+      </p>
+    }
+
+    @if (selected(); as cur) {
+      <!-- Header -->
+      <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div class="space-y-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700">{{ gradeLabel(cur.gradeId) }}</span>
+              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">فصل {{ sectionsLabel(cur.sections) }}</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">منهج {{ cur.subject }}</h2>
+            @if (cur.description) {
+              <p class="text-sm text-slate-500">{{ cur.description }}</p>
+            }
+            <p class="text-[11px] text-slate-400">
+              @if (showSearch() && cur.teacherName) {
+                {{ cur.teacherName }} ·
+              }
+              {{ cur.fileCount }} ملف · آخر تحديث {{ cur.updatedAt | timeAgo }}
+            </p>
           </div>
-          <h2 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">منهج {{ cur.subject }}</h2>
-          @if (cur.description) {
-            <p class="text-sm text-slate-500">{{ cur.description }}</p>
+
+          @if (scope.isTeacher()) {
+            <div class="flex flex-wrap items-center gap-2 text-xs shrink-0">
+              @if (isPendingDelete('curriculum', cur.id)) {
+                <span class="text-slate-500">تحذف المنهج بكل ملفاته؟</span>
+                <button type="button" (click)="confirmDelete()" [disabled]="saving()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold disabled:opacity-60">
+                  {{ saving() ? 'جاري الحذف...' : 'حذف' }}
+                </button>
+                <button type="button" (click)="pendingDelete.set(null)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">إلغاء</button>
+              } @else {
+                <button type="button" (click)="openForm(cur)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 font-bold transition-colors">تعديل البيانات</button>
+                <button type="button" (click)="pendingDelete.set({ type: 'curriculum', id: cur.id })" class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold transition-colors">حذف المنهج</button>
+              }
+            </div>
           }
-          <p class="text-[11px] text-slate-400">
-            @if (!scope.isTeacher() && !scope.isStudent() && teacherName(cur.teacherId)) {
-              {{ teacherName(cur.teacherId) }} ·
-            }
-            {{ cur.files.length }} ملف · آخر تحديث {{ cur.updatedAt | timeAgo }}
-          </p>
         </div>
-
-        @if (scope.isTeacher()) {
-          <div class="flex flex-wrap items-center gap-2 text-xs shrink-0">
-            @if (isPendingDelete('curriculum', cur.id)) {
-              <span class="text-slate-500">تحذف المنهج بكل ملفاته؟</span>
-              <button type="button" (click)="confirmDelete()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">حذف</button>
-              <button type="button" (click)="pendingDelete.set(null)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">إلغاء</button>
-            } @else {
-              <button type="button" (click)="openForm(cur)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 font-bold transition-colors">تعديل البيانات</button>
-              <button type="button" (click)="pendingDelete.set({ type: 'curriculum', id: cur.id })" class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold transition-colors">حذف المنهج</button>
-            }
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- The ministry's files -->
-    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="font-black text-slate-800">ملفات المنهج</h3>
-        @if (scope.isTeacher()) {
-          <button type="button" (click)="fileDialogOpen.set(true)"
-            class="px-3.5 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md transition-all">
-            📤 رفع ملف أو لينك
-          </button>
-        }
       </div>
 
-      @for (group of fileGroups(); track group.kind.id) {
-        <div class="space-y-2">
-          <p class="text-xs font-bold text-slate-500">{{ group.kind.icon }} {{ group.kind.label }}</p>
-          <ul class="space-y-2">
-            @for (f of group.files; track f.id) {
-              <li class="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-                <div class="flex-1 min-w-0 space-y-1">
-                  <p class="text-sm font-bold text-slate-800 flex flex-wrap items-center gap-2">
-                    {{ f.title }}
-                    @if (!f.forStudents) {
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">ليك انت بس</span>
-                    }
-                  </p>
-                  @if (f.file) {
-                    <app-teaching-files [files]="[f.file]" />
-                  }
-                  @if (f.link) {
-                    <a [href]="f.link" target="_blank" rel="noopener"
-                      class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-semibold text-primary-700 hover:underline">
-                      <span aria-hidden="true">🔗</span>
-                      <span class="truncate" dir="ltr">{{ f.link }}</span>
-                    </a>
-                  }
-                </div>
-                @if (scope.isTeacher()) {
-                  <div class="flex items-center gap-2 text-xs shrink-0">
-                    @if (isPendingDelete('file', f.id)) {
-                      <button type="button" (click)="confirmDelete()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">تأكيد الحذف</button>
-                      <button type="button" (click)="pendingDelete.set(null)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">إلغاء</button>
-                    } @else {
-                      <span class="text-[11px] text-slate-400">{{ f.uploadedAt | timeAgo }}</span>
-                      <button type="button" (click)="pendingDelete.set({ type: 'file', id: f.id })" class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold">حذف</button>
-                    }
-                  </div>
-                }
-              </li>
-            }
-          </ul>
-        </div>
-      } @empty {
-        <div class="text-center py-8 space-y-2">
-          <p class="text-3xl" aria-hidden="true">📚</p>
-          <p class="text-sm text-slate-400">
-            @if (scope.isTeacher()) {
-              لسه مرفعتش حاجة للمنهج ده. ارفع كتاب الوزارة وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات.
-            } @else {
-              مفيش ملفات منهج متاحة لسه.
-            }
-          </p>
-        </div>
+      @if (actionError()) {
+        <p class="px-4 py-3 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold" role="alert">{{ actionError() }}</p>
       }
-    </section>
 
-    <!-- The plan & objectives: the teacher's and the administration's only -->
-    @if (showPlan()) {
+      <!-- The ministry's files: one kind at a time, paged -->
       <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2">
-            <h3 class="font-black text-slate-800">خطة المنهج والأهداف</h3>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">للمعلم والإدارة بس</span>
-          </div>
+          <h3 class="font-black text-slate-800">ملفات المنهج</h3>
           @if (scope.isTeacher()) {
-            <button type="button" (click)="planDialogOpen.set(true)"
-              class="px-3.5 py-2 rounded-xl border border-primary-200 text-primary-800 hover:bg-primary-50 font-bold text-xs transition-colors">
-              ✎ {{ cur.plan.length || cur.planFile ? 'تعديل الخطة' : 'كتابة الخطة' }}
+            <button type="button" (click)="openFileDialog()"
+              class="px-3.5 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md transition-all">
+              📤 رفع ملف أو لينك
             </button>
           }
         </div>
 
-        @if (cur.planFile) {
-          <div class="flex flex-wrap items-center gap-2 text-xs">
-            <span class="font-bold text-slate-500">ملف الخطة:</span>
-            <app-teaching-files [files]="[cur.planFile]" />
+        @if (kindTabs().length > 1) {
+          <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="نوع الملفات">
+            <button type="button" role="tab" [attr.aria-selected]="fileKind() === null" (click)="selectKind(null)"
+              [class]="fileKind() === null ? 'bg-primary-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+              class="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors">
+              الكل ({{ cur.fileCount }})
+            </button>
+            @for (tab of kindTabs(); track tab.id) {
+              <button type="button" role="tab" [attr.aria-selected]="fileKind() === tab.id" (click)="selectKind(tab.id)"
+                [class]="fileKind() === tab.id ? 'bg-primary-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                class="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors">
+                {{ tab.icon }} {{ tab.label }} ({{ tab.count }})
+              </button>
+            }
           </div>
         }
 
-        @if (cur.plan.length) {
-          <ol class="space-y-2.5">
-            @for (w of cur.plan; track w.id) {
-              <li class="rounded-xl border border-slate-100 bg-slate-50/50 p-3 space-y-1.5">
-                <div class="flex items-start gap-2">
-                  <span class="shrink-0 text-[10px] font-black text-primary-800 bg-primary-50 px-2 py-0.5 rounded-full mt-0.5">الأسبوع {{ w.week }}</span>
-                  <p class="text-sm font-bold text-slate-800">{{ w.topic }}</p>
-                </div>
-                @if (w.objectives.length) {
-                  <ul class="ps-4 space-y-0.5 list-disc marker:text-primary-400">
-                    @for (o of w.objectives; track $index) {
-                      <li class="text-xs text-slate-600">{{ o }}</li>
-                    }
-                  </ul>
-                }
-              </li>
-            }
-          </ol>
-        } @else if (!cur.planFile) {
-          <p class="text-sm text-slate-400 text-center py-4">
-            {{ scope.isTeacher() ? 'لسه مكتبتش خطة المنهج والأهداف. اكتبها أسبوع بأسبوع أو ارفع ملف الخطة.' : 'المعلم لسه مكتبش خطة المنهج.' }}
+        @if (filesError()) {
+          <p class="px-4 py-2.5 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3" role="alert">
+            <span>{{ filesError() }}</span>
+            <button (click)="loadFiles()" type="button" class="font-bold underline">إعادة المحاولة</button>
           </p>
         }
+
+        <ul class="space-y-2" [class.opacity-60]="loadingFiles()" [attr.aria-busy]="loadingFiles()">
+          @for (f of files()?.files ?? []; track f.id) {
+            @let kind = kindOf(f.kind);
+            <li class="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+              <div class="flex-1 min-w-0 space-y-1">
+                <p class="text-sm font-bold text-slate-800 flex flex-wrap items-center gap-2">
+                  {{ f.title }}
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">{{ kind?.icon }} {{ kind?.label }}</span>
+                  @if (!f.forStudents) {
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">ليك انت بس</span>
+                  }
+                </p>
+                @if (f.file; as stored) {
+                  <button type="button" (click)="download(f)"
+                    class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 hover:text-primary-700 hover:border-primary-200">
+                    <span aria-hidden="true">⬇</span>
+                    <span class="truncate">{{ stored.name }}</span>
+                    <span class="text-slate-400 shrink-0">{{ sizeOf(stored.size) }}</span>
+                  </button>
+                }
+                @if (f.link) {
+                  <a [href]="f.link" target="_blank" rel="noopener"
+                    class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-semibold text-primary-700 hover:underline">
+                    <span aria-hidden="true">🔗</span>
+                    <span class="truncate" dir="ltr">{{ f.link }}</span>
+                  </a>
+                }
+              </div>
+              <div class="flex items-center gap-2 text-xs shrink-0">
+                @if (scope.isTeacher() && isPendingDelete('file', f.id)) {
+                  <button type="button" (click)="confirmDelete()" [disabled]="saving()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold disabled:opacity-60">تأكيد الحذف</button>
+                  <button type="button" (click)="pendingDelete.set(null)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">إلغاء</button>
+                } @else {
+                  <span class="text-[11px] text-slate-400">{{ f.uploadedAt | timeAgo }}</span>
+                  @if (scope.isTeacher()) {
+                    <button type="button" (click)="pendingDelete.set({ type: 'file', id: f.id })" class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold">حذف</button>
+                  }
+                }
+              </div>
+            </li>
+          } @empty {
+            @if (!loadingFiles()) {
+              <li class="text-center py-8 space-y-2 list-none">
+                <p class="text-3xl" aria-hidden="true">📚</p>
+                <p class="text-sm text-slate-400">
+                  @if (scope.isTeacher()) {
+                    لسه مرفعتش حاجة للمنهج ده. ارفع كتاب الوزارة وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات.
+                  } @else {
+                    مفيش ملفات منهج متاحة لسه.
+                  }
+                </p>
+              </li>
+            } @else {
+              <li class="text-center py-8 text-sm text-slate-400 list-none">جاري التحميل...</li>
+            }
+          }
+        </ul>
+
+        @if (files(); as page) {
+          <app-pagination [page]="page.meta.page" [pageSize]="page.meta.limit" [total]="page.meta.total" itemLabel="ملف"
+            [pageSizeOptions]="pageSizeOptions" [disabled]="loadingFiles()"
+            (pageChange)="goToFilesPage($event)" (pageSizeChange)="changeFilesPageSize($event)" />
+        }
       </section>
+
+      <!-- The plan & objectives: the teacher's and the administration's only -->
+      @if (showPlan()) {
+        <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-soft border border-slate-100 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="font-black text-slate-800">خطة المنهج والأهداف</h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">للمعلم والإدارة بس</span>
+            </div>
+            @if (scope.isTeacher()) {
+              <button type="button" (click)="openPlanDialog()"
+                class="px-3.5 py-2 rounded-xl border border-primary-200 text-primary-800 hover:bg-primary-50 font-bold text-xs transition-colors">
+                ✎ {{ cur.plan.length || cur.planFile ? 'تعديل الخطة' : 'كتابة الخطة' }}
+              </button>
+            }
+          </div>
+
+          @if (cur.planFile; as planFile) {
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="font-bold text-slate-500">ملف الخطة:</span>
+              <button type="button" (click)="downloadPlanFile()"
+                class="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 hover:text-primary-700 hover:border-primary-200">
+                <span aria-hidden="true">⬇</span>
+                <span class="truncate">{{ planFile.name }}</span>
+                <span class="text-slate-400 shrink-0">{{ sizeOf(planFile.size) }}</span>
+              </button>
+            </div>
+          }
+
+          @if (cur.plan.length) {
+            <ol class="space-y-2.5">
+              @for (w of cur.plan; track w.id) {
+                <li class="rounded-xl border border-slate-100 bg-slate-50/50 p-3 space-y-1.5">
+                  <div class="flex items-start gap-2">
+                    <span class="shrink-0 text-[10px] font-black text-primary-800 bg-primary-50 px-2 py-0.5 rounded-full mt-0.5">الأسبوع {{ w.week }}</span>
+                    <p class="text-sm font-bold text-slate-800">{{ w.topic }}</p>
+                  </div>
+                  @if (w.objectives.length) {
+                    <ul class="ps-4 space-y-0.5 list-disc marker:text-primary-400">
+                      @for (o of w.objectives; track $index) {
+                        <li class="text-xs text-slate-600">{{ o }}</li>
+                      }
+                    </ul>
+                  }
+                </li>
+              }
+            </ol>
+          } @else if (!cur.planFile) {
+            <p class="text-sm text-slate-400 text-center py-4">
+              {{ scope.isTeacher() ? 'لسه مكتبتش خطة المنهج والأهداف. اكتبها أسبوع بأسبوع أو ارفع ملف الخطة.' : 'المعلم لسه مكتبش خطة المنهج.' }}
+            </p>
+          }
+        </section>
+      }
+    } @else if (loadingDetail()) {
+      <p class="text-center py-10 text-sm text-slate-400">جاري فتح المنهج...</p>
     }
   } @else {
-    <!-- ================= All curricula ================= -->
+    <!-- ================= All curricula (paged) ================= -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h2 class="text-2xl font-black text-slate-800 tracking-tight">المناهج والمواد الدراسية</h2>
@@ -177,12 +235,25 @@
           </svg>
           <span>منهج مادة جديد</span>
         </button>
+      } @else if (showSearch()) {
+        <label class="sm:w-72">
+          <span class="sr-only">بحث في المناهج</span>
+          <input type="search" [value]="search()" (input)="onSearch($any($event.target).value)"
+            placeholder="ابحث بالمادة أو اسم المعلم"
+            class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" />
+        </label>
       }
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+    @if (listError()) {
+      <p class="px-4 py-3 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3" role="alert">
+        <span>{{ listError() }}</span>
+        <button (click)="loadList()" type="button" class="font-bold underline">إعادة المحاولة</button>
+      </p>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5" [class.opacity-60]="loadingList()" [attr.aria-busy]="loadingList()">
       @for (cur of curricula(); track cur.id) {
-        @let kinds = kindsOf(cur);
         <button type="button" (click)="open(cur.id)"
           class="text-right bg-white rounded-2xl p-5 shadow-soft border border-slate-100 hover:border-primary-200 hover:shadow-md transition-all flex flex-col gap-4">
           <div class="flex items-start justify-between gap-2 w-full">
@@ -190,15 +261,15 @@
               <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-block mb-1 bg-primary-50 text-primary-700">{{ gradeLabel(cur.gradeId) }}</span>
               <h3 class="text-base font-black text-slate-800">{{ cur.subject }}</h3>
               <p class="text-xs text-slate-400">فصل {{ sectionsLabel(cur.sections) }}</p>
-              @if (!scope.isTeacher() && !scope.isStudent() && teacherName(cur.teacherId)) {
-                <p class="text-[11px] text-slate-500 mt-0.5">{{ teacherName(cur.teacherId) }}</p>
+              @if (showSearch() && cur.teacherName) {
+                <p class="text-[11px] text-slate-500 mt-0.5">{{ cur.teacherName }}</p>
               }
             </div>
             <span class="text-2xl" aria-hidden="true">📚</span>
           </div>
 
           <div class="w-full flex flex-wrap gap-1.5">
-            @for (kind of kinds; track kind.id) {
+            @for (kind of kindsOf(cur); track kind.id) {
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ kind.icon }} {{ kind.label }}</span>
             } @empty {
               <span class="text-[11px] text-slate-400">لسه مفيش ملفات</span>
@@ -206,7 +277,7 @@
           </div>
 
           <div class="w-full pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span class="text-slate-500">{{ cur.files.length }} ملف · {{ cur.updatedAt | timeAgo }}</span>
+            <span class="text-slate-500">{{ cur.fileCount }} ملف · {{ cur.updatedAt | timeAgo }}</span>
             <span class="font-bold text-primary-700">فتح المنهج ←</span>
           </div>
         </button>
@@ -222,9 +293,11 @@
         </button>
       }
 
-      @if (!curricula().length && !subjectsWithoutCurriculum().length) {
+      @if (list() && !curricula().length && !subjectsWithoutCurriculum().length) {
         <div class="col-span-full text-center py-10 text-slate-400 text-sm">
-          @if (scope.isTeacher()) {
+          @if (search().trim()) {
+            مفيش مناهج تطابق البحث.
+          } @else if (scope.isTeacher()) {
             اضغط "منهج مادة جديد" عشان تبدأ.
           } @else if (scope.isStudent()) {
             مدرسين فصلك لسه منزلوش المناهج.
@@ -232,18 +305,27 @@
             المعلمين لسه منزلوش مناهج.
           }
         </div>
+      } @else if (!list() && loadingList()) {
+        <div class="col-span-full text-center py-10 text-slate-400 text-sm">جاري تحميل المناهج...</div>
       }
     </div>
+
+    @if (list(); as l) {
+      <app-pagination [page]="l.meta.page" [pageSize]="l.meta.limit" [total]="l.meta.total" itemLabel="منهج"
+        [pageSizeOptions]="pageSizeOptions" [disabled]="loadingList()"
+        (pageChange)="goToPage($event)" (pageSizeChange)="changePageSize($event)" />
+    }
   }
 </div>
 
 @if (formOpen()) {
-  <app-curriculum-form-dialog [curriculum]="editingCurriculum()" [subject]="presetSubject()"
+  <app-curriculum-form-dialog [curriculum]="editingCurriculum()" [subject]="presetSubject()" [saving]="saving()" [serverError]="saveError()"
     (saved)="saveCurriculum($event)" (closed)="formOpen.set(false)" />
 }
 @if (fileDialogOpen()) {
-  <app-curriculum-file-dialog (saved)="addFile($event)" (closed)="fileDialogOpen.set(false)" />
+  <app-curriculum-file-dialog [saving]="saving()" [serverError]="saveError()" (saved)="addFile($event)" (closed)="fileDialogOpen.set(false)" />
 }
 @if (planDialogOpen() && selected(); as cur) {
-  <app-curriculum-plan-dialog [curriculum]="cur" (saved)="savePlan($event)" (closed)="planDialogOpen.set(false)" />
+  <app-curriculum-plan-dialog [curriculum]="cur" [saving]="saving()" [serverError]="saveError()"
+    (saved)="savePlan($event)" (closed)="planDialogOpen.set(false)" />
 }

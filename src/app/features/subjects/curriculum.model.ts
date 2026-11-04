@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { TeachingFile } from '../teaching/teaching.model';
 
@@ -19,7 +20,7 @@ export interface CurriculumFile {
   id: string;
   kind: CurriculumFileKind;
   title: string;
-  // An uploaded file, or a link (the ministry's site, Drive...) - one of the two
+  // An uploaded file (kept on the server, downloaded through the API), or a link - one of the two
   file?: TeachingFile;
   link?: string;
   // false = the teacher's own reference (e.g. the teacher's guide), hidden from students
@@ -39,20 +40,47 @@ export interface CurriculumPlanWeek {
   objectives: string[];
 }
 
-export interface Curriculum {
+/** A curriculum as listed (the cards): its files are counted, not loaded. */
+export interface CurriculumSummary {
   id: string;
   teacherId: string;
+  teacherName: string;
   subject: string;
   // GRADE_LEVELS id, e.g. "G3"
   gradeId: string;
   // The teacher's classes in that grade that follow this curriculum
   sections: string[];
   description: string;
-  files: CurriculumFile[];
+  updatedAt: string;
+  fileCount: number;
+  // The kinds it has files for, in the CURRICULUM_FILE_KINDS order
+  kinds: CurriculumFileKind[];
+  latestFile: { title: string; uploadedAt: string } | null;
+}
+
+/** One curriculum opened: its plan and how many files of each kind (the files themselves are paged). */
+export interface Curriculum extends CurriculumSummary {
+  fileCounts: Partial<Record<CurriculumFileKind, number>>;
   // The plan & objectives: written week by week, and/or the teacher's own plan document
   plan: CurriculumPlanWeek[];
-  planFile?: TeachingFile;
-  updatedAt: string;
+  planFile: TeachingFile | null;
+}
+
+/** What the teacher fills in to start or edit a curriculum. */
+export interface CurriculumDraft {
+  subject: string;
+  gradeId: string;
+  sections: string[];
+  description: string;
+}
+
+/** A file or link the teacher adds to a curriculum. */
+export interface NewCurriculumFile {
+  kind: CurriculumFileKind;
+  title: string;
+  forStudents: boolean;
+  file?: File;
+  link?: string;
 }
 
 export function gradeLabel(gradeId: string): string {
@@ -64,12 +92,21 @@ export function gradeOfSection(section: string): string {
   return GRADE_LEVELS.find(grade => grade.sections.includes(section))?.id ?? '';
 }
 
-/** The kinds a curriculum has files for, in the CURRICULUM_FILE_KINDS order (e.g. for the card's icons). */
-export function curriculumKinds(curriculum: Curriculum): typeof CURRICULUM_FILE_KINDS {
-  return CURRICULUM_FILE_KINDS.filter(kind => curriculum.files.some(f => f.kind === kind.id));
+/** The kinds a curriculum has files for (e.g. for the card's icons). */
+export function curriculumKinds(curriculum: CurriculumSummary): typeof CURRICULUM_FILE_KINDS {
+  return CURRICULUM_FILE_KINDS.filter(kind => curriculum.kinds.includes(kind.id));
 }
 
 /** The most recently uploaded file of a curriculum. */
-export function latestCurriculumFile(curriculum: Curriculum): CurriculumFile | null {
-  return [...curriculum.files].sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt))[0] ?? null;
+export function latestCurriculumFile(curriculum: CurriculumSummary): CurriculumSummary['latestFile'] {
+  return curriculum.latestFile;
+}
+
+/** The server's message when it sent one, otherwise the fallback. */
+export function curriculumErrorMessage(err: unknown, fallback: string): string {
+  if (!(err instanceof HttpErrorResponse)) return fallback;
+  if (err.status === 0) return 'تعذر الاتصال بالخادم. تأكد إن الباك إند شغال وحاول مرة أخرى.';
+  const message = err.error?.message;
+  // Field errors (422) are in English; the form already says what's missing
+  return typeof message === 'string' && err.status !== 422 ? message : fallback;
 }

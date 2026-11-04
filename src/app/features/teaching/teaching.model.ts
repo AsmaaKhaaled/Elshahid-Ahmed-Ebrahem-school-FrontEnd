@@ -4,8 +4,10 @@ export interface TeachingFile {
   name: string;
   size: number;
   // Object URL of the picked file (valid for this session only, until the backend stores files).
-  // Empty for the demo data.
+  // Empty for the demo data and for files kept on the server (downloaded through the API).
   url: string;
+  // The picked file itself, for pages that upload it to the server
+  blob?: File;
 }
 
 export const MAX_FILE_MB = 20;
@@ -25,7 +27,7 @@ export function readPickedFiles(event: Event): { files: TeachingFile[]; error: s
   const tooBig = picked.filter(file => !media.includes(file) && file.size > MAX_FILE_MB * 1024 * 1024);
   const files = picked
     .filter(file => !media.includes(file) && !tooBig.includes(file))
-    .map(file => ({ name: file.name, size: file.size, url: URL.createObjectURL(file) }));
+    .map(file => ({ name: file.name, size: file.size, url: URL.createObjectURL(file), blob: file }));
   const errors = [
     media.length ? `${VIDEO_UPLOAD_SOON}: ${media.map(f => f.name).join('، ')}` : '',
     tooBig.length ? `حجم الملف أكبر من ${MAX_FILE_MB} ميجا: ${tooBig.map(f => f.name).join('، ')}` : ''

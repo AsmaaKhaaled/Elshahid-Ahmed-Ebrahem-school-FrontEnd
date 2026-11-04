@@ -47,6 +47,10 @@ export class PlatformActivityStore {
   private readonly teachingStore = inject(TeachingStore);
   private readonly curriculumStore = inject(CurriculumStore);
 
+  constructor() {
+    this.curriculumStore.ensureLoaded();
+  }
+
   // teacherId -> last time seen on the platform (missing = never logged in)
   readonly teacherLastSeen = signal<Record<string, string>>({
     '1': ago(2 * MIN),
@@ -108,10 +112,11 @@ export class PlatformActivityStore {
           `${q.title} — فصل ${sectionsLabel(q.sections)}`, q.teacherId, q.publishedAt
         )
       ),
-      ...this.curriculumStore.curricula().flatMap(c =>
-        c.files.map(f =>
-          teacherEvent(`curriculum-file-${f.id}`, 'curriculum', f.link ? 'إضافة لينك منهج' : 'رفع ملف منهج', `${f.title} — منهج ${c.subject}`, c.teacherId, f.uploadedAt)
-        )
+      // Each curriculum's latest file (the files themselves are paged on the curricula page)
+      ...this.curriculumStore.recent().flatMap(c =>
+        c.latestFile
+          ? [teacherEvent(`curriculum-${c.id}`, 'curriculum', 'إضافة لملفات المنهج', `${c.latestFile.title} — منهج ${c.subject}`, c.teacherId, c.latestFile.uploadedAt)]
+          : []
       )
     ];
 
@@ -135,7 +140,7 @@ export class PlatformActivityStore {
   readonly teacherContentCounts = computed(() => {
     const counts: Record<string, { curricula: number; materials: number; assignments: number; quizzes: number }> = {};
     const of = (id: string) => (counts[id] ??= { curricula: 0, materials: 0, assignments: 0, quizzes: 0 });
-    this.curriculumStore.curricula().forEach(c => of(c.teacherId).curricula++);
+    this.curriculumStore.recent().forEach(c => of(c.teacherId).curricula++);
     this.teachingStore.materials().forEach(m => of(m.teacherId).materials++);
     this.assignmentsStore.assignments().forEach(a => of(a.teacherId).assignments++);
     this.teachingStore.quizzes().forEach(q => of(q.teacherId).quizzes++);
