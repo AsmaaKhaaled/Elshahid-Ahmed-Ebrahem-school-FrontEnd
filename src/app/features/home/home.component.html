@@ -523,7 +523,7 @@
 
         <!-- Announcements List -->
         <div class="space-y-3">
-          @for (item of notices; track item.title) {
+          @for (item of homeNotices(); track item.title) {
           <div
             class="flex items-start gap-3 p-3 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
             <!-- Date Badge -->

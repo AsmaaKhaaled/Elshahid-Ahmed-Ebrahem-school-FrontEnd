@@ -12,7 +12,7 @@ export interface AnnouncementItemDto {
   id: string;
   title: string;
   content: string;
-  category: 'عاجل وهام' | 'إداري' | 'أولياء الأمور' | 'أنشطة وفعاليات';
+  category: 'عاجل وهام' | 'إداري' | 'الزوار' | 'أنشطة وفعاليات';
   audiences: Array<'TEACHER' | 'STUDENT' | 'PARENT'>;
   author: string;
   publishedAt: string;
@@ -140,3 +140,4 @@ export class AnnouncementsService {
     return this.http.delete<{ status: string; message?: string }>(`${this.baseUrl}/${id}`);
   }
 }
+

@@ -12,7 +12,7 @@ export type Audience = 'TEACHER' | 'STUDENT' | 'PARENT';
 export const AUDIENCES: { id: Audience; label: string }[] = [
   { id: 'TEACHER', label: 'المعلمون' },
   { id: 'STUDENT', label: 'الطلاب' },
-  { id: 'PARENT', label: 'أولياء الأمور' }
+  { id: 'PARENT', label: 'الزوار' }
 ];
 
 export interface Attachment {
@@ -97,8 +97,8 @@ const INITIAL_FALLBACK_ANNOUNCEMENTS: Announcement[] = [
   },
   {
     id: 'anc-3',
-    title: 'الجمعية العمومية لمجلس الآباء والمعلمين',
-    content: 'تتشرف إدارة المدرسة بدعوة السادة أولياء الأمور الكرام لحضور الجمعية العمومية لمجلس الآباء والمعلمين لمناقشة الخطة الأكاديمية للعام الدراسي.',
+    title: 'الجمعية العمومية ومواعيد استقبال الزوار',
+    content: 'تتشرف إدارة المدرسة بدعوة السادة الزوار الكرام للاطلاع على الأنشطة المدرسية والفعاليات المفتوحة لمناقشة الخطة الأكاديمية للعام الدراسي.',
     category: 'الزوار',
     audiences: ['TEACHER', 'PARENT'],
     author: 'مكتب الأخصائي الاجتماعي',
@@ -166,17 +166,21 @@ export class AnnouncementsStore {
         };
 
         this.addAnnouncement(newAnnouncement);
-        this.unreadCount.update(c => c + 1);
-        playChimeSound();
 
-        // Show floating toast alert
-        clearTimeout(this.toastTimeout);
-        this.latestToast.set({
-          title: newAnnouncement.title,
-          content: newAnnouncement.content,
-          category: newAnnouncement.category
-        });
-        this.toastTimeout = setTimeout(() => this.latestToast.set(null), 6000);
+        // Visitors have NO notifications (no chime, no unread count, no floating toast)
+        if (this.authService.isAuthenticated()) {
+          this.unreadCount.update(c => c + 1);
+          playChimeSound();
+
+          // Show floating toast alert for authenticated users
+          clearTimeout(this.toastTimeout);
+          this.latestToast.set({
+            title: newAnnouncement.title,
+            content: newAnnouncement.content,
+            category: newAnnouncement.category
+          });
+          this.toastTimeout = setTimeout(() => this.latestToast.set(null), 6000);
+        }
       });
     } catch {
       // Non-blocking socket listener
@@ -185,20 +189,25 @@ export class AnnouncementsStore {
 
   readonly isAdmin = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(this.authService.userRole() ?? ''));
 
-  // Admins see everything; others only see active announcements addressed to their role
+  // Admins see everything; others only see active announcements addressed to their role.
+  // Visitors (unauthenticated) only see announcements on the public Home page addressed to 'PARENT' (الزوار) or everyone.
   readonly visible = computed(() => {
     const role = this.authService.userRole();
+    const isAuth = this.authService.isAuthenticated();
     const list = this.isAdmin()
       ? this.announcements()
       : this.announcements().filter(a => {
           if (isExpired(a)) return false;
+          if (!isAuth) {
+            return a.audiences.includes('PARENT') || a.audiences.length === AUDIENCES.length;
+          }
           if (!role) return true;
           return a.audiences.includes(role as Audience) || a.audiences.length === AUDIENCES.length;
         });
     return [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.publishedAt.localeCompare(a.publishedAt));
   });
 
-  // Latest active announcements for the navbar bell
+  // Latest active announcements for the navbar bell (authenticated users only)
   readonly latest = computed(() =>
     this.visible()
       .filter(a => !isExpired(a))
