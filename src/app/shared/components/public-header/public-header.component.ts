@@ -3,13 +3,14 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../../core/constants/school.constants';
-import { AUDIENCES, AnnouncementsStore, isExpired } from '../../../features/announcements/announcements.store';
+import { Announcement, AUDIENCES, AnnouncementsStore, isExpired, announcementsPath } from '../../../features/announcements/announcements.store';
 import { getArabicTwoPartName, getArabicInitial } from '../../../core/utils/arabic-name.util';
+import { TimeAgoPipe } from '../../pipes/time-ago.pipe';
 
 @Component({
   selector: 'app-public-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, TimeAgoPipe],
   templateUrl: './public-header.component.html',
   styleUrl: './public-header.component.css',
   host: {
@@ -23,6 +24,11 @@ export class PublicHeaderComponent {
   private readonly router = inject(Router);
   private readonly announcementsStore = inject(AnnouncementsStore);
 
+  readonly unreadCount = this.announcementsStore.unreadCount;
+  readonly latestAnnouncements = this.announcementsStore.latest;
+  readonly announcementsLink = computed(() => announcementsPath(this.authService.userRole()));
+  readonly isNotificationsOpen = signal<boolean>(false);
+
   /**
    * The top-bar ticker: active announcements addressed to everyone (it's a public page),
    * pinned first. Comes from the announcements store, so it follows the API once that's wired.
@@ -30,7 +36,7 @@ export class PublicHeaderComponent {
   readonly tickerItems = computed(() =>
     this.announcementsStore.announcements()
       .filter(a => !isExpired(a) && a.audiences.length === AUDIENCES.length)
-      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.publishedAt.localeCompare(a.publishedAt))
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || (b.publishedAt || '').localeCompare(a.publishedAt || ''))
       .slice(0, 5)
   );
 
@@ -91,6 +97,22 @@ export class PublicHeaderComponent {
     }
   });
 
+  toggleNotifications(): void {
+    this.isNotificationsOpen.update(v => !v);
+    if (this.isNotificationsOpen()) {
+      this.isUserMenuOpen.set(false);
+    }
+  }
+
+  onNotificationClick(item: Announcement): void {
+    this.isNotificationsOpen.set(false);
+    this.announcementsStore.markAsRead(item.id);
+  }
+
+  markAllAsRead(): void {
+    this.announcementsStore.markAllAsRead();
+  }
+
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(v => !v);
   }
@@ -101,6 +123,9 @@ export class PublicHeaderComponent {
 
   toggleUserMenu(): void {
     this.isUserMenuOpen.update(v => !v);
+    if (this.isUserMenuOpen()) {
+      this.isNotificationsOpen.set(false);
+    }
   }
 
   closeUserMenu(): void {
@@ -118,6 +143,7 @@ export class PublicHeaderComponent {
 
   logout(): void {
     this.isUserMenuOpen.set(false);
+    this.isNotificationsOpen.set(false);
     this.authService.logout();
   }
 }
