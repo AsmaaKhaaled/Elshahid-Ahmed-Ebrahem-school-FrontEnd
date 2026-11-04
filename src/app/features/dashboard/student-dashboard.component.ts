@@ -5,7 +5,6 @@ import { AuthService } from '../../core/auth/auth.service';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
-import { AnnouncementsStore } from '../announcements/announcements.store';
 import { AssignmentsStore } from '../assignments/assignments.store';
 import { curriculumKinds, latestCurriculumFile } from '../subjects/curriculum.model';
 import { CurriculumStore } from '../subjects/curriculum.store';
@@ -39,7 +38,6 @@ export class StudentDashboardComponent {
   private readonly assignmentsStore = inject(AssignmentsStore);
   private readonly teachingStore = inject(TeachingStore);
   private readonly curriculumStore = inject(CurriculumStore);
-  readonly latestAnnouncements = inject(AnnouncementsStore).latest;
   readonly currentTerm = inject(AcademicCalendarStore).currentTerm;
 
   readonly school = SCHOOL_INFO;

@@ -10,7 +10,7 @@ export type Audience = 'TEACHER' | 'STUDENT' | 'PARENT';
 export const AUDIENCES: { id: Audience; label: string }[] = [
   { id: 'TEACHER', label: 'المعلمون' },
   { id: 'STUDENT', label: 'الطلاب' },
-  { id: 'PARENT', label: 'أولياء الأمور' }
+  { id: 'PARENT', label: 'الزوار' }
 ];
 
 export interface Attachment {
@@ -100,11 +100,11 @@ export class AnnouncementsStore {
   readonly visible = computed(() => {
     const role = this.authService.userRole();
     const list = this.isAdmin()
-      ? this.announcements(): this.announcements().filter(a => {
-          if (isExpired(a)) return false;
-          if (!role) return true;
-          return a.audiences.includes(role as Audience) || a.audiences.length === AUDIENCES.length;
-        });
+      ? this.announcements() : this.announcements().filter(a => {
+        if (isExpired(a)) return false;
+        if (!role) return true;
+        return a.audiences.includes(role as Audience) || a.audiences.length === AUDIENCES.length;
+      });
     return [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.publishedAt.localeCompare(a.publishedAt));
   });
 
@@ -137,12 +137,10 @@ export class AnnouncementsStore {
 
 export function announcementsPath(role: UserRole | null): string {
   switch (role) {
-    case 'TEACHER':
-      return '/teacher/announcements';
-    case 'STUDENT':
-    case 'PARENT':
-      return '/student/announcements';
-    default:
+    case 'ADMIN':
+    case 'SUPER_ADMIN':
       return '/admin/announcements';
+    default:
+      return '/announcements';
   }
 }

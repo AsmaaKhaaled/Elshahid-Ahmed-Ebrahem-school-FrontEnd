@@ -95,7 +95,7 @@ export const routes: Routes = [
       { path: 'exams', loadComponent: () => import('./features/exams/exams.component').then(m => m.ExamsComponent) },
       { path: 'attendance', loadComponent: () => import('./features/attendance/attendance.component').then(m => m.AttendanceComponent) },
       { path: 'grades', loadComponent: () => import('./features/grades/grades.component').then(m => m.GradesComponent) },
-      { path: 'announcements', loadComponent: () => import('./features/announcements/announcements.component').then(m => m.AnnouncementsComponent) },
+      { path: 'announcements', redirectTo: '/announcements', pathMatch: 'full' },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
@@ -116,7 +116,7 @@ export const routes: Routes = [
       { path: 'exams', loadComponent: () => import('./features/exams/exams.component').then(m => m.ExamsComponent) },
       { path: 'attendance', loadComponent: () => import('./features/attendance/attendance.component').then(m => m.AttendanceComponent) },
       { path: 'grades', loadComponent: () => import('./features/grades/grades.component').then(m => m.GradesComponent) },
-      { path: 'announcements', loadComponent: () => import('./features/announcements/announcements.component').then(m => m.AnnouncementsComponent) },
+      { path: 'announcements', redirectTo: '/announcements', pathMatch: 'full' },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
