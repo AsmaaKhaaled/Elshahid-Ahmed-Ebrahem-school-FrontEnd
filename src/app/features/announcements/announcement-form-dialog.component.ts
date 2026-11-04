@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, OnInit, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { today } from '../../core/academic/academic-calendar.store';
+import { AnnouncementsService, CreateAnnouncementPayload } from '../../core/services/announcements.service';
 import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
-import { ANNOUNCEMENT_CATEGORIES, AUDIENCES, Announcement, AnnouncementCategory, Attachment } from './announcements.store';
+import { ANNOUNCEMENT_CATEGORIES, AUDIENCES, Announcement, AnnouncementCategory, AnnouncementsStore, Attachment } from './announcements.store';
 
 const MAX_ATTACHMENT_MB = 10;
 
@@ -25,11 +27,15 @@ export class AnnouncementFormDialogComponent implements OnInit {
   readonly saved = output<Announcement>();
   readonly closed = output<void>();
 
+  private readonly announcementsService = inject(AnnouncementsService);
+  private readonly store = inject(AnnouncementsStore);
+
   readonly categories = ANNOUNCEMENT_CATEGORIES;
   readonly audiences = AUDIENCES;
   readonly minDate = today();
   readonly fileError = signal('');
-  // Locked from the click until the page closes the dialog
+  readonly isSaving = signal(false);
+  readonly errorMessage = signal<string | null>(null);
   readonly lock = submitLock();
 
   draft: Omit<Announcement, 'expiresAt'> & { expiresAt: string } = {
@@ -72,22 +78,50 @@ export class AnnouncementFormDialogComponent implements OnInit {
   }
 
   save(form: NgForm): void {
-    if (this.lock.busy()) return;
+    if (this.isSaving()) return;
     if (form.invalid) {
       form.control.markAllAsTouched();
       return;
     }
+
     const { expiresAt, ...rest } = this.draft;
-    this.lock.run(() =>
-      this.saved.emit({
-        ...rest,
-        title: rest.title.trim(),
-        content: rest.content.trim(),
-        author: rest.author.trim(),
-        expiresAt: expiresAt || undefined,
-        id: rest.id || crypto.randomUUID(),
-        publishedAt: rest.publishedAt || new Date().toISOString()
-      })
-    );
+    const payload: CreateAnnouncementPayload = {
+      title: rest.title.trim(),
+      category: rest.category,
+      audiences: rest.audiences,
+      content: rest.content.trim(),
+      author: rest.author.trim(),
+      expiresAt: expiresAt || undefined,
+      pinned: rest.pinned,
+      attachment: rest.attachment
+    };
+
+    this.isSaving.set(true);
+    this.errorMessage.set(null);
+
+    const isUpdate = !!rest.id && !rest.id.startsWith('anc-');
+    const request$ = isUpdate
+      ? this.announcementsService.update(rest.id, payload)
+      : this.announcementsService.create(payload);
+
+    request$.subscribe({
+      next: res => {
+        this.isSaving.set(false);
+        const savedAnnouncement: Announcement = (res.data || {
+          ...payload,
+          id: rest.id || crypto.randomUUID(),
+          publishedAt: rest.publishedAt || new Date().toISOString(),
+          isRead: true
+        }) as Announcement;
+
+        this.store.addAnnouncement(savedAnnouncement);
+        this.saved.emit(savedAnnouncement);
+        this.closed.emit();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isSaving.set(false);
+        this.errorMessage.set(err?.error?.message || 'تعذر نشر الإعلان، يرجى التحقق من الاتصال والمحاولة لاحقاً.');
+      }
+    });
   }
 }

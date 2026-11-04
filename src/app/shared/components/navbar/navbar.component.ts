@@ -6,7 +6,7 @@ import { AcademicCalendarStore } from '../../../core/academic/academic-calendar.
 import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
 import { TimeAgoPipe, arabicCount } from '../../pipes/time-ago.pipe';
-import { AnnouncementsStore, announcementsPath } from '../../../features/announcements/announcements.store';
+import { Announcement, AnnouncementsStore, announcementsPath } from '../../../features/announcements/announcements.store';
 import { AccountSettingsDialogComponent } from '../account-settings-dialog/account-settings-dialog.component';
 import { SidebarDrawer } from '../sidebar/sidebar-drawer.service';
 import { getArabicTwoPartName } from '../../../core/utils/arabic-name.util';
@@ -32,10 +32,8 @@ export class NavbarComponent {
 
   private readonly announcementsStore = inject(AnnouncementsStore);
   readonly latestAnnouncements = this.announcementsStore.latest;
-  // "New" = published within the last 3 days
-  readonly newAnnouncementsCount = computed(() =>
-    this.latestAnnouncements().filter(a => Date.now() - Date.parse(a.publishedAt) < 3 * 86400000).length
-  );
+  readonly unreadCount = this.announcementsStore.unreadCount;
+  readonly latestToast = this.announcementsStore.latestToast;
   readonly announcementsLink = computed(() => announcementsPath(this.authService.userRole()));
 
   daysText(days: number): string {
@@ -83,6 +81,19 @@ export class NavbarComponent {
     }
   }
 
+  onNotificationClick(item: Announcement): void {
+    this.isNotificationsOpen.set(false);
+    this.announcementsStore.markAsRead(item.id);
+  }
+
+  markAllAsRead(): void {
+    this.announcementsStore.markAllAsRead();
+  }
+
+  dismissToast(): void {
+    this.announcementsStore.dismissToast();
+  }
+
   readonly userTwoPartName = computed(() => getArabicTwoPartName(this.authService.userName()));
 
   // Initials of the logged-in user's real name, skipping titles like "أ." / "د." / "الأستاذ"
@@ -115,4 +126,3 @@ export class NavbarComponent {
     this.authService.logout();
   }
 }
-

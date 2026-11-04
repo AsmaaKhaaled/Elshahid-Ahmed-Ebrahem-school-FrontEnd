@@ -85,7 +85,13 @@
       <p class="text-xs text-slate-500 mt-1">فرز وبحث الإعلانات المدرسية بحسب التصنيف والجمهور المستهدف</p>
     </div>
 
-    @if (isAdmin()) {
+    @if (unreadCount() > 0 && isAuthenticated()) {
+        <button (click)="markAllAsRead()" type="button"
+          class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
+          <span>✓ تعليم الكل كمقروء</span>
+        </button>
+      }
+      @if (isAdmin()) {
       <button (click)="openForm(null)" type="button"
         class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-xs shadow-md shadow-portal-navy/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,8 +131,8 @@
   <div class="space-y-4">
     @for (item of filteredAnnouncements(); track item.id) {
       @let expired = isExpired(item);
-      <div
-        class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-7 shadow-card border border-slate-200/80 hover:shadow-xl transition-all space-y-3.5 relative overflow-hidden text-right"
+      <div (click)="markAsRead(item)"
+        class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-7 shadow-card border border-slate-200/80 hover:shadow-xl transition-all space-y-3.5 relative overflow-hidden text-right cursor-pointer"
         [class]="item.pinned && !expired ? 'border-r-4 border-r-portal-navy' : ''"
         [class.opacity-60]="expired">
 
@@ -138,6 +144,9 @@
             }
             @if (expired) {
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">منتهي الصلاحية</span>
+            }
+            @if (!item.isRead && !expired && isAuthenticated()) {
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">جديد</span>
             }
             <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" [class]="categoryStyles[item.category]">{{ item.category }}</span>
             <span class="text-xs text-slate-500 font-medium">
