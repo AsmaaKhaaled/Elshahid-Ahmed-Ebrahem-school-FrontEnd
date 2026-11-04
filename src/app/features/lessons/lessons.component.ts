@@ -213,7 +213,7 @@ export class LessonsComponent implements OnInit {
           });
         }
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -225,7 +225,7 @@ export class LessonsComponent implements OnInit {
           this.serverStudentClass.set(res.data.className || null);
         }
       },
-      error: () => {}
+      error: () => { }
     });
   }
 

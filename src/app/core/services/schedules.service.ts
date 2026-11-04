@@ -177,3 +177,4 @@ export class SchedulesService {
     return this.http.get<MyClassScheduleResponse>(`${this.baseUrl}/my-class`, { params });
   }
 }
+
