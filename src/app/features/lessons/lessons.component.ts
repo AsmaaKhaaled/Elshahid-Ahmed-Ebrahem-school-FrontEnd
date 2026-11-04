@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, signal, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, computed, inject, OnInit } from '@angular/core';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { DAILY_PERIODS, SCHOOL_DAYS } from '../../core/constants/school.constants';
+import { SchedulesService, StudentLessonItem } from '../../core/services/schedules.service';
 import { ScheduleSlot, WeeklySchedule, slotKey } from '../teachers/teacher.model';
 import { TeachersStore } from '../teachers/teachers.store';
 import { TeachingScope } from '../teaching/teaching-scope.service';
@@ -46,8 +47,8 @@ function todayIndex(): number {
 
 /**
  * الدروس والجدول المدرسي
- * - Teacher: their own weekly schedule, as the admin set it in هيئة التدريس (same data as the school timetable).
- * - Student: their class's lessons of the day.
+ * - Teacher: their own weekly schedule, as set by admin (loaded via GET /api/v1/schedules/my-schedule).
+ * - Student: their class's weekly schedule (loaded via GET /api/v1/schedules/my-class).
  */
 @Component({
   selector: 'app-lessons',
@@ -56,14 +57,11 @@ function todayIndex(): number {
   templateUrl: './lessons.component.html',
   styleUrl: './lessons.component.css'
 })
-export class LessonsComponent {
+export class LessonsComponent implements OnInit {
   readonly scope = inject(TeachingScope);
   private readonly teachersStore = inject(TeachersStore);
   private readonly calendar = inject(AcademicCalendarStore);
-
-  constructor() {
-    this.scope.ensureLoaded();
-  }
+  private readonly schedulesService = inject(SchedulesService);
 
   readonly days = SCHOOL_DAYS;
   readonly periods = Array.from({ length: DAILY_PERIODS }, (_, i) => i);
@@ -72,8 +70,11 @@ export class LessonsComponent {
 
   // ---- Teacher: own schedule ----
 
+  readonly serverTeacherSchedule = signal<WeeklySchedule | null>(null);
+  readonly serverStats = signal<{ today: number; weekly: number; classes: number } | null>(null);
+
   private readonly assigned = computed<WeeklySchedule>(
-    () => this.teachersStore.schedules()[this.calendar.currentTermId()]?.[this.scope.teacherId()] ?? {}
+    () => this.serverTeacherSchedule() ?? this.teachersStore.schedules()[this.calendar.currentTermId()]?.[this.scope.teacherId()] ?? {}
   );
 
   /** True while the admin hasn't set this teacher's schedule (the demo week is shown). */
@@ -92,21 +93,18 @@ export class LessonsComponent {
   });
 
   readonly weekStats = computed(() => {
+    if (this.serverStats()) {
+      return this.serverStats()!;
+    }
     const slots = Object.values(this.mySchedule());
     const today = this.periods.filter(p => this.mySchedule()[slotKey(this.todayIndex, p)]).length;
     return { weekly: slots.length, classes: new Set(slots.map(s => s.section)).size, today };
   });
 
-  periodsOn(day: number): number {
-    return this.periods.filter(p => this.mySchedule()[slotKey(day, p)]).length;
-  }
+  // ---- Student: class schedule from backend ----
 
-  slotAt(day: number, period: number): ScheduleSlot | null {
-    return this.mySchedule()[slotKey(day, period)] ?? null;
-  }
-
-  // ---- Student: the class's lessons (mock until the class timetable comes from the backend) ----
-
+  readonly serverStudentLessons = signal<StudentLessonItem[] | null>(null);
+  readonly serverStudentClass = signal<string | null>(null);
   readonly selectedDay = signal<string>('الأحد');
 
   readonly lessons = signal<Lesson[]>([
@@ -162,7 +160,80 @@ export class LessonsComponent {
     }
   ]);
 
-  readonly dailyLessons = computed(() => {
+  readonly dailyLessons = computed<Lesson[]>(() => {
+    const serverLessons = this.serverStudentLessons();
+    if (serverLessons && serverLessons.length > 0) {
+      const selectedDayName = this.selectedDay();
+      const filtered = serverLessons.filter(l => l.dayName === selectedDayName);
+      if (filtered.length > 0) {
+        return filtered.map(l => ({
+          id: l.id || `lesson-${l.dayOfWeek}-${l.period}`,
+          day: l.dayName,
+          period: l.period,
+          time: l.time || '08:00 - 08:45 AM',
+          subject: l.subject,
+          teacher: l.teacherName,
+          room: l.room || 'قاعة الفصل',
+          topic: l.topic || `مادة ${l.subject}`
+        }));
+      }
+    }
     return this.lessons().filter(l => l.day === this.selectedDay());
   });
+
+  constructor() {
+    this.scope.ensureLoaded();
+  }
+
+  ngOnInit(): void {
+    if (this.scope.isTeacher()) {
+      this.fetchTeacherSchedule();
+    } else {
+      this.fetchStudentSchedule();
+    }
+  }
+
+  fetchTeacherSchedule(): void {
+    this.schedulesService.getMySchedule(this.calendar.currentTermId()).subscribe({
+      next: res => {
+        const schedule = res.data?.schedule || {};
+        if (Object.keys(schedule).length > 0) {
+          const parsed: WeeklySchedule = {};
+          for (const [key, slot] of Object.entries(schedule)) {
+            parsed[key] = {
+              subject: slot.subject,
+              section: slot.className
+            };
+          }
+          this.serverTeacherSchedule.set(parsed);
+          this.serverStats.set({
+            today: res.data.todayPeriodsCount ?? 0,
+            weekly: res.data.weeklyLoad ?? Object.keys(parsed).length,
+            classes: res.data.classesCount ?? new Set(Object.values(parsed).map(s => s.section)).size
+          });
+        }
+      },
+      error: () => { }
+    });
+  }
+
+  fetchStudentSchedule(): void {
+    this.schedulesService.getMyClassSchedule(this.calendar.currentTermId()).subscribe({
+      next: res => {
+        if (res.data?.schedule?.length) {
+          this.serverStudentLessons.set(res.data.schedule);
+          this.serverStudentClass.set(res.data.className || null);
+        }
+      },
+      error: () => { }
+    });
+  }
+
+  periodsOn(day: number): number {
+    return this.periods.filter(p => this.mySchedule()[slotKey(day, p)]).length;
+  }
+
+  slotAt(day: number, period: number): ScheduleSlot | null {
+    return this.mySchedule()[slotKey(day, period)] ?? null;
+  }
 }

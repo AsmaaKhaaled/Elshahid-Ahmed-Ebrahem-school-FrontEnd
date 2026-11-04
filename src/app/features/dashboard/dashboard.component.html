@@ -383,10 +383,10 @@
       </ul>
     </section>
   } @else {
-    <!-- Teacher: today schedule & recent activity -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Teacher: today schedule -->
+    <div class="space-y-6">
       <!-- Today's Schedule and Periods -->
-      <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-soft border border-slate-100/80 space-y-4">
+      <div class="bg-white rounded-2xl p-6 shadow-soft border border-slate-100/80 space-y-4">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
             <h3 class="font-bold text-slate-800 text-base">جدول الحصص المدرسية اليوم</h3>
@@ -416,35 +416,6 @@
               </div>
             </div>
           }
-        </div>
-      </div>
-
-      <!-- Recent Notices and Activity -->
-      <div class="bg-white rounded-2xl p-6 shadow-soft border border-slate-100/80 space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h3 class="font-bold text-slate-800 text-base">أحدث التعميمات والأنشطة</h3>
-          <span class="text-xs text-slate-400">مباشر</span>
-        </div>
-
-        <div class="space-y-4">
-          @for (item of activities(); track item.id) {
-            <div class="flex items-start gap-3 text-right">
-              <div class="w-2 h-2 rounded-full bg-primary-600 mt-2 shrink-0"></div>
-              <div class="flex-1">
-                <h4 class="text-xs font-bold text-slate-800">{{ item.title }}</h4>
-                <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{{ item.description }}</p>
-                <span class="text-[10px] text-slate-400 mt-1 block">{{ item.time }}</span>
-              </div>
-            </div>
-          }
-        </div>
-
-        <div class="pt-2">
-          <a
-            routerLink="/announcements"
-            class="w-full block py-2.5 text-center text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-xl transition-colors">
-            عرض أرشيف الإعلانات
-          </a>
         </div>
       </div>
     </div>

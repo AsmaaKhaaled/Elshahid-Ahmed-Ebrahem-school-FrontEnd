@@ -48,6 +48,7 @@ export class TeachersComponent {
 
   constructor() {
     this.store.ensureLoaded();
+    this.store.loadSchoolSchedule().subscribe({ error: () => {} });
     this.store.classOptions().subscribe({ next: classes => this.classOptions.set(classes), error: () => {} });
   }
 
@@ -113,6 +114,7 @@ export class TeachersComponent {
   saveSchedule(teacherId: string, termId: string, schedule: WeeklySchedule): void {
     this.store.saveSchedule(teacherId, termId, schedule);
     this.scheduleTeacher.set(null);
+    this.notice.set('تم حفظ واعتماد جدول المعلم بنجاح.');
   }
 }
 

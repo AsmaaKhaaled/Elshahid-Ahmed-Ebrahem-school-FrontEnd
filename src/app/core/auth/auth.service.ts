@@ -51,6 +51,7 @@ export class AuthService {
 
   // Computed signals
   readonly isAuthenticated = computed(() => !!this.currentUser() && this.tokenService.hasValidToken());
+  readonly token = computed(() => this.tokenService.getToken());
   readonly userRole = computed<UserRole | null>(() => this.currentUser()?.role ?? null);
   readonly mustChangePassword = computed(() => this.requirePasswordChange() || (this.currentUser()?.mustChangePassword ?? false));
   readonly userName = computed(() => this.currentUser()?.fullName ?? 'المستخدم');

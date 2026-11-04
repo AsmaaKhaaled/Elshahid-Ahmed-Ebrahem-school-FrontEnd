@@ -8,6 +8,7 @@ import { PublicFooterComponent } from '../../shared/components/public-footer/pub
 import { HonorRollStore } from '../honor-roll/honor-roll.store';
 import { TEACHER_HONORIFIC } from '../teachers/teacher.model';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
+import { AnnouncementsStore, audienceLabel } from '../announcements/announcements.store';
 
 interface SchoolNotice {
   day: string;
@@ -129,6 +130,27 @@ export class HomeComponent {
     }
   ];
 
+  private readonly announcementsStore = inject(AnnouncementsStore);
+  readonly homeNotices = computed<SchoolNotice[]>(() => {
+    const list = this.announcementsStore.visible();
+    if (list && list.length > 0) {
+      const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+      return list.slice(0, 3).map(item => {
+        const d = new Date(item.publishedAt);
+        const day = isNaN(d.getDate()) ? '01' : String(d.getDate()).padStart(2, '0');
+        const month = isNaN(d.getMonth()) ? 'نوفمبر' : arabicMonths[d.getMonth()];
+        return {
+          day,
+          month,
+          tag: `${item.category} • موجه إلى: ${audienceLabel(item.audiences)}`,
+          title: item.title,
+          description: item.content
+        };
+      });
+    }
+    return this.notices;
+  });
+
   // Honor roll (لوحة الشرف) - managed by the admins from /admin/honor-roll
   private readonly honorRoll = inject(HonorRollStore);
   readonly honorTeachers = this.honorRoll.teachers;
@@ -147,7 +169,7 @@ export class HomeComponent {
     {
       day: '08',
       month: 'مايو',
-      tag: 'للطلاب وأولياء الأمور • منذ 5 أيام',
+      tag: 'للطلاب والزوار • منذ 5 أيام',
       title: 'جدول المراجعات النهائية لطلاب الصفين الأول والثاني الإعدادي',
       description: 'تم رفع المذكرات التوجيهية ونماذج اختبارات الأعوام السابقة على منصة الطالب بصيغة PDF قابلة للتحميل مع الحل النموذجي.'
     },

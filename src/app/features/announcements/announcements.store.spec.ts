@@ -75,7 +75,7 @@ describe('AnnouncementsStore', () => {
 
   it('describes the audience in Arabic', () => {
     expect(audienceLabel(['TEACHER', 'STUDENT', 'PARENT'])).toBe('الجميع');
-    expect(audienceLabel(['TEACHER', 'PARENT'])).toBe('المعلمون وأولياء الأمور');
+    expect(audienceLabel(['TEACHER', 'PARENT'])).toBe('المعلمون والزوار');
   });
 
   it('treats announcements without an end date as never expiring', () => {

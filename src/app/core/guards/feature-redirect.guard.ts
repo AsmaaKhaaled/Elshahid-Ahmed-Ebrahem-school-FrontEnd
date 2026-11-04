@@ -51,9 +51,8 @@ export const featureRedirectGuard = (feature: string): CanActivateFn => (route, 
       return router.createUrlTree(['/admin/dashboard']);
 
     case 'announcements':
-      if (role === 'TEACHER') return router.createUrlTree(['/teacher/announcements']);
-      if (role === 'STUDENT' || role === 'PARENT') return router.createUrlTree(['/student/announcements']);
-      return router.createUrlTree(['/admin/announcements']);
+      if (role === 'ADMIN' || role === 'SUPER_ADMIN') return router.createUrlTree(['/admin/announcements']);
+      return router.createUrlTree(['/announcements']);
 
     case 'classes':
       if (role === 'TEACHER') return router.createUrlTree(['/teacher/classes']);

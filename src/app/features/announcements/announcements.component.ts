@@ -19,7 +19,7 @@ import {
 const CATEGORY_STYLES: Record<AnnouncementCategory, string> = {
   'عاجل وهام': 'bg-rose-50 text-rose-700',
   'إداري': 'bg-primary-50 text-primary-700',
-  'أولياء الأمور': 'bg-amber-50 text-amber-700',
+  'الزوار': 'bg-amber-50 text-amber-700',
   'أنشطة وفعاليات': 'bg-emerald-50 text-emerald-700'
 };
 
@@ -64,6 +64,17 @@ export class AnnouncementsComponent implements OnInit {
   readonly confirmingDeleteId = signal<string | null>(null);
   readonly formOpen = signal(false);
   readonly editing = signal<Announcement | null>(null);
+  readonly unreadCount = this.store.unreadCount;
+
+  markAsRead(item: Announcement): void {
+    if (!item.isRead) {
+      this.store.markAsRead(item.id);
+    }
+  }
+
+  markAllAsRead(): void {
+    this.store.markAllAsRead();
+  }
 
   // Category tabs with counts; "المنتهية" (expired) only matters to admins
   readonly filters = computed(() => {
