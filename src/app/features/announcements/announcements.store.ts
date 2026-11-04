@@ -204,14 +204,14 @@ export class AnnouncementsStore {
           if (!role) return true;
           return a.audiences.includes(role as Audience) || a.audiences.length === AUDIENCES.length;
         });
-    return [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.publishedAt.localeCompare(a.publishedAt));
+    return [...list].sort((a, b) => Number(b.pinned) - Number(a.pinned) || (b.publishedAt || '').localeCompare(a.publishedAt || ''));
   });
 
   // Latest active announcements for the navbar bell (authenticated users only)
   readonly latest = computed(() =>
     this.visible()
       .filter(a => !isExpired(a))
-      .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+      .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''))
       .slice(0, 5)
   );
 
