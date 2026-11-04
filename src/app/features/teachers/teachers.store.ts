@@ -3,6 +3,7 @@ import { Observable, map, tap } from 'rxjs';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiService } from '../../core/services/api.service';
+import { SchedulesService, SchoolScheduleResponse } from '../../core/services/schedules.service';
 import { compareArabic } from '../../shared/utils/arabic-sort';
 import { Teacher, TeacherDto, TermSchedules, WeeklySchedule, teacherFromDto, teacherToBody } from './teacher.model';
 
@@ -15,13 +16,14 @@ interface TeacherResponse { data: { teacher: TeacherDto } }
 /**
  * Single source of truth for teachers & their weekly schedules, shared by the teachers page,
  * the school timetable, the classes page and the dashboard.
- * Teachers come from the backend; weekly schedules are still kept here until they move to the API.
+ * Teachers and their schedules are backed by the API.
  */
 @Injectable({ providedIn: 'root' })
 export class TeachersStore {
   private readonly calendar = inject(AcademicCalendarStore);
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly schedulesService = inject(SchedulesService);
 
   // A→Z, as the backend sends them
   readonly teachers = signal<Teacher[]>([]);
@@ -62,6 +64,33 @@ export class TeachersStore {
         this.loading.set(false);
       }
     });
+  }
+
+  /**
+   * Loads cumulative school schedule from the backend and updates the reactive schedules signal
+   */
+  loadSchoolSchedule(termId?: string): Observable<SchoolScheduleResponse> {
+    const targetTerm = termId || this.calendar.currentTermId();
+    return this.schedulesService.getSchoolSchedule(targetTerm).pipe(
+      tap(res => {
+        const byTeacher = res.data?.byTeacher || {};
+        const termSchedule: Record<string, WeeklySchedule> = {};
+        for (const [teacherId, slots] of Object.entries(byTeacher)) {
+          const teacherSlots: WeeklySchedule = {};
+          for (const [key, slot] of Object.entries(slots)) {
+            teacherSlots[key] = {
+              subject: slot.subject,
+              section: slot.className
+            };
+          }
+          termSchedule[teacherId] = teacherSlots;
+        }
+        this.schedules.update(all => ({
+          ...all,
+          [targetTerm]: termSchedule
+        }));
+      })
+    );
   }
 
   /** Classes a teacher can be assigned to, e.g. ["1/1", ..., "3/4"]. */

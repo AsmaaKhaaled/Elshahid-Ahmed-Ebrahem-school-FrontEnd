@@ -1,5 +1,5 @@
 <div appPortalToBody dir="rtl" class="dialog-overlay font-cairo">
-  <div [appSubmitLock]="lock.busy()" class="dialog-panel max-w-5xl">
+  <div class="dialog-panel max-w-5xl">
     <!-- Header -->
     <div class="dialog-head flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
       <div>
@@ -9,11 +9,29 @@
       <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
     </div>
 
+    <!-- Server Conflict / Error Alert -->
+    @if (serverError(); as errorMsg) {
+      <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800 flex items-start gap-3 animate-fadeIn" role="alert">
+        <svg class="w-5 h-5 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div class="flex-1">
+          <p class="text-sm font-black text-rose-900">{{ errorMsg }}</p>
+          @if (conflictDetail(); as conf) {
+            <p class="text-xs text-rose-700 font-medium mt-1">
+              الحصة المتعارضة: {{ conf.dayName }} - الحصة رقم {{ conf.period }} | الفصل: {{ conf.className }} (المعلم الحاجز للحصة: {{ conf.conflictingTeacherName }})
+            </p>
+          }
+        </div>
+        <button (click)="serverError.set(null)" type="button" class="text-rose-400 hover:text-rose-700 font-black cursor-pointer">✕</button>
+      </div>
+    }
+
     <!-- Term selector & stats -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
       <mat-form-field class="w-full md:w-80">
         <mat-label>الفصل الدراسي</mat-label>
-        <mat-select [value]="selectedTermId()" (valueChange)="selectedTermId.set($event)" [disabled]="editing()">
+        <mat-select [value]="selectedTermId()" (valueChange)="selectedTermId.set($event); fetchTeacherSchedule()" [disabled]="editing()">
           @for (term of terms(); track term.id) {
             <mat-option [value]="term.id">
               {{ term.label }}{{ term.id === currentTermId() ? ' (الحالي)' : '' }}
@@ -62,7 +80,8 @@
               @for (period of periods; track period) {
                 @let key = slotKey(dayIndex, period);
                 @let slot = draft()[key];
-                <td class="p-1.5 align-top" [class.bg-rose-50]="conflicts()[key]">
+                @let isServerConflict = serverConflictKey() === key;
+                <td class="p-1.5 align-top" [class.bg-rose-50]="conflicts()[key] || isServerConflict" [class.ring-2]="isServerConflict" [class.ring-rose-400]="isServerConflict">
                   @if (editing()) {
                     <mat-form-field class="field-compact field-cell w-full">
                       <mat-select [value]="slot?.section ?? ''" (selectionChange)="setSlot(key, { section: $event.value })" aria-label="الفصل">
@@ -92,6 +111,11 @@
                   @if (conflicts()[key]; as other) {
                     <span class="block text-[10px] text-rose-600 mt-1 leading-tight">تعارض مع {{ other }}</span>
                   }
+                  @if (isServerConflict) {
+                    <span class="block text-[10px] font-bold text-rose-700 mt-1 leading-tight">
+                      ⚠ تعارض مسبق مع {{ conflictDetail()?.conflictingTeacherName }}
+                    </span>
+                  }
                 </td>
               }
             </tr>
@@ -107,13 +131,21 @@
     <!-- Actions -->
     <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
       @if (editing()) {
-        <button (click)="cancelEdit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء التعديل</button>
-        <button (click)="save()" [disabled]="hasConflicts() || lock.busy()" type="button"
-          class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-50 disabled:cursor-not-allowed">
-          حفظ الجدول
+        <button (click)="cancelEdit()" [disabled]="isSaving()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء التعديل</button>
+        <button (click)="save()" [disabled]="hasConflicts() || isSaving()" type="button"
+          class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          @if (isSaving()) {
+            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span>جاري الحفظ والتحقق...</span>
+          } @else {
+            <span>حفظ الجدول</span>
+          }
         </button>
       } @else {
-        <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إغلاق</button>
+        <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
         <button (click)="editing.set(true)" type="button" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
           تعديل الجدول
         </button>
