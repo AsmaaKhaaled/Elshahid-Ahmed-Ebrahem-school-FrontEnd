@@ -8,6 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
   standalone: true,
   imports: [MatFormFieldModule, MatSelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // A block, so the parent's spacing (space-y-*) applies and it doesn't touch the cards above it
+  host: { class: 'block' },
   template: `
     @if (total() > 0) {
       <nav class="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" aria-label="التنقل بين الصفحات">

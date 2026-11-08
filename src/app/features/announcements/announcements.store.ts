@@ -141,7 +141,7 @@ export class AnnouncementsStore {
         this.loadUnreadCount();
         this.loadAnnouncements();
       } else {
-        this.loadAnnouncements();
+        this.loadPublicAnnouncements();
       }
     });
   }
@@ -240,6 +240,32 @@ export class AnnouncementsStore {
       error: () => {
         this.isLoading.set(false);
       }
+    });
+  }
+
+  /** Visitors (not signed in): only what the school published to الزوار - even when that's nothing. */
+  loadPublicAnnouncements(): void {
+    this.isLoading.set(true);
+    this.announcementsService.getPublic().subscribe({
+      next: res => {
+        this.isLoading.set(false);
+        if (Array.isArray(res.data)) {
+          this.announcements.set(res.data.map(item => ({
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            category: item.category as AnnouncementCategory,
+            audiences: item.audiences as Audience[],
+            author: item.author,
+            publishedAt: item.publishedAt,
+            expiresAt: item.expiresAt,
+            pinned: item.pinned,
+            attachment: item.attachment,
+            isRead: true
+          })));
+        }
+      },
+      error: () => this.isLoading.set(false)
     });
   }
 

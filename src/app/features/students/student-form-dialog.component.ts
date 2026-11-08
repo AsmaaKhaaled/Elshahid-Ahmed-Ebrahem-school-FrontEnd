@@ -4,10 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { GRADE_LEVELS } from '../../core/constants/school.constants';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
 import { ClassesService, SchoolClass } from '../../core/services/classes.service';
 import { CreateStudentPayload, StudentsService } from '../../core/services/students.service';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { apiErrorMessage } from '../../shared/utils/api-error';
+import { normalizeNationalId, normalizePhone } from '../../shared/utils/egyptian-ids';
 import { STUDENT_STATUSES, Student, nextStudentCode } from './student.model';
 import { studentFromApi } from './students.store';
 
@@ -29,6 +31,7 @@ import { studentFromApi } from './students.store';
 export class StudentFormDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly classesService = inject(ClassesService);
+  private readonly structure = inject(SchoolStructureStore);
   private readonly studentsService = inject(StudentsService);
 
   // Inputs & Outputs
@@ -114,11 +117,23 @@ export class StudentFormDialogComponent implements OnInit {
       });
     }
 
-    // 3. Dynamic Cascading Filter for Classes
+    // 3. National ID & phone typed with Arabic digits, spaces or dashes are cleaned as typed (as the backend does)
+    this.cleanAsTyped('nationalId', normalizeNationalId);
+    this.cleanAsTyped('guardianPhone', normalizePhone);
+
+    // 4. Dynamic Cascading Filter for Classes
     this.form.get('gradeLevel')?.valueChanges.subscribe(selectedGrade => {
       if (selectedGrade) {
         this.updateFilteredClasses(selectedGrade);
       }
+    });
+  }
+
+  private cleanAsTyped(name: 'nationalId' | 'guardianPhone', clean: (value: string) => string): void {
+    const control = this.form.get(name);
+    control?.valueChanges.subscribe(value => {
+      const cleaned = clean(value ?? '');
+      if (cleaned !== value) control.setValue(cleaned, { emitEvent: false });
     });
   }
 
@@ -172,7 +187,8 @@ export class StudentFormDialogComponent implements OnInit {
 
   private generateFallbackClasses(): SchoolClass[] {
     const list: SchoolClass[] = [];
-    GRADE_LEVELS.forEach(g => {
+    // This year's classes when the backend list isn't available
+    this.structure.grades().forEach(g => {
       g.sections.forEach(s => {
         list.push({
           id: `class-${g.id}-${s}`,
@@ -236,17 +252,15 @@ export class StudentFormDialogComponent implements OnInit {
         next: (res) => {
           this.isSubmitting.set(false);
           const data = res?.data;
-          const initialPassword = data?.initialCredentials?.initialPassword || 'Student@2026';
+          // First sign-in: national ID + the student code
+          const initialPassword = data?.initialCredentials?.initialPassword || data?.studentCode;
           // Immediately emit saved student to update table instantly!
           this.emitSavedStudent(data || payload, initialPassword);
         },
         error: (err) => {
           this.isSubmitting.set(false);
-          const backendMessage =
-            err?.error?.message ||
-            err?.error?.details?.[0]?.message ||
-            'حدث خطأ أثناء حفظ قيد الطالب بالمنظومة. يرجى مراجعة البيانات.';
-          this.serverError.set(backendMessage);
+          // e.g. the class is full, the grade doesn't match the class, a duplicate national ID
+          this.serverError.set(apiErrorMessage(err, 'حدث خطأ أثناء حفظ قيد الطالب بالمنظومة. يرجى مراجعة البيانات.'));
         }
       });
     } else {
@@ -258,11 +272,7 @@ export class StudentFormDialogComponent implements OnInit {
         },
         error: (err) => {
           this.isSubmitting.set(false);
-          this.serverError.set(
-            err?.error?.message ||
-            err?.error?.errors?.[0]?.message ||
-            'تعذر حفظ تعديلات الطالب. يرجى مراجعة البيانات.'
-          );
+          this.serverError.set(apiErrorMessage(err, 'تعذر حفظ تعديلات الطالب. يرجى مراجعة البيانات.'));
         }
       });
     }

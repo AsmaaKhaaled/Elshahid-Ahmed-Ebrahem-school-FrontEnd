@@ -20,6 +20,8 @@ export interface SchoolClass {
   section: string;
   gradeLevel: string;
   enrolledStudents: number;
+  // Max students, set per grade by the admin (up to MAX_CLASS_CAPACITY)
+  capacity: number;
   shift: 'صباحي' | 'مسائي';
   advisorHistory: AdvisorAssignment[];
 }

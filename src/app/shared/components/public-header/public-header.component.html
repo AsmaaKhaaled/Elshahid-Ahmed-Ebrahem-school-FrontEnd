@@ -5,29 +5,23 @@
     <div class="flex items-center gap-2 text-[11px] sm:text-xs min-w-0 flex-1">
       <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
       <strong class="text-white font-bold shrink-0">تنويه:</strong>
-      @if (tickerItems().length) {
-        <!-- Scrolls rightwards like an Arabic news ticker; the list is doubled so the loop is seamless -->
-        <div class="ticker min-w-0 flex-1" title="اضغط لعرض كل الإعلانات">
-          <div class="ticker-track" [style.animation-duration]="tickerDuration()">
-            @for (copy of [0, 1]; track copy) {
-              <!-- At least a screen wide, so a single short announcement doesn't leave the bar half empty mid-loop -->
-              <div class="flex shrink-0 min-w-[100vw]" [attr.aria-hidden]="copy === 1 ? 'true' : null">
-                @for (item of tickerItems(); track item.id) {
-                  <a routerLink="/announcements" [tabindex]="copy === 1 ? -1 : 0"
-                    class="text-slate-200 hover:text-white whitespace-nowrap px-6 border-l border-white/15">
-                    @if (item.pinned) { <span class="text-amber-300">📌</span> }
-                    {{ item.title }}
-                  </a>
-                }
-              </div>
-            }
-          </div>
+      <!-- Scrolls rightwards like an Arabic news ticker; the list is doubled so the loop is seamless -->
+      <div class="ticker min-w-0 flex-1" title="اضغط لعرض كل الإعلانات">
+        <div class="ticker-track" [style.animation-duration]="tickerDuration()">
+          @for (copy of [0, 1]; track copy) {
+            <!-- At least a screen wide, so a single short announcement doesn't leave the bar half empty mid-loop -->
+            <div class="flex shrink-0 min-w-[100vw]" [attr.aria-hidden]="copy === 1 ? 'true' : null">
+              @for (item of tickerItems(); track item.id) {
+                <a routerLink="/announcements" [tabindex]="copy === 1 ? -1 : 0"
+                  class="text-slate-200 hover:text-white whitespace-nowrap px-6 border-l border-white/15">
+                  @if (item.pinned) { <span class="text-amber-300">📌</span> }
+                  {{ item.title }}
+                </a>
+              }
+            </div>
+          }
         </div>
-      } @else {
-        <span class="text-slate-200 truncate">
-          بدء تفعيل نظام رصد درجات أعمال السنة والاختبار الشهري لكافة المواد ({{ academicTerm().label }}).
-        </span>
-      }
+      </div>
     </div>
 
     <!-- Left Badges (Hidden on mobile < 640px to keep ticker strictly single-line) -->
@@ -58,8 +52,8 @@
       <div class="min-w-0">
         <h1 class="text-xs sm:text-sm lg:text-base font-black text-slate-900 tracking-tight leading-tight truncate">
           <span>مدرسة الشهيد أحمد إبراهيم</span>
-          <span class="hidden lg:inline font-bold text-slate-700"> حسب الله الإعدادية بنين</span>
-          <span class="hidden sm:inline lg:hidden font-bold text-slate-700"> الإعدادية</span>
+          <span class="hidden lg:inline"> حسب الله الإعدادية بنين</span>
+          <span class="hidden sm:inline lg:hidden"> الإعدادية</span>
         </h1>
         <p class="text-[10px] sm:text-[11px] text-slate-500 font-semibold truncate hidden xl:block">
           بوابة التعلم والخدمات الأكاديمية الإلكترونية

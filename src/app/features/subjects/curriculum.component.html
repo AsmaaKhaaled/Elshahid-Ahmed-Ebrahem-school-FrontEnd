@@ -212,48 +212,78 @@
       <p class="text-center py-10 text-sm text-slate-400">جاري فتح المنهج...</p>
     }
   } @else {
-    <!-- ================= All curricula (paged) ================= -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-black text-slate-800 tracking-tight">المناهج والمواد الدراسية</h2>
-        <p class="text-xs text-slate-500 mt-1">
-          @if (scope.isTeacher()) {
-            ارفع منهج الوزارة لكل مادة بتدرّسها: الكتاب وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات، واكتب خطة المنهج والأهداف
-          } @else if (scope.isStudent()) {
-            مناهج مواد فصل {{ scope.studentSection() }}: كتب الوزارة وتوزيع المنهج ونماذج الامتحانات
-          } @else {
-            مناهج كل المعلمين: ملفات الوزارة اللي رفعوها، وخطة المنهج والأهداف لكل مادة
-          }
-        </p>
+    <!-- The teacher: their curricula and their lesson materials, on one page -->
+    @if (scope.isTeacher()) {
+      <div class="inline-flex p-1 rounded-2xl bg-slate-100 gap-1" role="tablist" aria-label="المحتوى">
+        @for (tab of teacherTabs; track tab.id) {
+          <button type="button" role="tab" [attr.aria-selected]="view() === tab.id" (click)="selectView(tab.id)"
+            [class]="view() === tab.id ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-600 hover:text-slate-800'"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition-all">
+            {{ tab.label }}
+          </button>
+        }
       </div>
-
-      @if (scope.isTeacher()) {
-        <button type="button" (click)="openForm(null)"
-          class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center justify-center gap-2 transition-all">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          <span>منهج مادة جديد</span>
-        </button>
-      } @else if (showSearch()) {
-        <label class="sm:w-72">
-          <span class="sr-only">بحث في المناهج</span>
-          <input type="search" [value]="search()" (input)="onSearch($any($event.target).value)"
-            placeholder="ابحث بالمادة أو اسم المعلم"
-            class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" />
-        </label>
-      }
-    </div>
-
-    @if (listError()) {
-      <p class="px-4 py-3 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3" role="alert">
-        <span>{{ listError() }}</span>
-        <button (click)="loadList()" type="button" class="font-bold underline">إعادة المحاولة</button>
-      </p>
     }
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5" [class.opacity-60]="loadingList()" [attr.aria-busy]="loadingList()">
-      @for (cur of curricula(); track cur.id) {
+    @if (view() === 'materials') {
+      <app-materials />
+    } @else {
+      <!-- ================= All curricula (paged) ================= -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-slate-800 tracking-tight">المناهج والمواد الدراسية</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            @if (scope.isTeacher()) {
+              ارفع منهج الوزارة لكل مادة بتدرّسها: الكتاب وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات، واكتب خطة المنهج والأهداف
+            } @else if (scope.isStudent()) {
+              مناهج مواد فصل {{ scope.studentSection() }}: كتب الوزارة وتوزيع المنهج ونماذج الامتحانات
+            } @else {
+              مناهج كل المعلمين: ملفات الوزارة اللي رفعوها، وخطة المنهج والأهداف لكل مادة
+            }
+          </p>
+        </div>
+
+        @if (scope.isTeacher()) {
+          <button type="button" (click)="openForm(null)"
+            class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center justify-center gap-2 transition-all">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>منهج مادة جديد</span>
+          </button>
+        } @else if (showSearch()) {
+          <label class="sm:w-72">
+            <span class="sr-only">بحث في المناهج</span>
+            <input type="search" [value]="search()" (input)="onSearch($any($event.target).value)"
+              placeholder="ابحث بالمادة أو اسم المعلم"
+              class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" />
+          </label>
+        }
+      </div>
+
+      <!-- The administration: the curricula grade by grade -->
+      @if (showSearch()) {
+        <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="الصف الدراسي">
+          @for (tab of gradeTabs(); track tab.id) {
+            <button type="button" role="tab" [attr.aria-selected]="selectedGrade() === tab.id" (click)="selectGrade(tab.id)"
+              [class]="selectedGrade() === tab.id ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+              class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
+              {{ tab.label }}
+              <span class="ms-1 px-1.5 py-0.5 rounded-md text-[10px]"
+                [class]="selectedGrade() === tab.id ? 'bg-white/20' : 'bg-slate-100 text-slate-500'">{{ tab.count }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      @if (listError()) {
+        <p class="px-4 py-3 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3" role="alert">
+          <span>{{ listError() }}</span>
+          <button (click)="loadList()" type="button" class="font-bold underline">إعادة المحاولة</button>
+        </p>
+      }
+
+      <ng-template #curriculumCard let-cur>
         <button type="button" (click)="open(cur.id)"
           class="text-right bg-white rounded-2xl p-5 shadow-soft border border-slate-100 hover:border-primary-200 hover:shadow-md transition-all flex flex-col gap-4">
           <div class="flex items-start justify-between gap-2 w-full">
@@ -281,39 +311,68 @@
             <span class="font-bold text-primary-700">فتح المنهج ←</span>
           </div>
         </button>
-      }
+      </ng-template>
 
-      <!-- The teacher's subjects with no curriculum yet -->
-      @for (subject of subjectsWithoutCurriculum(); track subject) {
-        <button type="button" (click)="openForm(null, subject)"
-          class="text-right rounded-2xl p-5 border-2 border-dashed border-slate-200 hover:border-primary-300 hover:bg-primary-50/40 transition-all flex flex-col justify-center gap-1 min-h-40">
-          <span class="text-base font-black text-slate-700">{{ subject }}</span>
-          <span class="text-xs text-slate-500">لسه مرفعتش منهج المادة دي</span>
-          <span class="text-xs font-bold text-primary-700 mt-2">+ ارفع المنهج</span>
-        </button>
-      }
-
-      @if (list() && !curricula().length && !subjectsWithoutCurriculum().length) {
-        <div class="col-span-full text-center py-10 text-slate-400 text-sm">
-          @if (search().trim()) {
-            مفيش مناهج تطابق البحث.
-          } @else if (scope.isTeacher()) {
-            اضغط "منهج مادة جديد" عشان تبدأ.
-          } @else if (scope.isStudent()) {
-            مدرسين فصلك لسه منزلوش المناهج.
-          } @else {
-            المعلمين لسه منزلوش مناهج.
+      <!-- Every grade at once: each grade's curricula under its own heading -->
+      @if (showSearch() && !selectedGrade()) {
+        <div class="space-y-6" [class.opacity-60]="loadingList()">
+          @for (group of curriculaByGrade(); track group.grade.id) {
+            <section class="space-y-3">
+              <h3 class="flex items-center gap-2 font-black text-slate-800">
+                {{ group.grade.label }}
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">{{ group.curricula.length }} منهج</span>
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+                @for (cur of group.curricula; track cur.id) {
+                  <ng-container [ngTemplateOutlet]="curriculumCard" [ngTemplateOutletContext]="{ $implicit: cur }" />
+                }
+              </div>
+            </section>
           }
         </div>
-      } @else if (!list() && loadingList()) {
-        <div class="col-span-full text-center py-10 text-slate-400 text-sm">جاري تحميل المناهج...</div>
       }
-    </div>
 
-    @if (list(); as l) {
-      <app-pagination [page]="l.meta.page" [pageSize]="l.meta.limit" [total]="l.meta.total" itemLabel="منهج"
-        [pageSizeOptions]="pageSizeOptions" [disabled]="loadingList()"
-        (pageChange)="goToPage($event)" (pageSizeChange)="changePageSize($event)" />
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5" [class.opacity-60]="loadingList()" [attr.aria-busy]="loadingList()">
+        @if (!showSearch() || selectedGrade()) {
+          @for (cur of curricula(); track cur.id) {
+            <ng-container [ngTemplateOutlet]="curriculumCard" [ngTemplateOutletContext]="{ $implicit: cur }" />
+          }
+        }
+
+        <!-- The teacher's subjects with no curriculum yet -->
+        @for (subject of subjectsWithoutCurriculum(); track subject) {
+          <button type="button" (click)="openForm(null, subject)"
+            class="text-right rounded-2xl p-5 border-2 border-dashed border-slate-200 hover:border-primary-300 hover:bg-primary-50/40 transition-all flex flex-col justify-center gap-1 min-h-40">
+            <span class="text-base font-black text-slate-700">{{ subject }}</span>
+            <span class="text-xs text-slate-500">لسه مرفعتش منهج المادة دي</span>
+            <span class="text-xs font-bold text-primary-700 mt-2">+ ارفع المنهج</span>
+          </button>
+        }
+
+        @if (list() && !curricula().length && !subjectsWithoutCurriculum().length) {
+          <div class="col-span-full text-center py-10 text-slate-400 text-sm">
+            @if (search().trim()) {
+              مفيش مناهج تطابق البحث.
+            } @else if (selectedGrade()) {
+              المعلمين لسه منزلوش مناهج للصف ده.
+            } @else if (scope.isTeacher()) {
+              اضغط "منهج مادة جديد" عشان تبدأ.
+            } @else if (scope.isStudent()) {
+              مدرسين فصلك لسه منزلوش المناهج.
+            } @else {
+              المعلمين لسه منزلوش مناهج.
+            }
+          </div>
+        } @else if (!list() && loadingList()) {
+          <div class="col-span-full text-center py-10 text-slate-400 text-sm">جاري تحميل المناهج...</div>
+        }
+      </div>
+
+      @if (list(); as l) {
+        <app-pagination [page]="l.meta.page" [pageSize]="l.meta.limit" [total]="l.meta.total" itemLabel="منهج"
+          [pageSizeOptions]="pageSizeOptions" [disabled]="loadingList()"
+          (pageChange)="goToPage($event)" (pageSizeChange)="changePageSize($event)" />
+      }
     }
   }
 </div>

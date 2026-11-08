@@ -1,9 +1,13 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subject, catchError, concatMap, of, switchMap } from 'rxjs';
+import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { PAGE_SIZE_OPTIONS, loadPageSize, savePageSize } from '../../shared/components/pagination/page-size';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
+import { MaterialsComponent } from '../materials/materials.component';
 import { fileSizeLabel, sectionsLabel } from '../teaching/teaching.model';
 import { TeachingScope } from '../teaching/teaching-scope.service';
 import { CurriculumFileDialogComponent } from './curriculum-file-dialog.component';
@@ -20,8 +24,9 @@ const LIST_SIZE_KEY = 'curricula';
 const FILES_SIZE_KEY = 'curriculum-files';
 const SEARCH_DELAY_MS = 300;
 
+type TeacherView = 'curricula' | 'materials';
 type PendingDelete = { type: 'curriculum' | 'file'; id: string } | null;
-interface ListQuery { page: number; limit: number; search: string }
+interface ListQuery { page: number; limit: number; search: string; gradeId: string }
 interface FilesQuery { id: string; page: number; limit: number; kind: CurriculumFileKind | null }
 
 /**
@@ -33,12 +38,14 @@ interface FilesQuery { id: string; page: number; limit: number; kind: Curriculum
   selector: 'app-curriculum',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TimeAgoPipe, PaginationComponent, CurriculumFormDialogComponent, CurriculumFileDialogComponent, CurriculumPlanDialogComponent],
+  imports: [NgTemplateOutlet, TimeAgoPipe, PaginationComponent, MaterialsComponent, CurriculumFormDialogComponent, CurriculumFileDialogComponent, CurriculumPlanDialogComponent],
   templateUrl: './curriculum.component.html'
 })
 export class CurriculumComponent {
   private readonly service = inject(CurriculumService);
   private readonly store = inject(CurriculumStore);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly scope = inject(TeachingScope);
 
   readonly gradeLabel = gradeLabel;
@@ -47,6 +54,22 @@ export class CurriculumComponent {
   readonly fileKinds = CURRICULUM_FILE_KINDS;
   readonly sizeOf = fileSizeLabel;
   readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
+
+  // The teacher's page holds both their curricula and their lesson materials (?tab=materials)
+  readonly teacherTabs = [
+    { id: 'curricula', label: 'المناهج' },
+    { id: 'materials', label: 'المواد والملفات التعليمية' }
+  ] as const;
+  readonly view = signal<TeacherView>(
+    this.route.snapshot.queryParamMap.get('tab') === 'materials' && this.scope.isTeacher() ? 'materials' : 'curricula'
+  );
+
+  selectView(view: TeacherView): void {
+    if (view === this.view()) return;
+    this.view.set(view);
+    // Kept in the address, so a refresh / back stays on the same tab
+    this.router.navigate([], { relativeTo: this.route, queryParams: { tab: view === 'materials' ? view : null }, replaceUrl: true });
+  }
 
   /** The plan & objectives are for the teacher and the administration, not the students. */
   readonly showPlan = computed(() => !this.scope.isStudent());
@@ -57,10 +80,26 @@ export class CurriculumComponent {
   readonly page = signal(1);
   readonly pageSize = signal(loadPageSize(LIST_SIZE_KEY));
   readonly search = signal('');
+  // The administration browses the curricula grade by grade ('' = every grade)
+  readonly selectedGrade = signal('');
   readonly list = signal<CurriculaPage | null>(null);
   readonly loadingList = signal(false);
   readonly listError = signal<string | null>(null);
   readonly curricula = computed(() => this.list()?.curricula ?? []);
+
+  /** One tab per grade with how many curricula it has (they follow the search). */
+  readonly gradeTabs = computed(() => {
+    const counts = this.list()?.gradeCounts ?? {};
+    const grades = GRADE_LEVELS.map(grade => ({ id: grade.id, label: grade.shortLabel, count: counts[grade.id] ?? 0 }));
+    return [{ id: '', label: 'كل الصفوف', count: grades.reduce((sum, g) => sum + g.count, 0) }, ...grades];
+  });
+
+  /** The page's curricula under their grade's heading (the administration's view). */
+  readonly curriculaByGrade = computed(() =>
+    GRADE_LEVELS.map(grade => ({ grade, curricula: this.curricula().filter(c => c.gradeId === grade.id) })).filter(
+      group => group.curricula.length
+    )
+  );
 
   // ---- One curriculum opened ----
   readonly selectedId = signal<string | null>(null);
@@ -152,7 +191,14 @@ export class CurriculumComponent {
   // ---------- The list ----------
 
   loadList(): void {
-    this.listQuery.next({ page: this.page(), limit: this.pageSize(), search: this.search().trim() });
+    this.listQuery.next({ page: this.page(), limit: this.pageSize(), search: this.search().trim(), gradeId: this.selectedGrade() });
+  }
+
+  selectGrade(gradeId: string): void {
+    if (gradeId === this.selectedGrade()) return;
+    this.selectedGrade.set(gradeId);
+    this.page.set(1);
+    this.loadList();
   }
 
   goToPage(page: number): void {

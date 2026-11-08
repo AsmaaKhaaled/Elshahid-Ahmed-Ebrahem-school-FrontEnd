@@ -14,7 +14,8 @@ export const ADMIN_PERMISSIONS = [
   { key: 'platform-activity', label: 'نشاط المستخدمين على المنصة' },
   { key: 'academic-year', label: 'العام والفصل الدراسي' },
   { key: 'announcements', label: 'لوحة الإعلانات والتعميمات' },
-  { key: 'honor-roll', label: 'لوحة الشرف' }
+  { key: 'honor-roll', label: 'لوحة الشرف' },
+  { key: 'home-content', label: 'محتوى الصفحة الرئيسية' }
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number]['key'];

@@ -242,11 +242,3 @@
 @if (isAccountSettingsOpen()) {
   <app-account-settings-dialog (saved)="onAccountSaved($event)" (closed)="isAccountSettingsOpen.set(false)" />
 }
-
-@if (accountNotice(); as message) {
-  <div dir="rtl" role="status"
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] px-4 py-3 rounded-2xl bg-emerald-600 text-white text-xs font-bold shadow-elevated flex items-center gap-3">
-    <span>✓ {{ message }}</span>
-    <button (click)="accountNotice.set(null)" type="button" class="text-white/80 hover:text-white" aria-label="إغلاق">✕</button>
-  </div>
-}

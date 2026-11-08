@@ -1,7 +1,6 @@
-import { DAILY_PERIODS, GRADE_LEVELS, SCHOOL_DAYS } from '../../core/constants/school.constants';
+import { DAILY_PERIODS, SCHOOL_DAYS } from '../../core/constants/school.constants';
 import { Teacher, WeeklySchedule, slotKey, teacherDisplayName } from '../teachers/teacher.model';
 
-export const ALL_SECTIONS = GRADE_LEVELS.flatMap(grade => grade.sections);
 export const WEEKLY_SLOTS = SCHOOL_DAYS.length * DAILY_PERIODS;
 
 export interface TimetableLesson {
@@ -26,9 +25,13 @@ export interface SectionCoverage {
   free: number;
 }
 
-/** Turns every teacher's weekly schedule of one term into one timetable per class. */
-export function buildSchoolTimetable(teachers: Teacher[], termSchedules: Record<string, WeeklySchedule>): SchoolTimetable {
-  const timetable: SchoolTimetable = Object.fromEntries(ALL_SECTIONS.map(section => [section, {}]));
+/** Turns every teacher's weekly schedule of one term into one timetable per class (`sections` = the school's classes). */
+export function buildSchoolTimetable(
+  teachers: Teacher[],
+  termSchedules: Record<string, WeeklySchedule>,
+  sections: string[]
+): SchoolTimetable {
+  const timetable: SchoolTimetable = Object.fromEntries(sections.map(section => [section, {}]));
 
   // Follow the teachers list order, so lessons always show in the same order
   for (const teacher of teachers) {

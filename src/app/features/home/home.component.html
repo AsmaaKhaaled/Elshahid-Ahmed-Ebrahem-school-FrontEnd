@@ -180,6 +180,59 @@
     </div>
   </section>
 
+  <!-- ================= تاريخ المدرسة واليوبيل الماسي ================= -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-8 items-center">
+
+      <!-- Jubilee banner photo (Right in RTL) -->
+      <div class="md:col-span-5 relative">
+        <div class="absolute -inset-3 sm:-inset-4 rounded-[2rem] bg-gradient-to-br from-amber-300/40 via-amber-100/30 to-primary-100/40 blur-xl pointer-events-none"></div>
+        <figure class="relative m-0">
+          <img [src]="jubileePhoto" alt="لافتة اليوبيل الماسي لمدرسة الشهيد أحمد إبراهيم حسب الله بين طلاب المدرسة" loading="lazy"
+            width="1002" height="1024"
+            class="w-full h-auto rounded-2xl sm:rounded-3xl shadow-card ring-4 ring-white object-cover bg-slate-100" />
+          <span
+            class="absolute -bottom-4 inset-x-0 mx-auto w-fit px-4 py-1.5 rounded-full bg-portal-navy text-white text-xs sm:text-sm font-black shadow-lg ring-4 ring-white whitespace-nowrap">
+            ✦ {{ jubileeYears }} عامًا من التأسيس ✦
+          </span>
+        </figure>
+      </div>
+
+      <!-- History & jubilee words (Left in RTL) -->
+      <div class="md:col-span-7 text-right pt-4 md:pt-0">
+        <span class="text-[11px] font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full inline-block border border-amber-200">
+          تاريخ المدرسة
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-black text-portal-navy tracking-tight mt-3 leading-snug">
+          اليوبيل الماسي: {{ jubileeYears }} عامًا من التربية والتنمية والانتماء
+        </h2>
+
+        <div class="mt-4 space-y-3">
+          @for (paragraph of schoolHistory; track $index) {
+          <p class="text-xs sm:text-sm md:text-[15px] text-slate-600 leading-loose">{{ paragraph }}</p>
+          }
+        </div>
+
+        <!-- Key facts -->
+        <div class="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+          <div class="rounded-xl sm:rounded-2xl bg-white border border-slate-200/80 shadow-soft p-3 text-center">
+            <p class="text-lg sm:text-2xl font-black text-portal-navy tabular-nums">{{ foundedYear }}</p>
+            <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5">سنة التأسيس</p>
+          </div>
+          <div class="rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 shadow-soft p-3 text-center text-portal-navyDark">
+            <p class="text-lg sm:text-2xl font-black tabular-nums">+{{ jubileeYears }}</p>
+            <p class="text-[10px] sm:text-xs font-bold mt-0.5">عامًا من العطاء</p>
+          </div>
+          <div class="rounded-xl sm:rounded-2xl bg-white border border-slate-200/80 shadow-soft p-3 text-center">
+            <p class="text-sm sm:text-base font-black text-portal-navy leading-tight pt-1">{{ schoolValues.join(' • ') }}</p>
+            <p class="text-[10px] sm:text-xs text-slate-500 font-bold mt-1">شعار المدرسة</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- ================= 5. Principal's Word (كلمة مدير المدرسة) ================= -->
   <section class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8">
     <div
@@ -189,11 +242,11 @@
       <div class="md:col-span-4 relative bg-gradient-to-br from-portal-navy to-portal-navyDark p-6 sm:p-8 flex items-center justify-center">
         <div class="absolute -top-16 -left-16 w-48 h-48 rounded-full bg-amber-400/15 blur-2xl pointer-events-none"></div>
         <div class="relative w-40 sm:w-48 md:w-full max-w-[240px]">
-          <img [src]="principal.photoUrl" [alt]="principal.name"
+          <img [src]="principal().photoUrl" [alt]="principal().name"
             class="w-full aspect-[5/6] object-cover rounded-2xl ring-4 ring-white/20 shadow-xl bg-slate-200" />
           <span
             class="absolute -bottom-3 inset-x-0 mx-auto w-fit px-3.5 py-1 rounded-full bg-amber-400 text-portal-navyDark text-[11px] font-black shadow-md whitespace-nowrap">
-            {{ principal.title }}
+            {{ principal().title }}
           </span>
         </div>
       </div>
@@ -205,21 +258,21 @@
           كلمة مدير المدرسة
         </span>
         <h3 class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight mt-3">
-          {{ principal.name }}
+          {{ principal().name }}
         </h3>
 
         <div class="relative mt-4 space-y-3">
           <svg class="absolute -top-2 -right-1 w-10 h-10 text-portal-navy/10" fill="currentColor" viewBox="0 0 24 24">
             <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z" />
           </svg>
-          @for (paragraph of principal.message; track $index) {
+          @for (paragraph of principal().message; track $index) {
           <p class="relative text-xs sm:text-sm md:text-base text-slate-600 leading-loose">{{ paragraph }}</p>
           }
         </div>
 
         <div class="mt-5 pt-4 border-t border-slate-100 flex items-center gap-3">
           <span class="w-10 h-1 rounded-full bg-amber-400"></span>
-          <span class="text-xs sm:text-sm font-bold text-slate-700">{{ principal.name }} — {{ principal.title }}</span>
+          <span class="text-xs sm:text-sm font-bold text-slate-700">{{ principal().name }} — {{ principal().title }}</span>
         </div>
       </div>
 
@@ -500,6 +553,84 @@
     </div>
 
   </section>
+
+  <!-- ================= رؤية ورسالة المدرسة ================= -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 space-y-5 sm:space-y-6">
+    <!-- Header: the school's emblem, title and values -->
+    <div class="flex flex-col items-center text-center gap-2.5">
+      <img [src]="schoolLogo" alt="شعار المدرسة"
+        class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white p-1 shadow-card ring-4 ring-amber-400/30 object-contain" />
+      <h2 class="text-2xl sm:text-3xl font-black text-portal-navy tracking-tight">رؤية ورسالة المدرسة</h2>
+      <div class="flex flex-wrap items-center justify-center gap-2 text-[11px] sm:text-xs font-bold">
+        @for (value of schoolValues; track value) {
+        <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">{{ value }}</span>
+        }
+        <span class="px-3 py-1 rounded-full bg-primary-50 text-portal-navy border border-primary-100">تأسست عام {{ foundedYear }}</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5">
+      <!-- Vision (Right in RTL): one statement, given the spotlight -->
+      <div
+        class="md:col-span-5 relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-portal-navy to-portal-navyDark p-6 sm:p-8 text-white shadow-card flex flex-col">
+        <div class="absolute -top-16 -left-16 w-48 h-48 rounded-full bg-amber-400/15 blur-2xl pointer-events-none"></div>
+        <div class="relative flex items-center gap-3">
+          <span class="w-11 h-11 rounded-xl bg-amber-400 text-portal-navyDark flex items-center justify-center shadow-md shrink-0">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </span>
+          <h3 class="text-lg sm:text-xl font-black">رؤية المدرسة</h3>
+        </div>
+        <p class="relative flex-1 flex items-center mt-5 text-lg sm:text-xl md:text-2xl font-bold leading-loose">
+          {{ vision }}
+        </p>
+        <span class="relative mt-5 w-12 h-1 rounded-full bg-amber-400"></span>
+      </div>
+
+      <!-- Mission (Left in RTL): the goals, one by one -->
+      <div class="md:col-span-7 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-card p-6 sm:p-8 text-right">
+        <div class="flex items-center gap-3">
+          <span class="w-11 h-11 rounded-xl bg-primary-50 text-portal-navy flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            </svg>
+          </span>
+          <h3 class="text-lg sm:text-xl font-black text-slate-900">رسالة المدرسة</h3>
+        </div>
+        <ul class="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-3">
+          @for (goal of mission; track $index) {
+          <li class="flex items-start gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+            <span
+              class="w-6 h-6 rounded-full bg-portal-navy text-white text-[11px] font-black flex items-center justify-center shrink-0 tabular-nums">
+              {{ $index + 1 }}
+            </span>
+            <span class="text-xs sm:text-sm text-slate-700 leading-relaxed">{{ goal }}</span>
+          </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= من حياة المدرسة (photo carousel) - hidden until the admins add a photo ================= -->
+  @if (galleryPhotos().length) {
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 space-y-4 sm:space-y-5">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 text-right">
+      <div>
+        <span class="text-[11px] font-bold text-portal-navy bg-primary-50 px-3 py-1 rounded-full inline-block border border-primary-100">
+          من حياة المدرسة
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-black text-portal-navy tracking-tight mt-2">لقطات من أنشطتنا</h2>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-500 max-w-md">أنشطة طلابنا ومسابقاتهم ورحلاتهم وحفلات التكريم على مدار العام الدراسي.</p>
+    </div>
+    <app-school-gallery [photos]="galleryPhotos()" />
+  </section>
+  }
 
   <!-- ================= 7. Bottom Split: Announcements & Academic KPI Monitors ================= -->
   <section class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-8">

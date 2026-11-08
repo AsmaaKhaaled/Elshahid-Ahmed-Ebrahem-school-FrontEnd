@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { provideMaterialDefaults } from '../../shared/material/material-defaults.providers';
@@ -13,4 +14,9 @@ import { provideMaterialDefaults } from '../../shared/material/material-defaults
   templateUrl: './student-layout.component.html',
   styleUrl: './student-layout.component.css'
 })
-export class StudentLayoutComponent {}
+export class StudentLayoutComponent {
+  constructor() {
+    // This year's classes per grade, used by every page that lists classes
+    inject(SchoolStructureStore).ensureLoaded();
+  }
+}

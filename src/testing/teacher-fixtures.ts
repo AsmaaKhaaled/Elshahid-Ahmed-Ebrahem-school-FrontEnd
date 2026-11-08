@@ -2,6 +2,8 @@ import { Teacher, TeacherDto } from '../app/features/teachers/teacher.model';
 
 /** A teacher as the app holds it (ids are short for readable tests). */
 export function makeTeacher(id: string, name: string, change: Partial<Teacher> = {}): Teacher {
+  const subjects = change.subjects ?? ['الرياضيات'];
+  const classes = change.classes ?? [];
   return {
     id,
     name,
@@ -10,11 +12,14 @@ export function makeTeacher(id: string, name: string, change: Partial<Teacher> =
     specialization: 'الرياضيات',
     email: '',
     phone: '01012345678',
-    subjects: ['الرياضيات'],
-    classes: [],
     status: 'على رأس العمل',
+    active: true,
     account: { status: 'ACTIVE', mustChangePassword: false },
-    ...change
+    ...change,
+    subjects,
+    classes,
+    // Every subject to all the classes unless the test says otherwise
+    assignments: change.assignments ?? subjects.map(subject => ({ subject, classes: [...classes] }))
   };
 }
 
@@ -30,7 +35,9 @@ export function teacherDto(teacher: Teacher): TeacherDto {
     specialization: teacher.specialization,
     subjects: teacher.subjects,
     classes: teacher.classes,
+    assignments: teacher.assignments,
     status: teacher.status === 'على رأس العمل' ? 'ON_DUTY' : teacher.status === 'منتدب' ? 'SECONDED' : 'ON_LEAVE',
+    active: teacher.active,
     account: teacher.account
   };
 }

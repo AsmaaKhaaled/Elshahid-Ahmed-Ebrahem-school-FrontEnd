@@ -8,17 +8,31 @@
       </span>
     </div>
 
-    <!-- Classes are fixed by GRADE_LEVELS for now, so creating a class is not available yet -->
-    <button
-      type="button"
-      disabled
-      title="هذه الخاصية غير متاحة حالياً"
-      class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs flex items-center gap-2 cursor-not-allowed">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      <span>إنشاء فصل دراسي جديد</span>
-    </button>
+    <!-- Number of classes per grade & their capacity change every year -->
+    @if (canManage()) {
+      <button
+        type="button"
+        (click)="openSetup()"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 text-white hover:bg-primary-900 shadow font-bold text-xs flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span>إعداد الفصول والكثافة</span>
+      </button>
+    }
+  </div>
+
+  <!-- This year's setup per grade -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    @for (grade of gradeSummaries(); track grade.grade) {
+      <div class="bg-white rounded-2xl px-4 py-3 shadow-soft border border-slate-100/80">
+        <span class="block text-xs font-bold text-slate-500">{{ grade.label }}</span>
+        <span class="block text-sm font-black text-slate-800 mt-0.5">
+          {{ grade.sections }} فصول · كثافة {{ grade.capacity }} طالب
+        </span>
+      </div>
+    }
   </div>
 
   <!-- Grade Filter -->
@@ -38,7 +52,7 @@
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
     @for (cls of filteredClasses(); track cls.id) {
       @let advisor = advisorStates()[cls.id];
-      @let density = cls.enrolledStudents / capacity;
+      @let density = cls.enrolledStudents / cls.capacity;
       <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100/80 hover:shadow-md transition-all space-y-4">
         <div class="flex items-start justify-between">
           <div>
@@ -57,7 +71,7 @@
         <div class="space-y-1.5">
           <div class="flex justify-between text-xs text-slate-600">
             <span>الكثافة الطلابية:</span>
-            <span class="font-bold text-slate-800">{{ cls.enrolledStudents }} / {{ capacity }} طالب</span>
+            <span class="font-bold text-slate-800">{{ cls.enrolledStudents }} / {{ cls.capacity }} طالب</span>
           </div>
           <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
             <div
@@ -120,5 +134,15 @@
       [advisorsElsewhere]="advisorsElsewhere(cls.id)"
       (saved)="assignAdvisor(cls.id, $event)"
       (closed)="advisorClass.set(null)" />
+  }
+
+  @if (setupOpen()) {
+    <app-class-structure-dialog
+      [setup]="setup()"
+      [year]="year()"
+      [saving]="savingSetup()"
+      [serverError]="setupError()"
+      (saved)="saveSetup($event)"
+      (closed)="setupOpen.set(false)" />
   }
 </div>

@@ -15,15 +15,20 @@ export interface GradeLevel {
   sections: string[];
 }
 
-// الصفوف الدراسية للمرحلة الإعدادية وفصول كل صف
+// الصفوف الدراسية للمرحلة الإعدادية بفصولها الافتراضية (4 لكل صف).
+// عدد الفصول الفعلي لكل صف بيتغير كل سنة - اقرأه من SchoolStructureStore مش من هنا.
 export const GRADE_LEVELS: GradeLevel[] = [
   { id: 'G1', label: 'الصف الأول الإعدادي', shortLabel: 'الأول الإعدادي', sections: ['1/1', '1/2', '1/3', '1/4'] },
   { id: 'G2', label: 'الصف الثاني الإعدادي', shortLabel: 'الثاني الإعدادي', sections: ['2/1', '2/2', '2/3', '2/4'] },
   { id: 'G3', label: 'الصف الثالث الإعدادي', shortLabel: 'الثالث الإعدادي', sections: ['3/1', '3/2', '3/3', '3/4'] }
 ];
 
-// أقصى كثافة مسموحة للفصل الواحد
-export const MAX_CLASS_CAPACITY = 45;
+// أقصى كثافة ممكنة للفصل الواحد (الكثافة الفعلية لكل صف يحددها الأدمن، بحد أقصى 50)
+export const MAX_CLASS_CAPACITY = 50;
+// كثافة الفصل لحد ما الأدمن يحددها
+export const DEFAULT_CLASS_CAPACITY = 40;
+// أقصى عدد فصول للصف الواحد
+export const MAX_SECTIONS_PER_GRADE = 10;
 
 // السنوات والفصول الدراسية يديرها الأدمن من صفحة "العام والفصل الدراسي" - راجع AcademicCalendarStore
 

@@ -34,6 +34,17 @@
           لم يتم تحديد تاريخ الانتهاء المتوقع — حدده من الجدول تحت عشان النظام ينبهك قبل نهاية الفصل
         </span>
       }
+      <!-- The next term's start, as planned (only once it was added to the list) -->
+      @if (nextPlanned(); as planned) {
+        <span class="text-xs mt-1 block text-slate-500">
+          {{ next().label }}:
+          @if (planned.plannedStartDate) {
+            البداية المتوقعة {{ planned.plannedStartDate | arabicDate:'dateOnly' }}
+          } @else {
+            <span class="font-semibold text-amber-700">لسه متحددش تاريخ بدايته</span>
+          }
+        </span>
+      }
     </div>
     @if (!confirming()) {
       <button (click)="confirming.set(true)" type="button"
@@ -79,7 +90,9 @@
     <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h3 class="font-bold text-slate-800 text-base">سجل السنوات والفصول الدراسية</h3>
-        <p class="text-xs text-slate-500 mt-0.5">ضيف الفصل أو العام الجديد قبل بدايته عشان تجهز جداوله مسبقاً</p>
+        <p class="text-xs text-slate-500 mt-0.5">
+          ضيف الفصل أو العام الجديد قبل بدايته وحدد مواعيد بدايته ونهايته من خريطة الوزارة. لو الوزارة غيرت المواعيد، عدّلها من هنا
+        </p>
       </div>
       <button (click)="calendar.addNextTerm()" type="button"
         class="px-4 py-2 rounded-xl border border-primary-200 bg-primary-50 hover:bg-primary-100 text-primary-800 font-bold text-xs transition-colors">
@@ -88,35 +101,47 @@
     </div>
 
     <div class="overflow-x-auto">
-      <table appCardTable class="w-full text-right text-sm">
-        <thead class="bg-slate-50 text-xs text-slate-500 font-bold">
+      <table appCardTable class="w-full text-right text-xs">
+        <thead class="bg-slate-50 text-[11px] text-slate-500 font-bold">
           <tr>
-            <th class="py-3.5 px-4">الفصل الدراسي</th>
-            <th class="py-3.5 px-4">العام الدراسي</th>
-            <th class="py-3.5 px-4">تاريخ البداية</th>
-            <th class="py-3.5 px-4">الانتهاء المتوقع</th>
-            <th class="py-3.5 px-4">تاريخ الانتهاء الفعلي</th>
-            <th class="py-3.5 px-4 text-center">الحالة</th>
-            <th class="py-3.5 px-4 text-center">الإجراءات</th>
+            <th class="py-2.5 px-2.5">الفصل</th>
+            <th class="py-2.5 px-2.5">العام</th>
+            <th class="py-2.5 px-2.5">البداية المتوقعة</th>
+            <th class="py-2.5 px-2.5">البداية الفعلية</th>
+            <th class="py-2.5 px-2.5">الانتهاء المتوقع</th>
+            <th class="py-2.5 px-2.5">الانتهاء الفعلي</th>
+            <th class="py-2.5 px-2.5 text-center">الحالة</th>
+            <th class="py-2.5 px-2.5 text-center">الإجراءات</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-700">
           @for (term of termsNewestFirst(); track term.id) {
             @let status = calendar.termStatus(term);
             <tr [class]="status === 'current' ? 'bg-emerald-50/40' : 'hover:bg-slate-50/80'">
-              <td class="py-3 px-4 font-bold text-slate-800">{{ term.term === 1 ? 'الفصل الدراسي الأول' : 'الفصل الدراسي الثاني' }}</td>
-              <td class="py-3 px-4">{{ term.year }}</td>
-              <td class="py-3 px-4 whitespace-nowrap">{{ term.startedAt ? (term.startedAt | arabicDate:'medium') : '—' }}</td>
-              <td class="py-3 px-4 whitespace-nowrap">
+              <td class="py-2 px-2.5 font-bold text-slate-800">{{ term.term === 1 ? 'الأول' : 'الثاني' }}</td>
+              <td class="py-2 px-2.5">{{ term.year }}</td>
+              <td class="py-2 px-2.5 whitespace-nowrap">
+                @if (status === 'upcoming') {
+                  <!-- Known from the ministry's calendar, but it can still move until the term starts -->
+                  <app-date-field compact class="w-36" ariaLabel="البداية المتوقعة للفصل" [value]="term.plannedStartDate ?? ''"
+                    [min]="calendar.earliestStart(term)" [max]="term.plannedEndDate"
+                    (valueChange)="calendar.setPlannedStartDate(term.id, $event)" />
+                } @else {
+                  {{ term.plannedStartDate ? (term.plannedStartDate | arabicDate:'medium') : '—' }}
+                }
+              </td>
+              <td class="py-2 px-2.5 whitespace-nowrap">{{ term.startedAt ? (term.startedAt | arabicDate:'medium') : '—' }}</td>
+              <td class="py-2 px-2.5 whitespace-nowrap">
                 @if (status === 'past') {
                   {{ term.plannedEndDate ? (term.plannedEndDate | arabicDate:'medium') : '—' }}
                 } @else {
                   <!-- Editable: the ministry sometimes moves the dates -->
-                  <app-date-field compact class="w-48" ariaLabel="النهاية المخططة للفصل" [value]="term.plannedEndDate ?? ''"
-                    [min]="term.startedAt" (valueChange)="calendar.setPlannedEndDate(term.id, $event)" />
+                  <app-date-field compact class="w-36" ariaLabel="النهاية المخططة للفصل" [value]="term.plannedEndDate ?? ''"
+                    [min]="term.startedAt ?? term.plannedStartDate" [max]="calendar.latestEnd(term)"
+                    (valueChange)="calendar.setPlannedEndDate(term.id, $event)" />
                 }
               </td>
-              <td class="py-3 px-4 whitespace-nowrap">
+              <td class="py-2 px-2.5 whitespace-nowrap">
                 @if (term.endedAt) {
                   {{ term.endedAt | arabicDate:'medium' }}
                 } @else if (status === 'current') {
@@ -125,10 +150,10 @@
                   —
                 }
               </td>
-              <td class="py-3 px-4 text-center">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold" [class]="statusStyles[status]">{{ statusLabels[status] }}</span>
+              <td class="py-2 px-2.5 text-center">
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap" [class]="statusStyles[status]">{{ statusLabels[status] }}</span>
               </td>
-              <td class="py-3 px-4 text-center">
+              <td class="py-2 px-2.5 text-center">
                 @if (calendar.canRemove(term)) {
                   <button (click)="calendar.removeTerm(term.id)" type="button"
                     class="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50">

@@ -81,6 +81,34 @@ describe('TeachersStore', () => {
     expect(store.schedules()['2026-2027-T1']['1']).toBeUndefined();
   });
 
+  it('stops a teacher who left: kept in the list as stopped, without classes or schedules', () => {
+    const teacher = makeTeacher('1', 'أحمد علي', { classes: ['3/1'] });
+    store.teachers.set([teacher]);
+    store.saveSchedule('1', '2026-2027-T1', { [slotKey(0, 0)]: { subject: 'الرياضيات', section: '3/1' } });
+
+    let removed = -1;
+    store.deactivateTeacher('1').subscribe(res => (removed = res.removedPeriods));
+    const req = http.expectOne(`${API}/1/deactivate`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ data: { teacher: teacherDto({ ...teacher, active: false, classes: [], subjects: [], assignments: [] }), removedPeriods: 1 } });
+
+    expect(removed).toBe(1);
+    expect(store.teachers()[0]).toEqual(jasmine.objectContaining({ id: '1', active: false, classes: [] }));
+    expect(store.schedules()['2026-2027-T1']['1']).toBeUndefined();
+  });
+
+  it('brings a stopped teacher back', () => {
+    const stopped = makeTeacher('1', 'أحمد علي', { active: false });
+    store.teachers.set([stopped]);
+
+    store.activateTeacher('1').subscribe();
+    const req = http.expectOne(`${API}/1/activate`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ data: { teacher: teacherDto({ ...stopped, active: true }) } });
+
+    expect(store.teachers()[0].active).toBeTrue();
+  });
+
   it('computes the weekly load from the current term schedule', () => {
     const termId = TestBed.inject(AcademicCalendarStore).currentTermId();
     store.saveSchedule('1', termId, {

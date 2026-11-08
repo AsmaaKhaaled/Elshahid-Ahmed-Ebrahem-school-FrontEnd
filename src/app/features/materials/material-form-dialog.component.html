@@ -16,7 +16,8 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <mat-form-field class="w-full">
           <mat-label>المادة</mat-label>
-          <mat-select name="subject" required [(ngModel)]="draft.subject">
+          <mat-select name="subject" required [ngModel]="draft.subject"
+            (ngModelChange)="draft.subject = $event; draft.sections = scope.keepSections($event, draft.sections)">
             @for (subject of scope.subjects(); track subject) {
               <mat-option [value]="subject">{{ subject }}</mat-option>
             }
@@ -26,7 +27,7 @@
         <mat-form-field class="w-full">
           <mat-label>تظهر لفصول</mat-label>
           <mat-select name="sections" required multiple [(ngModel)]="draft.sections">
-            @for (section of scope.sections(); track section) {
+            @for (section of scope.sectionsFor(draft.subject); track section) {
               <mat-option [value]="section">فصل {{ section }}</mat-option>
             }
           </mat-select>

@@ -3,9 +3,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
-import { DAILY_PERIODS, GRADE_LEVELS, SCHOOL_DAYS } from '../../core/constants/school.constants';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
+import { DAILY_PERIODS, SCHOOL_DAYS } from '../../core/constants/school.constants';
 import { SchedulesService, ScheduleSlotInput, TimetableConflictDetail } from '../../core/services/schedules.service';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
+import { apiErrorMessage } from '../../shared/utils/api-error';
 import { ScheduleSlot, Teacher, TermSchedules, WeeklySchedule, slotKey, teacherDisplayName } from './teacher.model';
 
 @Component({
@@ -30,7 +32,13 @@ export class TeacherScheduleDialogComponent implements OnInit {
   readonly currentTermId = this.calendar.currentTermId;
   readonly days = SCHOOL_DAYS;
   readonly periods = Array.from({ length: DAILY_PERIODS }, (_, i) => i);
-  readonly sections = GRADE_LEVELS.flatMap(grade => grade.sections);
+  private readonly schoolSections = inject(SchoolStructureStore).allSections;
+  // Only the classes assigned to this teacher (teachers page), in the school's order
+  readonly sections = computed(() => {
+    const taught = new Set(this.teacher().assignments.flatMap(a => a.classes));
+    const ordered = this.schoolSections().filter(section => taught.has(section));
+    return [...ordered, ...[...taught].filter(section => !ordered.includes(section)).sort()];
+  });
   readonly slotKey = slotKey;
   readonly displayName = teacherDisplayName;
 
@@ -40,8 +48,13 @@ export class TeacherScheduleDialogComponent implements OnInit {
   readonly serverError = signal<string | null>(null);
   readonly conflictDetail = signal<TimetableConflictDetail | null>(null);
 
+  // termId -> the teacher's schedule as the backend has it (fetched when the dialog opens / a term is picked)
+  private readonly fetched = signal<Record<string, WeeklySchedule>>({});
+  readonly loadingSchedule = signal(false);
+
+  // What's saved: the backend's copy once fetched, else the page's copy
   private readonly savedSchedule = computed<WeeklySchedule>(() =>
-    this.schedules()[this.selectedTermId()]?.[this.teacher().id] ?? {}
+    this.fetched()[this.selectedTermId()] ?? this.schedules()[this.selectedTermId()]?.[this.teacher().id] ?? {}
   );
   // Working copy; resets to the saved schedule whenever the term (or saved data) changes
   readonly draft = linkedSignal<WeeklySchedule>(() => ({ ...this.savedSchedule() }));
@@ -88,26 +101,30 @@ export class TeacherScheduleDialogComponent implements OnInit {
     const termId = this.selectedTermId();
     if (!teacherId) return;
 
+    this.loadingSchedule.set(true);
     this.schedulesService.getTeacherSchedule(teacherId, termId).subscribe({
       next: res => {
-        const backendSchedule = res.data?.schedule || {};
         const parsed: WeeklySchedule = {};
-        for (const [key, slot] of Object.entries(backendSchedule)) {
+        for (const [key, slot] of Object.entries(res.data?.schedule || {})) {
           if (slot.className) {
-            parsed[key] = {
-              subject: slot.subject,
-              section: slot.className
-            };
+            parsed[key] = { subject: slot.subject, section: slot.className };
           }
         }
-        if (Object.keys(parsed).length > 0) {
-          this.draft.set(parsed);
-        }
+        // Becomes the saved schedule (the draft follows it unless it's being edited)
+        this.fetched.update(all => ({ ...all, [termId]: parsed }));
+        this.loadingSchedule.set(false);
       },
       error: () => {
-        // Fall back gracefully to current draft
+        // Keep showing the page's copy
+        this.loadingSchedule.set(false);
       }
     });
+  }
+
+  /** The teacher's subjects taught to a class (all their subjects while no class is picked) */
+  subjectsFor(section: string): string[] {
+    const subjects = this.teacher().assignments.filter(a => a.classes.includes(section)).map(a => a.subject);
+    return subjects.length ? subjects : this.teacher().subjects;
   }
 
   setSlot(key: string, change: Partial<ScheduleSlot>): void {
@@ -121,6 +138,11 @@ export class TeacherScheduleDialogComponent implements OnInit {
       const next = { ...schedule };
       const empty: ScheduleSlot = { subject: this.teacher().subjects[0] ?? '', section: '' };
       const slot: ScheduleSlot = { ...empty, ...schedule[key], ...change };
+      // A new class keeps the subject only if the teacher teaches it to that class
+      if (change.section && !change.subject) {
+        const subjects = this.subjectsFor(slot.section);
+        if (!subjects.includes(slot.subject)) slot.subject = subjects[0] ?? slot.subject;
+      }
       if (slot.section) {
         next[key] = slot;
       } else {
@@ -161,6 +183,7 @@ export class TeacherScheduleDialogComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.isSaving.set(false);
+        this.fetched.update(all => ({ ...all, [this.selectedTermId()]: this.draft() }));
         this.saved.emit({ termId: this.selectedTermId(), schedule: this.draft() });
       },
       error: (err: HttpErrorResponse) => {
@@ -171,7 +194,7 @@ export class TeacherScheduleDialogComponent implements OnInit {
           this.serverError.set(message);
           this.conflictDetail.set(conflict ?? null);
         } else {
-          this.serverError.set(err.error?.message || 'تعذر حفظ الجدول المدرسي. تحقق من الاتصال وحاول مرة أخرى.');
+          this.serverError.set(apiErrorMessage(err, 'تعذر حفظ الجدول المدرسي. تحقق من الاتصال وحاول مرة أخرى.'));
         }
       }
     });

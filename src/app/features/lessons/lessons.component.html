@@ -6,11 +6,25 @@
     <p class="text-xs text-slate-500 mt-1">الحصص اللي إدارة المدرسة وزّعتها عليك · {{ currentTerm().label }}</p>
   </div>
 
-  @if (isDemoSchedule()) {
-    <p class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-3">
-      ده جدول تجريبي لحد ما الإدارة تعمل جدولك من "هيئة التدريس".
+  @switch (state()) {
+    @case ('loading') {
+      <p class="text-center py-10 text-sm text-slate-400">جاري تحميل جدولك...</p>
+    }
+    @case ('error') {
+      <div class="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-sm text-rose-800 flex flex-wrap items-center justify-between gap-3" role="alert">
+        <span>تعذر تحميل جدولك من الخادم. تأكد من الاتصال وحاول مرة أخرى.</span>
+        <button (click)="load()" type="button" class="px-4 py-2 rounded-xl bg-white border border-rose-200 font-bold text-xs">إعادة المحاولة</button>
+      </div>
+    }
+  }
+
+  @if (state() === 'ready' && !hasSchedule()) {
+    <p class="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+      الإدارة لسه ماعملتش جدول حصصك للفصل الدراسي ده. أول ما يتعمل من "هيئة التدريس" هيظهر هنا.
     </p>
   }
+
+  @if (state() === 'ready' && hasSchedule()) {
 
   @let stats = weekStats();
   <div class="grid grid-cols-3 gap-3 sm:gap-4">
@@ -98,56 +112,118 @@
       </table>
     </div>
   </section>
+  }
 </div>
 } @else {
-<!-- ================= Student: the class's lessons of the day ================= -->
+<!-- ================= Student: their class's weekly schedule (as the admin set it) ================= -->
 <div class="space-y-6">
   <div>
-    <h2 class="text-2xl font-black text-slate-800 tracking-tight">الجدول المدرسي والحصص اليومية</h2>
-    <p class="text-xs text-slate-500 mt-1">حصص فصلك ومواضيع الدروس</p>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">جدول الحصص</h2>
+    <p class="text-xs text-slate-500 mt-1">
+      @if (className()) { جدول فصل {{ className() }} · }{{ currentTerm().label }}
+    </p>
   </div>
 
-  <!-- Day Selector Tabs -->
-  <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
-    @for (day of days; track day) {
-      <button
-        type="button"
-        (click)="selectedDay.set(day)"
-        [class]="selectedDay() === day ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
-        class="shrink-0 whitespace-nowrap px-5 py-2.5 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
-        {{ day }}
-      </button>
+  @switch (state()) {
+    @case ('loading') {
+      <p class="text-center py-10 text-sm text-slate-400">جاري تحميل جدول فصلك...</p>
     }
-  </div>
-
-  <!-- Schedule Timeline / Cards -->
-  <div class="space-y-3">
-    @for (lesson of dailyLessons(); track lesson.id) {
-      <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-primary-200 transition-all">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-primary-50 text-primary-800 flex flex-col items-center justify-center font-bold shrink-0 border border-primary-100">
-            <span class="text-[10px] text-primary-500 font-medium">الحصة</span>
-            <span class="text-base font-black leading-none">{{ lesson.period }}</span>
-          </div>
-
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 class="font-black text-slate-800 text-base">{{ lesson.subject }}</h3>
-              <span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                قاعة {{ lesson.room }}
-              </span>
-            </div>
-            <p class="text-xs text-slate-500 mt-1">المعلم: <strong class="text-slate-700">{{ lesson.teacher }}</strong> | موضوع الدرس: <span class="text-primary-700 font-semibold">{{ lesson.topic }}</span></p>
-          </div>
-        </div>
-
-        <span class="self-start sm:self-auto font-mono text-xs text-slate-500 font-semibold dir-ltr bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-          {{ lesson.time }}
-        </span>
+    @case ('error') {
+      <div class="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-sm text-rose-800 flex flex-wrap items-center justify-between gap-3" role="alert">
+        <span>تعذر تحميل جدول فصلك من الخادم. تأكد من الاتصال وحاول مرة أخرى.</span>
+        <button (click)="load()" type="button" class="px-4 py-2 rounded-xl bg-white border border-rose-200 font-bold text-xs">إعادة المحاولة</button>
       </div>
-    } @empty {
-      <p class="text-center py-10 text-sm text-slate-400">مفيش حصص متسجلة لليوم ده.</p>
     }
-  </div>
+    @case ('no-class') {
+      <p class="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+        إنت لسه مش متسكّن في فصل. أول ما شؤون الطلاب تسكّنك في فصلك هيظهر جدولك هنا.
+      </p>
+    }
+  }
+
+  @if (state() === 'ready' && !hasLessons()) {
+    <p class="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+      جدول فصلك لسه ماتعملش للفصل الدراسي ده. أول ما الإدارة تعمله هيظهر هنا.
+    </p>
+  }
+
+  @if (state() === 'ready' && hasLessons()) {
+    <!-- Day tabs: one row, scrolls sideways on narrow screens -->
+    <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+      @for (day of days; track day; let i = $index) {
+        <button type="button" (click)="selectedDayIndex.set(i)"
+          [class]="selectedDayIndex() === i ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
+          class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60 flex items-center gap-1.5">
+          {{ day }}
+          @if (i === todayIndex) {
+            <span class="text-[9px] px-1.5 py-0.5 rounded-full" [class]="selectedDayIndex() === i ? 'bg-white/20' : 'bg-emerald-50 text-emerald-700'">النهارده</span>
+          }
+          <span class="opacity-60">({{ lessonsOn(i) }})</span>
+        </button>
+      }
+    </div>
+
+    <!-- The selected day -->
+    <ul class="space-y-2.5">
+      @for (p of studentDay(); track p.period) {
+        <li class="rounded-2xl border p-3 sm:p-4 flex items-center gap-3 sm:gap-4"
+          [class]="p.lesson ? 'bg-white border-slate-100 shadow-soft' : 'bg-slate-50/60 border-dashed border-slate-200'">
+          <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center shrink-0 border"
+            [class]="p.lesson ? 'bg-primary-50 text-primary-800 border-primary-100' : 'bg-white text-slate-400 border-slate-200'">
+            <span class="text-[10px] font-medium opacity-80">الحصة</span>
+            <span class="text-base font-black leading-none">{{ p.period }}</span>
+          </div>
+          @if (p.lesson; as lesson) {
+            <div class="min-w-0 flex-1">
+              <h3 class="font-black text-slate-800 text-sm sm:text-base">{{ lesson.subject }}</h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                المعلم: <strong class="text-slate-700">{{ lesson.teacherName }}</strong>
+                @if (lesson.room) { · قاعة {{ lesson.room }} }
+              </p>
+            </div>
+            @if (lesson.time) {
+              <span class="shrink-0 font-mono text-[11px] text-slate-500 font-semibold dir-ltr bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ lesson.time }}</span>
+            }
+          } @else {
+            <p class="text-sm font-semibold text-slate-400">حصة فاضية</p>
+          }
+        </li>
+      }
+    </ul>
+
+    <!-- The whole week -->
+    <section class="bg-white rounded-2xl shadow-soft border border-slate-100 p-4 space-y-3">
+      <h3 class="font-bold text-slate-800 text-sm">جدول الأسبوع كامل</h3>
+      <div class="overflow-x-auto rounded-xl border border-slate-100">
+        <table class="table-grid w-full text-xs text-center min-w-[640px]">
+          <thead class="bg-slate-50 text-slate-500 font-bold">
+            <tr>
+              <th scope="col" class="py-2.5 px-2 w-20">اليوم</th>
+              @for (period of periods; track period) {
+                <th scope="col" class="py-2.5 px-2">الحصة {{ period + 1 }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (day of days; track day; let d = $index) {
+              <tr [class]="d === todayIndex ? 'bg-primary-50/40' : ''">
+                <th scope="row" class="py-2 px-2 font-bold text-slate-700">{{ day }}</th>
+                @for (period of periods; track period) {
+                  @let lesson = lessonAt(d, period);
+                  <td class="py-2 px-1.5">
+                    @if (lesson) {
+                      <span class="block rounded-lg bg-primary-50 text-primary-800 font-bold px-1.5 py-1" [title]="lesson.teacherName">{{ lesson.subject }}</span>
+                    } @else {
+                      <span class="text-slate-300">—</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
 </div>
 }

@@ -10,6 +10,8 @@ export interface SchoolClass {
   gradeLevel: string;
   roomNumber?: string;
   capacity?: number;
+  // Active students in the class (GET /classes)
+  currentStudentCount?: number;
 }
 
 interface ClassesApiResponse {

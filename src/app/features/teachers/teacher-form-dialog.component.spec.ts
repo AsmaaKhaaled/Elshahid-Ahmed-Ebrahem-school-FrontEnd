@@ -32,18 +32,37 @@ describe('TeacherFormDialogComponent', () => {
     expect(component.classGroups().map(g => g.sections)).toEqual([['1/1', '1/A'], [], ['3/2'], ['معمل']]);
   });
 
-  it('emits the chosen classes (sorted) with the password', async () => {
+  it('emits the classes of each subject (sorted) and all of them together', async () => {
     await open();
     const results: TeacherFormResult[] = [];
     component.saved.subscribe(result => results.push(result));
 
-    component.password = 'NewPass99';
+    component.onSubjectsChange(['الرياضيات', 'العلوم']);
+    component.draft.assignments[1].classes = ['1/2', '3/3'];
     component.save(validForm());
     component.save(validForm());
 
     expect(results.length).toBe(1);
-    expect(results[0].teacher.classes).toEqual(['3/2', '3/3']);
-    expect(results[0].password).toBe('NewPass99');
+    expect(results[0].teacher.assignments).toEqual([
+      { subject: 'الرياضيات', classes: ['3/2', '3/3'] },
+      { subject: 'العلوم', classes: ['1/2', '3/3'] }
+    ]);
+    expect(results[0].teacher.classes).toEqual(['1/2', '3/2', '3/3']);
+    expect(results[0].password).toBe('');
+  });
+
+  it('shows one class picker per chosen subject, keeping the classes of a subject that stays', async () => {
+    await open();
+    component.onSubjectsChange(['العلوم', 'الرياضيات']);
+    expect(component.draft.assignments).toEqual([
+      { subject: 'العلوم', classes: [] },
+      { subject: 'الرياضيات', classes: ['3/3', '3/2'] }
+    ]);
+
+    component.onSubjectsChange(['العلوم']);
+    fixture.detectChanges();
+    expect(document.body.textContent).toContain('فصول العلوم');
+    expect(document.body.textContent).not.toContain('فصول الرياضيات');
   });
 
   it('asks for the initial password only when adding a teacher', async () => {
@@ -52,6 +71,11 @@ describe('TeacherFormDialogComponent', () => {
     const password = document.body.querySelector<HTMLInputElement>('input[name="password"]')!;
     expect(password.required).toBeTrue();
     expect(document.body.textContent).toContain('كلمة المرور المبدئية');
+  });
+
+  it('has no password field when editing a teacher', async () => {
+    await open();
+    expect(document.body.querySelector('input[name="password"]')).toBeNull();
   });
 
   it('unlocks and shows the server message when saving fails', async () => {

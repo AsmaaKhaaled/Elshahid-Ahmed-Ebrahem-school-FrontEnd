@@ -34,9 +34,10 @@ export class ClassAdvisorDialogComponent implements OnInit {
   readonly current = computed(() => currentAdvisor(this.schoolClass(), this.year()));
   readonly history = computed(() => [...this.schoolClass().advisorHistory].reverse());
 
-  // A teacher can advise only one class per year, must be on duty, and must differ from the current advisor
+  // A teacher can advise only one class per year, must be on duty, and must differ from the current advisor.
+  // Stopped teachers (left the school) aren't offered at all.
   readonly teacherOptions = computed(() =>
-    this.teachers().map(teacher => {
+    this.teachers().filter(teacher => teacher.active).map(teacher => {
       const elsewhere = this.advisorsElsewhere()[teacher.id];
       let blockedReason = '';
       if (teacher.id === this.current()?.teacherId) {

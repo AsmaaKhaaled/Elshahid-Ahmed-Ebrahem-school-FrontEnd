@@ -5,6 +5,7 @@ import { Observable, Subscription, concatMap, of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { today } from '../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
+import { ConfirmService } from '../../core/notifications/confirm.service';
 import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { TimeFieldComponent } from '../../shared/components/time-field/time-field.component';
 import { PAGE_SIZE_OPTIONS, loadPageSize, savePageSize } from '../../shared/components/pagination/page-size';
@@ -49,6 +50,7 @@ export class TeacherAttendanceComponent implements OnInit {
   private readonly service = inject(TeacherAttendanceService);
   private readonly authService = inject(AuthService);
   private readonly injector = inject(Injector);
+  private readonly confirm = inject(ConfirmService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly school = SCHOOL_INFO;
@@ -140,9 +142,20 @@ export class TeacherAttendanceComponent implements OnInit {
     return this.draft().filter(row => row.status === status).length;
   }
 
-  changeDate(date: string): void {
+  async changeDate(date: string): Promise<void> {
     if (!date || date === this.selectedDate()) return;
-    if (this.dirty() && !confirm('فيه تعديلات في دفتر اليوم لسه ما اتحفظتش. تحب تسيبها وتفتح يوم تاني؟')) return;
+    if (
+      this.dirty() &&
+      !(await this.confirm.ask({
+        title: 'فيه تعديلات في دفتر اليوم لسه ما اتحفظتش',
+        message: 'لو فتحت يوم تاني، التعديلات اللي عملتها ومحفظتهاش هتضيع.',
+        confirmText: 'افتح اليوم التاني',
+        cancelText: 'ارجع احفظها',
+        tone: 'danger'
+      }))
+    ) {
+      return;
+    }
     this.selectedDate.set(date);
     this.loadDay();
   }

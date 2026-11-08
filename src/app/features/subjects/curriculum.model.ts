@@ -89,7 +89,8 @@ export function gradeLabel(gradeId: string): string {
 
 /** The grade a class belongs to, e.g. "3/2" -> "G3". */
 export function gradeOfSection(section: string): string {
-  return GRADE_LEVELS.find(grade => grade.sections.includes(section))?.id ?? '';
+  const id = `G${section.split('/')[0]}`;
+  return GRADE_LEVELS.some(grade => grade.id === id) ? id : '';
 }
 
 /** The kinds a curriculum has files for (e.g. for the card's icons). */

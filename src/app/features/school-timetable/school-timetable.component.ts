@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, effect, untracked } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
-import { DAILY_PERIODS, GRADE_LEVELS, SCHOOL_DAYS } from '../../core/constants/school.constants';
-import { SchedulesService, SchoolScheduleResponse } from '../../core/services/schedules.service';
-import { WeeklySchedule, slotKey, teacherDisplayName } from '../teachers/teacher.model';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
+import { DAILY_PERIODS, SCHOOL_DAYS } from '../../core/constants/school.constants';
+import { WeeklySchedule, activeTeachers, slotKey, teacherDisplayName } from '../teachers/teacher.model';
 import { TeachersStore } from '../teachers/teachers.store';
 import { exportSchoolTimetable } from './timetable-excel';
-import { ALL_SECTIONS, TimetableLesson, WEEKLY_SLOTS, buildSchoolTimetable, findConflicts, sectionCoverage } from './timetable';
+import { TimetableLesson, WEEKLY_SLOTS, buildSchoolTimetable, findConflicts, sectionCoverage } from './timetable';
 
 type TimetableView = 'sections' | 'teachers';
 
@@ -20,14 +20,14 @@ type TimetableView = 'sections' | 'teachers';
   templateUrl: './school-timetable.component.html',
   styleUrl: './school-timetable.component.css'
 })
-export class SchoolTimetableComponent implements OnInit {
+export class SchoolTimetableComponent {
   private readonly teachersStore = inject(TeachersStore);
-  private readonly schedulesService = inject(SchedulesService);
   private readonly calendar = inject(AcademicCalendarStore);
 
   readonly terms = this.calendar.terms;
   readonly currentTermId = this.calendar.currentTermId;
-  readonly grades = GRADE_LEVELS;
+  private readonly structure = inject(SchoolStructureStore);
+  readonly grades = this.structure.grades;
   readonly days = SCHOOL_DAYS;
   readonly periods = Array.from({ length: DAILY_PERIODS }, (_, i) => i);
   readonly weeklySlots = WEEKLY_SLOTS;
@@ -36,18 +36,20 @@ export class SchoolTimetableComponent implements OnInit {
 
   readonly view = signal<TimetableView>('sections');
   readonly selectedTermId = signal(this.calendar.currentTermId());
-  readonly selectedSection = signal(ALL_SECTIONS[0]);
+  readonly selectedSection = signal(this.structure.allSections()[0] ?? '');
   readonly selectedDay = signal(0);
   readonly exporting = signal(false);
   readonly isLoading = signal(false);
-  readonly backendData = signal<SchoolScheduleResponse['data'] | null>(null);
+  readonly loadError = signal<string | null>(null);
 
-  readonly teachers = this.teachersStore.teachers;
+  // Stopped teachers (left the school) have no periods and aren't listed
+  readonly teachers = computed(() => activeTeachers(this.teachersStore.teachers()));
   readonly termLabel = computed(() => this.terms().find(term => term.id === this.selectedTermId())?.label ?? '');
   
-  // Local store timetable (used as base or fallback)
+  // One source for the view, the conflicts check and the Excel export: the teachers' schedules
+  // as saved in the backend (loaded into the teachers store for the selected term)
   readonly termSchedules = computed<Record<string, WeeklySchedule>>(() => this.teachersStore.schedules()[this.selectedTermId()] ?? {});
-  readonly timetable = computed(() => buildSchoolTimetable(this.teachers(), this.termSchedules()));
+  readonly timetable = computed(() => buildSchoolTimetable(this.teachers(), this.termSchedules(), this.structure.allSections()));
   readonly localConflicts = computed(() => findConflicts(this.timetable()));
   
   // Unified conflicts
@@ -55,18 +57,7 @@ export class SchoolTimetableComponent implements OnInit {
     return this.localConflicts();
   });
 
-  // Section coverage computed from backend if available, or local timetable
-  readonly coverage = computed(() => {
-    const backend = this.backendData();
-    if (backend?.byClass) {
-      return new Map(ALL_SECTIONS.map(section => {
-        const slots = backend.byClass[section] || {};
-        const filled = Object.keys(slots).length;
-        return [section, { section, filled, free: WEEKLY_SLOTS - filled }];
-      }));
-    }
-    return new Map(sectionCoverage(this.timetable()).map(c => [c.section, c]));
-  });
+  readonly coverage = computed(() => new Map(sectionCoverage(this.timetable()).map(c => [c.section, c])));
 
   readonly sectionSlots = computed(() => this.timetable()[this.selectedSection()] ?? {});
   readonly incompleteSections = computed(() => [...this.coverage().values()].filter(c => c.free > 0).length);
@@ -81,25 +72,21 @@ export class SchoolTimetableComponent implements OnInit {
 
   constructor() {
     this.teachersStore.ensureLoaded();
+    // Loads the selected term's schedules (again whenever another term is picked)
     effect(() => {
       const termId = this.selectedTermId();
-      this.fetchSchedule(termId);
+      untracked(() => this.fetchSchedule(termId));
     });
-  }
-
-  ngOnInit(): void {
-    this.fetchSchedule(this.selectedTermId());
   }
 
   fetchSchedule(termId: string): void {
     this.isLoading.set(true);
-    this.schedulesService.getSchoolSchedule(termId).subscribe({
-      next: res => {
-        this.backendData.set(res.data);
-        this.isLoading.set(false);
-      },
+    this.loadError.set(null);
+    this.teachersStore.loadSchoolSchedule(termId).subscribe({
+      next: () => this.isLoading.set(false),
       error: () => {
         this.isLoading.set(false);
+        this.loadError.set('تعذر تحميل الجدول المدرسي من الخادم. تأكد إن الباك إند شغال وحاول مرة أخرى.');
       }
     });
   }
@@ -109,36 +96,10 @@ export class SchoolTimetableComponent implements OnInit {
   }
 
   lessonsAt(day: number, period: number): TimetableLesson[] {
-    const key = slotKey(day, period);
-    const backend = this.backendData();
-    if (backend?.byClass) {
-      const classSlots = backend.byClass[this.selectedSection()];
-      const slot = classSlots?.[key];
-      if (slot) {
-        return [{
-          teacherId: slot.teacherId,
-          teacherName: slot.teacherName,
-          subject: slot.subject
-        }];
-      }
-      return [];
-    }
-    return this.sectionSlots()[key] ?? [];
+    return this.sectionSlots()[slotKey(day, period)] ?? [];
   }
 
   scheduleOf(teacherId: string): WeeklySchedule {
-    const backend = this.backendData();
-    if (backend?.byTeacher?.[teacherId]) {
-      const slots = backend.byTeacher[teacherId];
-      const parsed: WeeklySchedule = {};
-      for (const [key, slot] of Object.entries(slots)) {
-        parsed[key] = {
-          subject: slot.subject,
-          section: slot.className
-        };
-      }
-      return parsed;
-    }
     return this.termSchedules()[teacherId] ?? {};
   }
 

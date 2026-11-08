@@ -67,6 +67,25 @@ describe('AcademicCalendarStore', () => {
     });
   });
 
+  describe('planned start date', () => {
+    it('can be moved for a term that has not started yet', () => {
+      store.setPlannedStartDate('2026-2027-T2', '2027-02-13');
+      expect(store.terms().find(t => t.id === '2026-2027-T2')!.plannedStartDate).toBe('2027-02-13');
+    });
+
+    it('stays as it was once the term has started', () => {
+      const current = store.currentTerm();
+      store.setPlannedStartDate(current.id, '2030-01-01');
+      expect(store.currentTerm().plannedStartDate).toBe(current.plannedStartDate);
+    });
+
+    it('keeps the dates in order: a term starts after the one before it and ends before the next', () => {
+      const next = store.terms().find(t => t.id === '2026-2027-T2')!;
+      expect(store.earliestStart(next)).toBe(store.currentTerm().plannedEndDate!);
+      expect(store.latestEnd(store.currentTerm())).toBe(next.plannedStartDate!);
+    });
+  });
+
   describe('adding and removing terms', () => {
     it('adds the term after the latest one', () => {
       const added = store.addNextTerm();

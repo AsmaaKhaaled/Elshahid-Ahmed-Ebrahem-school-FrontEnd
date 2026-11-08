@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -28,20 +28,21 @@ export class ApiService {
     return this.http.get(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, { responseType: 'blob' });
   }
 
-  post<T>(endpoint: string, body: any, headers?: HttpHeaders): Observable<T> {
-    return this.http.post<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, body, { headers });
+  // `context` tunes the toasts (see notify.interceptor: SILENT_REQUEST, SUCCESS_MESSAGE)
+  post<T>(endpoint: string, body: any, headers?: HttpHeaders, context?: HttpContext): Observable<T> {
+    return this.http.post<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, body, { headers, context });
   }
 
-  put<T>(endpoint: string, body: any): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, body);
+  put<T>(endpoint: string, body: any, context?: HttpContext): Observable<T> {
+    return this.http.put<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, body, { context });
   }
 
-  patch<T>(endpoint: string, body: any): Observable<T> {
-    return this.http.patch<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, body);
+  patch<T>(endpoint: string, body: any, context?: HttpContext): Observable<T> {
+    return this.http.patch<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, body, { context });
   }
 
-  delete<T>(endpoint: string): Observable<T> {
-    return this.http.delete<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`);
+  delete<T>(endpoint: string, context?: HttpContext): Observable<T> {
+    return this.http.delete<T>(`${this.baseUrl}/${this.cleanEndpoint(endpoint)}`, { context });
   }
 
   private cleanEndpoint(endpoint: string): string {

@@ -8,7 +8,9 @@ export interface AcademicTerm {
   // Real dates (YYYY-MM-DD) recorded when the term became current / was ended
   startedAt?: string;
   endedAt?: string;
-  // Expected end date from the ministry's school calendar (editable by the admin)
+  // Expected start / end dates from the ministry's school calendar, known before the year starts.
+  // The admin can still move them (the ministry sometimes changes them) until the term is over.
+  plannedStartDate?: string;
   plannedEndDate?: string;
 }
 
@@ -43,9 +45,15 @@ export function termAfter(term: AcademicTerm): AcademicTerm {
 }
 
 const DEFAULT_TERMS: AcademicTerm[] = [
-  { ...makeTerm(2025, 2), startedAt: '2026-02-07', endedAt: '2026-09-19', plannedEndDate: '2026-06-11' },
-  { ...makeTerm(2026, 1), startedAt: '2026-09-19', plannedEndDate: '2027-01-21' },
-  { ...makeTerm(2026, 2), plannedEndDate: '2027-06-10' }
+  {
+    ...makeTerm(2025, 2),
+    startedAt: '2026-02-07',
+    endedAt: '2026-09-19',
+    plannedStartDate: '2026-02-07',
+    plannedEndDate: '2026-06-11'
+  },
+  { ...makeTerm(2026, 1), startedAt: '2026-09-19', plannedStartDate: '2026-09-19', plannedEndDate: '2027-01-21' },
+  { ...makeTerm(2026, 2), plannedStartDate: '2027-02-06', plannedEndDate: '2027-06-10' }
 ];
 
 export function today(): string {
@@ -110,6 +118,26 @@ export class AcademicCalendarStore {
     this.terms.update(list =>
       list.map(t => (t.id === termId && this.termStatus(t) !== 'past' ? { ...t, plannedEndDate: date || undefined } : t))
     );
+  }
+
+  // Only a term that hasn't started yet can have its start moved; once it starts, the real date counts
+  setPlannedStartDate(termId: string, date: string): void {
+    this.terms.update(list =>
+      list.map(t => (t.id === termId && this.termStatus(t) === 'upcoming' ? { ...t, plannedStartDate: date || undefined } : t))
+    );
+  }
+
+  /** The earliest a term may start: after the term before it ends (actually, or as planned). */
+  earliestStart(term: AcademicTerm): string {
+    const index = this.terms().findIndex(t => t.id === term.id);
+    const previous = index > 0 ? this.terms()[index - 1] : null;
+    return previous?.endedAt ?? previous?.plannedEndDate ?? '';
+  }
+
+  /** The latest a term may end: before the term after it is planned to start. */
+  latestEnd(term: AcademicTerm): string {
+    const index = this.terms().findIndex(t => t.id === term.id);
+    return this.terms()[index + 1]?.plannedStartDate ?? '';
   }
 
   addNextTerm(): AcademicTerm {

@@ -33,12 +33,16 @@ export class PublicHeaderComponent {
    * The top-bar ticker: active announcements addressed to everyone (it's a public page),
    * pinned first. Comes from the announcements store, so it follows the API once that's wired.
    */
-  readonly tickerItems = computed(() =>
-    this.announcementsStore.announcements()
+  readonly tickerItems = computed<{ id: string; title: string; pinned: boolean }[]>(() => {
+    const items = this.announcementsStore.announcements()
       .filter(a => !isExpired(a) && a.audiences.length === AUDIENCES.length)
       .sort((a, b) => Number(b.pinned) - Number(a.pinned) || (b.publishedAt || '').localeCompare(a.publishedAt || ''))
-      .slice(0, 5)
-  );
+      .slice(0, 5);
+    // Nothing published to everyone right now: the school's standing notice keeps the bar moving
+    return items.length
+      ? items
+      : [{ id: 'notice', title: `بدء تفعيل نظام رصد درجات أعمال السنة والاختبار الشهري لكافة المواد (${this.academicTerm().label})`, pinned: false }];
+  });
 
   /** Longer text gets more time, so the speed stays readable (~4 characters a second). */
   readonly tickerDuration = computed(() => {

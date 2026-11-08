@@ -1,0 +1,60 @@
+<div appPortalToBody dir="rtl" class="dialog-overlay font-cairo">
+  <form #form="ngForm" (ngSubmit)="save(form)" novalidate [appSubmitLock]="lock.busy()"
+    class="dialog-panel max-w-2xl">
+    <div class="dialog-head flex items-center justify-between pb-3 border-b border-slate-100">
+      <div>
+        <h3 class="font-black text-slate-800 text-lg">إعداد الفصول الدراسية</h3>
+        <p class="text-xs text-slate-500 mt-0.5">
+          عدد الفصول في كل صف وكثافة الفصل@if (year()) { — العام الدراسي {{ year() }} }
+        </p>
+      </div>
+      <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
+    </div>
+
+    <div class="space-y-4 pt-1">
+      @for (grade of draft; track grade.grade) {
+        @let removing = removed(grade);
+        <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50/60 space-y-3">
+          <h4 class="font-black text-slate-800 text-sm">{{ gradeLabel(grade.grade) }}</h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <mat-form-field class="w-full">
+              <mat-label>عدد الفصول</mat-label>
+              <input matInput type="number" inputmode="numeric" [name]="'sections-' + grade.grade" required
+                [min]="1" [max]="maxSections" step="1" pattern="\d+" [(ngModel)]="grade.sections" />
+              <mat-error>من 1 إلى {{ maxSections }} فصول</mat-error>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>كثافة الفصل (أقصى عدد طلاب)</mat-label>
+              <input matInput type="number" inputmode="numeric" [name]="'capacity-' + grade.grade" required
+                [min]="1" [max]="maxCapacity" step="1" pattern="\d+" [(ngModel)]="grade.capacity" />
+              <mat-hint>الحد الأقصى {{ maxCapacity }} طالب</mat-hint>
+              <mat-error>من 1 إلى {{ maxCapacity }} طالب</mat-error>
+            </mat-form-field>
+          </div>
+
+          @if (sectionsPreview(grade)) {
+            <p class="text-[11px] text-slate-500">الفصول: <span class="font-bold text-slate-700">{{ sectionsPreview(grade) }}</span></p>
+          }
+          @if (removing.length) {
+            <p class="text-[11px] font-semibold text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5">
+              هيتشال: {{ removing.join('، ') }} — لازم يكون مفيش فيهم طلاب
+            </p>
+          }
+        </div>
+      }
+    </div>
+
+    @if (serverError()) {
+      <p class="text-xs font-semibold text-rose-700 bg-rose-50 rounded-xl px-3 py-2" role="alert">{{ serverError() }}</p>
+    }
+
+    <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
+      <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+        {{ lock.busy() ? 'جاري الحفظ...' : 'حفظ الإعدادات' }}
+      </button>
+    </div>
+  </form>
+</div>

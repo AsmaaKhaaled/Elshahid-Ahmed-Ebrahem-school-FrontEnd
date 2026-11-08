@@ -91,7 +91,8 @@
           <span>✓ تعليم الكل كمقروء</span>
         </button>
       }
-      @if (isAdmin()) {
+      <!-- Published from the admin panel only, not from the public page -->
+      @if (isAdmin() && !isPublicPage()) {
       <button (click)="openForm(null)" type="button"
         class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-portal-navy hover:bg-portal-navyDark text-white font-bold text-xs shadow-md shadow-portal-navy/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -102,17 +103,91 @@
     }
   </div>
 
-  <!-- Search & categories -->
-  <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+  <!-- Search & month on one row, the categories under them -->
+  <div class="space-y-3">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
     <!-- Search Input -->
-    <div class="relative w-full lg:w-80">
-      <input type="text" [(ngModel)]="searchQuery" placeholder="البحث في عنوان أو نص الإعلان..."
-        class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-portal-navy/20 focus:border-portal-navy shadow-xs" />
+    <div class="relative w-full sm:w-80">
+      <input type="text" [(ngModel)]="searchQuery" placeholder="ابحث بالعنوان أو الشهر (مثال: أكتوبر)..."
+        class="w-full h-11 pr-10 pl-10 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-portal-navy/20 focus:border-portal-navy shadow-xs" />
       <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </span>
+      @if (searchQuery()) {
+        <button (click)="searchQuery.set('')" type="button" aria-label="مسح البحث" title="مسح البحث"
+          class="absolute inset-y-0 left-2 my-auto w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      }
+    </div>
+
+    <!-- Month filter: a menu of the school year's months; ✕ goes back to every month -->
+    <div class="relative w-full sm:w-60" (keydown.escape)="monthMenuOpen.set(false)">
+      <button type="button" (click)="monthMenuOpen.set(!monthMenuOpen())" aria-haspopup="listbox" [attr.aria-expanded]="monthMenuOpen()"
+        class="w-full h-11 pr-2 pl-10 rounded-xl border text-xs font-bold shadow-xs flex items-center gap-2.5 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-portal-navy/20"
+        [class]="selectedMonth() || monthMenuOpen() ? 'border-portal-navy/40 bg-primary-50/60 text-portal-navy' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'">
+        <span class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+          [class]="selectedMonth() ? 'bg-portal-navy text-white' : 'bg-slate-100 text-slate-500'">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </span>
+        <span class="truncate">{{ selectedMonthLabel() }}</span>
+      </button>
+      @if (selectedMonth()) {
+        <button (click)="selectedMonth.set('')" type="button" aria-label="إلغاء فلتر الشهر" title="كل الشهور"
+          class="absolute inset-y-0 left-2 my-auto w-7 h-7 rounded-lg flex items-center justify-center text-portal-navy hover:bg-white transition-colors cursor-pointer">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      } @else {
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 transition-transform"
+          [class.rotate-180]="monthMenuOpen()">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </span>
+      }
+
+      @if (monthMenuOpen()) {
+        <!-- Clicking anywhere outside closes the menu -->
+        <div class="fixed inset-0 z-20" (click)="monthMenuOpen.set(false)"></div>
+        <div role="listbox" aria-label="الشهور"
+          class="absolute z-30 top-full mt-2 right-0 w-full sm:w-64 bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-900/10 p-1.5 max-h-80 overflow-y-auto">
+          <button type="button" role="option" [attr.aria-selected]="!selectedMonth()" (click)="pickMonth('')"
+            class="w-full px-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-colors cursor-pointer"
+            [class]="!selectedMonth() ? 'bg-portal-navy text-white' : 'text-slate-700 hover:bg-slate-50'">
+            <span>كل الشهور</span>
+            @if (!selectedMonth()) {
+              <span aria-hidden="true">✓</span>
+            }
+          </button>
+          <div class="my-1.5 border-t border-slate-100"></div>
+          @for (month of monthOptions(); track month.key) {
+            @let active = selectedMonth() === month.key;
+            <button type="button" role="option" [attr.aria-selected]="active" [disabled]="!month.count" (click)="pickMonth(month.key)"
+              class="w-full px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-colors enabled:cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+              [class]="active ? 'bg-portal-navy text-white' : 'text-slate-700 enabled:hover:bg-slate-50'">
+              <span class="flex items-baseline gap-1.5">
+                <span class="font-bold">{{ month.name }}</span>
+                <span class="text-[11px]" [class]="active ? 'text-white/70' : 'text-slate-400'">{{ month.year }}</span>
+              </span>
+              @if (month.count) {
+                <span class="min-w-6 px-1.5 py-0.5 rounded-full text-[10px] font-black text-center"
+                  [class]="active ? 'bg-white/20 text-white' : 'bg-primary-50 text-portal-navy'">{{ month.count }}</span>
+              } @else {
+                <span class="text-[10px]">لا توجد إعلانات</span>
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
     </div>
 
     <!-- Category Filter Pills (Horizontal swipe on mobile, wrap on sm+) -->
@@ -197,7 +272,7 @@
       </div>
     } @empty {
       <div class="bg-white rounded-2xl sm:rounded-3xl shadow-card border border-slate-200/80 text-center py-12 sm:py-16 text-slate-400 text-xs">
-        لا توجد إعلانات تطابق البحث أو التصنيف المحدد حالياً.
+        لا توجد إعلانات تطابق البحث أو الشهر أو التصنيف المحدد حالياً.
       </div>
     }
   </div>

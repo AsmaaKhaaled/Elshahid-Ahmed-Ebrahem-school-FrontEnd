@@ -9,6 +9,8 @@ import { HonorRollStore } from '../honor-roll/honor-roll.store';
 import { TEACHER_HONORIFIC } from '../teachers/teacher.model';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
 import { AnnouncementsStore, audienceLabel } from '../announcements/announcements.store';
+import { HomeContentStore } from '../home-content/home-content.store';
+import { SchoolGalleryComponent } from './school-gallery.component';
 
 interface SchoolNotice {
   day: string;
@@ -29,7 +31,7 @@ interface AcademicPillar {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, HonorAvatarComponent, PublicHeaderComponent, PublicFooterComponent],
+  imports: [RouterLink, HonorAvatarComponent, PublicHeaderComponent, PublicFooterComponent, SchoolGalleryComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -86,17 +88,32 @@ export class HomeComponent {
 
   readonly isMobileMenuOpen = signal<boolean>(false);
 
-  // كلمة مدير المدرسة - TODO: placeholder photo & text, replace with the principal's real photo and words
-  readonly principal = {
-    name: SCHOOL_INFO.principal,
-    title: 'مدير المدرسة',
-    photoUrl: 'images/principal-placeholder.svg',
-    message: [
-      'أبنائي الطلاب، السادة أولياء الأمور، زملائي المعلمين... أهلاً بكم في البوابة الإلكترونية لمدرستنا.',
-      'نؤمن بأن المدرسة بيت ثانٍ يصنع العقول ويبني الشخصية، ونسعى كل يوم لتقديم تعليم متميز يواكب العصر، في بيئة آمنة تحترم الطالب وتنمّي مواهبه.',
-      'ستظل أبوابنا مفتوحة دائماً لكل اقتراح يخدم أبناءنا، فالتعاون بين البيت والمدرسة هو طريقنا للتفوق والنجاح.'
-    ]
-  };
+  // كلمة مدير المدرسة & من حياة المدرسة - managed by the admins from /admin/home-content
+  private readonly homeContent = inject(HomeContentStore);
+  readonly principal = this.homeContent.principal;
+  readonly galleryPhotos = this.homeContent.visibleSlides;
+
+  // رؤية ورسالة المدرسة - as written on the school's own vision & mission board
+  readonly schoolValues = ['تربية', 'تنمية', 'انتماء'];
+  readonly foundedYear = SCHOOL_INFO.foundedYear;
+
+  // تاريخ المدرسة واليوبيل الماسي (75 years since 1948), beside the jubilee banner photo
+  readonly jubileeYears = 75;
+  readonly jubileePhoto = 'images/diamond-jubilee.jpg';
+  readonly schoolHistory = [
+    'نقف اليوم فخرًا واعتزازًا أمام صرح تعليمي شامخ، يُضيء سماء العلم والمعرفة منذ عقود؛ مدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية بنين. إن الاحتفال باليوبيل الماسي ومرور أكثر من 75 عامًا على التأسيس (1948 - 2027) ليس مجرد احتساب للأيام والسنين، بل هو احتفاء بمسيرة ممتدة من العطاء والتميز، وتخريج أجيال ساهمت في بناء المجتمع ورفعة الوطن.',
+    'تحت شعار "تربية، تنمية، انتماء"، نجحت المدرسة عبر تاريخها العريق في ترسيخ القيم الأخلاقية والوطنية في نفوس أبنائها الطلاب، بالتوازي مع تقديم تعليم متميز يبني العقول ويهيئ الشباب للمستقبل.',
+    'إن هذا الإنجاز التاريخي هو ثمرة جهود مخلصة وتعاون مستمر بين الإدارات المتعاقبة، والمعلمين الأجلاء الذين لم يبخلوا بجهد، وأولياء الأمور الداعمين، والطلاب الشغوفين بالعلم. نتوجه بتحية إعزاز وتقدير لكل من ترك بصمة في هذا الصرح العريق، متمنين للمدرسة دوام التقدم والازدهار لتظل دائمًا منارة للعلم والتربية والانتماء.'
+  ];
+  readonly vision = 'إعداد طالب متميز محب لوطنه، متمسك بقيمه، قادر على مواجهة التحديات، في مؤسسة تعليمية آمنة متطورة.';
+  readonly mission = [
+    'تفعيل الأنشطة الطلابية في كل المجالات.',
+    'تفعيل دور وحدة التدريب والجودة وتنمية المعلمين مهنياً.',
+    'الاهتمام بتكنولوجيا التعليم والتعلم وتنويع مصادره.',
+    'الاهتمام بالطلاب وتنمية قدراتهم ومهاراتهم.',
+    'تفعيل دور المشاركة المجتمعية بالمؤسسة.',
+    'تنمية السلوكيات المرتبطة بالقيم والأخلاق، وتعزيز قيم الولاء والانتماء والمواطنة.'
+  ];
 
   // Core Pillars / Highlights Replacing Duplicates
   readonly pillars: AcademicPillar[] = [

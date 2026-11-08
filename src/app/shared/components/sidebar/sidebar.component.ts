@@ -203,8 +203,8 @@ export class SidebarComponent {
       label: 'المواد التعليمية والملفات',
       route: '/materials',
       iconPaths: ['M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z', 'M12 11v6m0 0l-3-3m3 3l3-3'],
-      // Teachers upload, students download; admins see the uploads in "نشاط المستخدمين على المنصة"
-      roles: ['TEACHER', 'STUDENT']
+      // Students download here; teachers upload from the curriculum page's second tab (المناهج والمواد الدراسية)
+      roles: ['STUDENT']
     },
     {
       label: 'فيديوهات الشرح',
@@ -275,6 +275,13 @@ export class SidebarComponent {
       route: '/honor-roll',
       access: 'honor-roll',
       iconPaths: ['M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z'],
+      roles: ['ADMIN', 'SUPER_ADMIN']
+    },
+    {
+      label: 'محتوى الصفحة الرئيسية',
+      route: '/home-content',
+      access: 'home-content',
+      iconPaths: ['M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'],
       roles: ['ADMIN', 'SUPER_ADMIN']
     },
     {

@@ -1,44 +1,47 @@
-import { Injectable, signal } from '@angular/core';
-import { GRADE_LEVELS } from '../../core/constants/school.constants';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
+import { ClassesService } from '../../core/services/classes.service';
 import { AdvisorAssignment, SchoolClass } from './school-class.model';
 
 /**
  * Single source of truth for the school's classes & their advisors,
  * shared by the classes page and the dashboard.
+ * The classes themselves follow this year's setup (SchoolStructureStore).
  */
 @Injectable({ providedIn: 'root' })
 export class ClassesStore {
-  // Advisors are picked from the real teachers (they now come from the backend), so none is set up front
-  readonly classes = signal<SchoolClass[]>([
-    seedClass('c1', '1/1', 0, 42),
-    seedClass('c2', '1/2', 0, 41),
-    seedClass('c3', '1/3', 0, 40),
-    seedClass('c4', '1/4', 0, 39),
-    seedClass('c5', '2/1', 1, 43),
-    seedClass('c6', '2/2', 1, 42),
-    seedClass('c7', '2/3', 1, 40),
-    seedClass('c8', '2/4', 1, 47),
-    seedClass('c9', '3/1', 2, 44),
-    seedClass('c10', '3/2', 2, 43),
-    seedClass('c11', '3/3', 2, 41),
-    seedClass('c12', '3/4', 2, 42)
-  ]);
+  private readonly structure = inject(SchoolStructureStore);
+  private readonly classesService = inject(ClassesService);
+
+  // Advisors per class ("2/3" -> history); kept here until the backend stores them
+  private readonly advisors = signal<Record<string, AdvisorAssignment[]>>({});
+  // Active students per class, from the backend
+  private readonly enrolled = signal<Record<string, number>>({});
+
+  readonly classes = computed<SchoolClass[]>(() =>
+    this.structure.grades().flatMap(grade =>
+      grade.sections.map(section => ({
+        id: section,
+        section,
+        gradeLevel: grade.label,
+        enrolledStudents: this.enrolled()[section] ?? 0,
+        capacity: this.structure.capacityOf(section),
+        shift: 'صباحي' as const,
+        advisorHistory: this.advisors()[section] ?? []
+      }))
+    )
+  );
+
+  /** Reads how many students each class has (the classes page calls it on open). */
+  loadEnrollment(): void {
+    this.classesService.getAll().subscribe({
+      next: classes =>
+        this.enrolled.set(Object.fromEntries(classes.map(cls => [cls.name, cls.currentStudentCount ?? 0]))),
+      error: () => {}
+    });
+  }
 
   assignAdvisor(classId: string, assignment: AdvisorAssignment): void {
-    this.classes.update(list =>
-      list.map(cls => (cls.id === classId ? { ...cls, advisorHistory: [...cls.advisorHistory, assignment] } : cls))
-    );
+    this.advisors.update(all => ({ ...all, [classId]: [...(all[classId] ?? []), assignment] }));
   }
-}
-
-// Demo data until classes come from the backend
-function seedClass(id: string, section: string, gradeIndex: number, enrolledStudents: number): SchoolClass {
-  return {
-    id,
-    section,
-    gradeLevel: GRADE_LEVELS[gradeIndex].label,
-    enrolledStudents,
-    shift: 'صباحي',
-    advisorHistory: []
-  };
 }

@@ -1,6 +1,8 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { HttpContext } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError, map } from 'rxjs';
+import { SUCCESS_MESSAGE } from '../interceptors/notify.interceptor';
 import { ApiService } from '../services/api.service';
 import { TokenService } from './token.service';
 import { AdminRouteAccess, SUPER_ADMIN_ONLY } from '../admin/admin-permissions';
@@ -15,6 +17,9 @@ import {
 } from '../models/auth-response.model';
 
 export const ADMIN_ROLES: UserRole[] = ['ADMIN', 'SUPER_ADMIN'];
+
+// The account settings dialog words its own success toast ("تم تغيير كلمة المرور..."); errors still come from the interceptor
+const PAGE_SAYS_DONE = new HttpContext().set(SUCCESS_MESSAGE, '');
 
 export interface ProfileUpdate {
   fullName: string;
@@ -250,7 +255,7 @@ export class AuthService {
    * currentPassword is required by the backend when the national ID or email changes.
    */
   updateProfile(data: ProfileUpdate): Observable<User> {
-    return this.api.patch<GetMeResponse>('auth/me', data).pipe(
+    return this.api.patch<GetMeResponse>('auth/me', data, PAGE_SAYS_DONE).pipe(
       map(res => {
         const user: User = { ...this.currentUser()!, ...res.user };
         this.currentUser.set(user);
@@ -262,7 +267,7 @@ export class AuthService {
 
   /** Change own password (PATCH /api/v1/auth/change-password), needs the current one. */
   changePassword(body: { currentPassword: string; newPassword: string; confirmPassword: string }): Observable<void> {
-    return this.api.patch<unknown>('auth/change-password', body).pipe(map(() => undefined));
+    return this.api.patch<unknown>('auth/change-password', body, PAGE_SAYS_DONE).pipe(map(() => undefined));
   }
 
   logout(): void {

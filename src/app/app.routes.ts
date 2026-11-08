@@ -69,6 +69,7 @@ export const routes: Routes = [
       { path: 'academic-year', data: { access: 'academic-year' }, loadComponent: () => import('./features/academic-settings/academic-settings.component').then(m => m.AcademicSettingsComponent) },
       { path: 'platform-activity', data: { access: 'platform-activity' }, loadComponent: () => import('./features/platform-activity/platform-activity.component').then(m => m.PlatformActivityComponent) },
       { path: 'honor-roll', data: { access: 'honor-roll' }, loadComponent: () => import('./features/honor-roll/honor-roll.component').then(m => m.HonorRollComponent) },
+      { path: 'home-content', data: { access: 'home-content' }, loadComponent: () => import('./features/home-content/home-content.component').then(m => m.HomeContentComponent) },
       { path: 'admins', data: { access: SUPER_ADMIN_ONLY }, loadComponent: () => import('./features/admins/admins.component').then(m => m.AdminsComponent) },
       // Temporarily disabled for admins (see the sidebar's disabledFor) - restore the loadComponent to re-enable
       { path: 'grades', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -89,7 +90,8 @@ export const routes: Routes = [
       { path: 'classes', loadComponent: () => import('./features/classes/my-classes.component').then(m => m.MyClassesComponent) },
       { path: 'subjects', loadComponent: () => import('./features/subjects/curriculum.component').then(m => m.CurriculumComponent) },
       { path: 'lessons', loadComponent: () => import('./features/lessons/lessons.component').then(m => m.LessonsComponent) },
-      { path: 'materials', loadComponent: () => import('./features/materials/materials.component').then(m => m.MaterialsComponent) },
+      // Merged into المناهج والمواد الدراسية (second tab)
+      { path: 'materials', redirectTo: '/teacher/subjects?tab=materials', pathMatch: 'full' },
       { path: 'assignments', loadComponent: () => import('./features/assignments/assignments.component').then(m => m.AssignmentsComponent) },
       { path: 'quizzes', loadComponent: () => import('./features/quizzes/quizzes.component').then(m => m.QuizzesComponent) },
       { path: 'exams', loadComponent: () => import('./features/exams/exams.component').then(m => m.ExamsComponent) },

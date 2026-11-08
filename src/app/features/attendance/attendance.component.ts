@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { today } from '../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
+import { ConfirmService } from '../../core/notifications/confirm.service';
 import { DateFieldComponent } from '../../shared/components/date-field/date-field.component';
 import { PAGE_SIZE_OPTIONS, loadPageSize, savePageSize } from '../../shared/components/pagination/page-size';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { ClassRoster } from '../students/class-roster.service';
-import { TeachingScope } from '../teaching/teaching-scope.service';
+import { TeachingScope, pickOption } from '../teaching/teaching-scope.service';
 import { StudentSummary, exportClassAttendanceExcel, summarizeByStudent } from './class-attendance-excel';
 import {
   ALL_STUDENT_STATUS_OPTIONS, ClassArchiveFilters, ClassArchiveRecord, ClassDayRecord, STUDENT_NOT_RECORDED,
@@ -42,6 +44,7 @@ export class AttendanceComponent {
   private readonly roster = inject(ClassRoster);
   private readonly auth = inject(AuthService);
   private readonly injector = inject(Injector);
+  private readonly confirm = inject(ConfirmService);
 
   readonly school = SCHOOL_INFO;
   readonly statusOptions = STUDENT_STATUS_OPTIONS;
@@ -61,7 +64,8 @@ export class AttendanceComponent {
   // ================= Teacher: the daily sheet =================
 
   readonly today = today();
-  readonly selectedSection = signal(this.scope.sections()[0] ?? '');
+  // Opened from the dashboard on one class: ?section=3/2
+  readonly selectedSection = signal(pickOption(inject(ActivatedRoute).snapshot.queryParamMap.get('section'), this.scope.sections()));
   readonly selectedDate = signal(this.today);
 
   readonly sheet = computed(() => this.store.sheet(this.selectedSection(), this.selectedDate()));
@@ -98,16 +102,16 @@ export class AttendanceComponent {
     return this.draft().filter(row => row.status === status).length;
   }
 
-  changeSection(section: string): void {
-    if (section === this.selectedSection() || !this.leaveUnsaved()) return;
+  async changeSection(section: string): Promise<void> {
+    if (section === this.selectedSection() || !(await this.leaveUnsaved())) return;
     this.selectedSection.set(section);
     this.filters.set(EMPTY_FILTERS);
     this.archivePage.set(1);
     this.loadDay();
   }
 
-  changeDate(date: string): void {
-    if (!date || date === this.selectedDate() || !this.leaveUnsaved()) return;
+  async changeDate(date: string): Promise<void> {
+    if (!date || date === this.selectedDate() || !(await this.leaveUnsaved())) return;
     this.selectedDate.set(date);
     this.loadDay();
   }
@@ -271,8 +275,17 @@ export class AttendanceComponent {
     if (resetPage) this.sheetPage.set(1);
   }
 
-  private leaveUnsaved(): boolean {
-    return !this.dirty() || confirm('فيه تعديلات في دفتر اليوم لسه ما اتحفظتش. تحب تسيبها؟');
+  private async leaveUnsaved(): Promise<boolean> {
+    return (
+      !this.dirty() ||
+      this.confirm.ask({
+        title: 'فيه تعديلات في دفتر اليوم لسه ما اتحفظتش',
+        message: 'لو كمّلت، الغياب اللي سجلته ومحفظتهوش هيضيع.',
+        confirmText: 'كمّل من غير حفظ',
+        cancelText: 'ارجع احفظه',
+        tone: 'danger'
+      })
+    );
   }
 
   private updateRow(studentId: string, change: (row: ClassDayRecord) => ClassDayRecord): void {

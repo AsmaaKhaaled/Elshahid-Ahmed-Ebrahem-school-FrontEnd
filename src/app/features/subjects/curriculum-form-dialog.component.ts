@@ -3,7 +3,8 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { GRADE_LEVELS } from '../../core/constants/school.constants';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
+import { GradeLevel } from '../../core/constants/school.constants';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
 import { TeachingScope } from '../teaching/teaching-scope.service';
@@ -19,6 +20,7 @@ import { Curriculum, CurriculumDraft, gradeOfSection } from './curriculum.model'
 })
 export class CurriculumFormDialogComponent implements OnInit {
   readonly scope = inject(TeachingScope);
+  private readonly structure = inject(SchoolStructureStore);
 
   // null = new curriculum
   readonly curriculum = input<Curriculum | null>(null);
@@ -35,19 +37,33 @@ export class CurriculumFormDialogComponent implements OnInit {
 
   draft: CurriculumDraft = { subject: '', gradeId: '', sections: [], description: '' };
 
-  /** Grades the teacher has classes in (all grades if their classes aren't known). */
-  grades(): typeof GRADE_LEVELS {
-    const taught = new Set(this.scope.sections().map(gradeOfSection));
-    const grades = GRADE_LEVELS.filter(grade => taught.has(grade.id));
-    return grades.length ? grades : GRADE_LEVELS;
+  /** Grades the teacher teaches the chosen subject in (all grades if their classes aren't known). */
+  grades(): GradeLevel[] {
+    const all = this.structure.grades();
+    const taught = new Set(this.scope.sectionsFor(this.draft.subject).map(gradeOfSection));
+    const grades = all.filter(grade => taught.has(grade.id));
+    return grades.length ? grades : all;
   }
 
-  /** The teacher's classes in the chosen grade. */
+  /** The teacher's classes for the chosen subject in the chosen grade. */
   sectionOptions(): string[] {
-    const grade = GRADE_LEVELS.find(g => g.id === this.draft.gradeId);
+    const grade = this.structure.grades().find(g => g.id === this.draft.gradeId);
     if (!grade) return [];
-    const mine = this.scope.sections().filter(s => grade.sections.includes(s));
+    const mine = this.scope.sectionsFor(this.draft.subject).filter(s => grade.sections.includes(s));
     return mine.length ? mine : grade.sections;
+  }
+
+  // Another subject may be taught in other grades / classes
+  selectSubject(subject: string): void {
+    this.draft.subject = subject;
+    const grades = this.grades();
+    if (!grades.some(g => g.id === this.draft.gradeId)) {
+      this.draft.gradeId = '';
+      this.draft.sections = [];
+      if (grades.length === 1) this.selectGrade(grades[0].id);
+    } else {
+      this.draft.sections = this.scope.keepSections(subject, this.draft.sections);
+    }
   }
 
   ngOnInit(): void {

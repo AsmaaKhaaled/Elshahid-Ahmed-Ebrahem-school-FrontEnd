@@ -16,7 +16,8 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <mat-form-field class="w-full">
           <mat-label>المادة</mat-label>
-          <mat-select name="subject" required [(ngModel)]="subject">
+          <mat-select name="subject" required [ngModel]="subject"
+            (ngModelChange)="subject = $event; sections = assignment() ? sections : scope.keepSections($event, sections)">
             @for (s of scope.subjects(); track s) {
               <mat-option [value]="s">{{ s }}</mat-option>
             }
@@ -26,7 +27,7 @@
         <mat-form-field class="w-full">
           <mat-label>الفصول</mat-label>
           <mat-select name="sections" required multiple [(ngModel)]="sections" [disabled]="!!assignment()">
-            @for (section of scope.sections(); track section) {
+            @for (section of scope.sectionsFor(subject); track section) {
               <mat-option [value]="section">فصل {{ section }}</mat-option>
             }
           </mat-select>

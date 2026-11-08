@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { loginAs, provideTestDefaults } from '../../../testing/test-helpers';
 import { makeTeacher } from '../../../testing/teacher-fixtures';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
@@ -82,7 +83,36 @@ describe('DashboardComponent', () => {
   it('keeps the teacher dashboard without the admin charts', async () => {
     await open('TEACHER');
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('الفصول المسندة لجدول التدريس');
+    expect(text).toContain('موادي وفصولها');
     expect(text).not.toContain('النصاب الأسبوعي للمعلمين');
+  });
+
+  it("shows a teacher of two subjects each subject's own classes", async () => {
+    await open('TEACHER');
+    // The signed-in teacher: Arabic to 1/1 & 2/1, religion to 1/1 only
+    TestBed.inject(TeachersStore).teachers.update(list => [
+      ...list,
+      makeTeacher('test-TEACHER', 'أحمد علي', {
+        subjects: ['اللغة العربية', 'التربية الدينية'],
+        classes: ['1/1', '2/1'],
+        assignments: [
+          { subject: 'اللغة العربية', classes: ['1/1', '2/1'] },
+          { subject: 'التربية الدينية', classes: ['1/1'] }
+        ]
+      })
+    ]);
+    TestBed.inject(HttpTestingController)
+      .expectOne(req => req.url.endsWith('/teachers/me/classes'))
+      .flush({ data: { classes: [{ id: 'x', name: '1/1', displayNameArabic: '', gradeLevel: '', roomNumber: '101', capacity: 40, studentCount: 33, isAdvisor: false }] } });
+    fixture.detectChanges();
+
+    expect(component.teachingGroups().map(g => [g.subject, g.classes.map(c => c.name)])).toEqual([
+      ['اللغة العربية', ['1/1', '2/1']],
+      ['التربية الدينية', ['1/1']]
+    ]);
+    // 1/1 takes both subjects but is one class
+    expect(component.taughtClassCount()).toBe(2);
+    expect(component.teachingGroups()[0].classes[0]).toEqual({ name: '1/1', gradeLabel: 'الصف الأول الإعدادي', roomNumber: '101', studentCount: 33 });
+    expect(component.teacherSubjectsLabel()).toBe('اللغة العربية والتربية الدينية');
   });
 });

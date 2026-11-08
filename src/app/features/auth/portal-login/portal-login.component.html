@@ -72,12 +72,12 @@
             <input id="portal-identifier" name="identifier" type="text" autocomplete="username"
               [ngModel]="identifier()" (ngModelChange)="identifier.set($event)"
               [placeholder]="portal().identifierPlaceholder" [attr.maxlength]="portal().identifierMaxLength"
-              [attr.inputmode]="role() === 'teacher' ? 'numeric' : null"
+              inputmode="numeric"
               class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-mono font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-portal-navy/20 focus:border-portal-navy transition-shadow" />
           </div>
 
           <div class="space-y-1.5">
-            <label for="portal-password" class="block text-xs font-bold text-slate-700">كلمة المرور</label>
+            <label for="portal-password" class="block text-xs font-bold text-slate-700">{{ portal().passwordLabel }}</label>
             <div class="relative">
               <input id="portal-password" name="password" autocomplete="current-password"
                 [type]="showPassword() ? 'text' : 'password'"
@@ -100,6 +100,9 @@
                 }
               </button>
             </div>
+            @if (portal().passwordHint) {
+            <p class="text-[11px] font-semibold text-slate-500">{{ portal().passwordHint }}</p>
+            }
           </div>
 
           <div class="flex items-center justify-between text-xs">

@@ -7,6 +7,11 @@ const DEMO_TEACHER_SECTIONS = ['3/2', '3/3', '3/4'];
 const DEMO_TEACHER_SUBJECT = 'الرياضيات';
 const DEMO_STUDENT_SECTION = '3/2';
 
+/** `wanted` (e.g. a class from the link) if it's one of the options, else the first option. */
+export function pickOption(wanted: string | null, options: string[]): string {
+  return wanted && options.includes(wanted) ? wanted : (options[0] ?? '');
+}
+
 /**
  * Who is signed in, as far as teaching content goes:
  * a teacher publishes only to the classes & subjects assigned to them,
@@ -47,6 +52,29 @@ export class TeachingScope {
     if (subjects.length) return subjects;
     return [profile?.specialization || DEMO_TEACHER_SUBJECT];
   });
+
+  // Which classes each subject is taught to, as the admin assigned them (no demo fallback)
+  readonly subjectAssignments = computed<{ subject: string; classes: string[] }[]>(
+    () => this.teacher()?.assignments ?? this.auth.teacherProfile()?.teachingAssignments ?? []
+  );
+
+  /** Classes the signed-in teacher teaches `subject` to (all their classes if none were set per subject). */
+  sectionsFor(subject: string): string[] {
+    const classes = this.subjectAssignments().find(a => a.subject === subject)?.classes;
+    return classes?.length ? classes : this.sections();
+  }
+
+  /** Drops the picked classes that `subject` isn't taught to (after the subject changes). */
+  keepSections(subject: string, sections: string[]): string[] {
+    const taught = this.sectionsFor(subject);
+    return sections.filter(section => taught.includes(section));
+  }
+
+  /** Subjects the signed-in teacher teaches to `section`. */
+  subjectsFor(section: string): string[] {
+    const subjects = this.subjects().filter(subject => this.sectionsFor(subject).includes(section));
+    return subjects.length ? subjects : this.subjects();
+  }
 
   ensureLoaded(): void {
     this.teachersStore.ensureLoaded();

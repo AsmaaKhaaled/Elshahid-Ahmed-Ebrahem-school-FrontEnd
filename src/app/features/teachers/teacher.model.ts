@@ -5,6 +5,12 @@ export const TEACHER_STATUSES: TeacherStatus[] = ['على رأس العمل', '�
 // اللقب الموحد لكل المعلمين - الاسم نفسه يُخزن بدون لقب
 export const TEACHER_HONORIFIC = 'أ.';
 
+// The classes one subject is taught to, e.g. { subject: 'اللغة العربية', classes: ['1/1', '2/3'] }
+export interface TeachingAssignment {
+  subject: string;
+  classes: string[];
+}
+
 export interface Teacher {
   id: string;
   name: string;
@@ -14,9 +20,13 @@ export interface Teacher {
   email: string;
   phone: string;
   subjects: string[];
-  // Classes the teacher teaches, e.g. ["3/2", "3/3"]
+  // Classes the teacher teaches (any subject), e.g. ["3/2", "3/3"]
   classes: string[];
+  // Which of those classes each subject goes to
+  assignments: TeachingAssignment[];
   status: TeacherStatus;
+  // false = stopped (left the school): can't sign in, no classes or periods, kept for the records
+  active: boolean;
   // Teachers-portal sign-in (null for a teacher without an account)
   account?: { status: string; mustChangePassword: boolean } | null;
 }
@@ -41,7 +51,9 @@ export interface TeacherDto {
   specialization: string;
   subjects: string[];
   classes: string[];
+  assignments?: TeachingAssignment[];
   status: EmploymentStatus;
+  active?: boolean;
   account?: Teacher['account'];
 }
 
@@ -57,10 +69,16 @@ export function teacherFromDto(dto: TeacherDto): Teacher {
     phone: dto.phone ?? '',
     subjects: dto.subjects,
     classes: dto.classes,
+    // Older backends: every subject goes to all the teacher's classes
+    assignments: dto.assignments ?? dto.subjects.map(subject => ({ subject, classes: [...dto.classes] })),
     status,
+    active: dto.active ?? true,
     account: dto.account ?? null
   };
 }
+
+/** Teachers still at the school (the ones other pages list, count & schedule) */
+export const activeTeachers = (teachers: Teacher[]): Teacher[] => teachers.filter(t => t.active);
 
 /** Body of POST / PUT /teachers; `password` is the initial (or reset) sign-in password. */
 export function teacherToBody(teacher: Teacher, password: string) {
@@ -73,6 +91,7 @@ export function teacherToBody(teacher: Teacher, password: string) {
     specialization: teacher.specialization,
     subjects: teacher.subjects,
     classes: teacher.classes,
+    assignments: teacher.assignments,
     status: STATUS_TO_API[teacher.status],
     ...(password && { password })
   };

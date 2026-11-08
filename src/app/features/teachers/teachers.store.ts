@@ -112,21 +112,50 @@ export class TeachersStore {
     );
   }
 
+  /** Deletes a teacher added by mistake; one with records is refused by the backend (stop them instead). */
   deleteTeacher(teacherId: string): Observable<void> {
     return this.api.delete<unknown>(`teachers/${teacherId}`).pipe(
       map(() => undefined),
       tap(() => {
         this.teachers.update(list => list.filter(t => t.id !== teacherId));
-        this.schedules.update(all => {
-          const next: TermSchedules = {};
-          for (const [termId, termSchedules] of Object.entries(all)) {
-            const { [teacherId]: _removed, ...rest } = termSchedules;
-            next[termId] = rest;
-          }
-          return next;
-        });
+        this.dropSchedules(teacherId);
       })
     );
+  }
+
+  /**
+   * Stops a teacher who left the school: the backend closes their account (signed out at once),
+   * takes them off their classes, advised classes & timetable, and keeps everything they recorded.
+   */
+  deactivateTeacher(teacherId: string): Observable<{ teacher: Teacher; removedPeriods: number }> {
+    return this.api
+      .patch<{ data: { teacher: TeacherDto; removedPeriods: number } }>(`teachers/${teacherId}/deactivate`, {})
+      .pipe(
+        map(res => ({ teacher: teacherFromDto(res.data.teacher), removedPeriods: res.data.removedPeriods ?? 0 })),
+        tap(({ teacher }) => {
+          this.upsert(teacher);
+          this.dropSchedules(teacherId);
+        })
+      );
+  }
+
+  /** Lets a stopped teacher sign in again; their subjects & classes are set again from the form. */
+  activateTeacher(teacherId: string): Observable<Teacher> {
+    return this.api.patch<TeacherResponse>(`teachers/${teacherId}/activate`, {}).pipe(
+      map(res => teacherFromDto(res.data.teacher)),
+      tap(saved => this.upsert(saved))
+    );
+  }
+
+  private dropSchedules(teacherId: string): void {
+    this.schedules.update(all => {
+      const next: TermSchedules = {};
+      for (const [termId, termSchedules] of Object.entries(all)) {
+        const { [teacherId]: _removed, ...rest } = termSchedules;
+        next[termId] = rest;
+      }
+      return next;
+    });
   }
 
   saveSchedule(teacherId: string, termId: string, schedule: WeeklySchedule): void {

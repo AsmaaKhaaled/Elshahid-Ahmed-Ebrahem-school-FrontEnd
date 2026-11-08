@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../../core/academic/academic-calendar.store';
 import { SCHOOL_INFO } from '../../../core/constants/school.constants';
+import { ToastService } from '../../../core/notifications/toast.service';
 import { ArabicDatePipe } from '../../pipes/arabic-date.pipe';
 import { TimeAgoPipe, arabicCount } from '../../pipes/time-ago.pipe';
 import { Announcement, AnnouncementsStore, announcementsPath } from '../../../features/announcements/announcements.store';
@@ -47,24 +48,17 @@ export class NavbarComponent {
   readonly isProfileMenuOpen = signal<boolean>(false);
   readonly isNotificationsOpen = signal<boolean>(false);
   readonly isAccountSettingsOpen = signal<boolean>(false);
-  readonly accountNotice = signal<string | null>(null);
-  private noticeTimer?: ReturnType<typeof setTimeout>;
-
-  constructor() {
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.noticeTimer));
-  }
+  private readonly toasts = inject(ToastService);
 
   openAccountSettings(): void {
     this.isProfileMenuOpen.set(false);
     this.isAccountSettingsOpen.set(true);
   }
 
-  // The dialog saved a change: close it and confirm for a few seconds
+  // The dialog saved a change: close it and confirm with a toast
   onAccountSaved(message: string): void {
     this.isAccountSettingsOpen.set(false);
-    clearTimeout(this.noticeTimer);
-    this.accountNotice.set(message);
-    this.noticeTimer = setTimeout(() => this.accountNotice.set(null), 4000);
+    this.toasts.success(message);
   }
 
   toggleProfileMenu(): void {

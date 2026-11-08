@@ -85,10 +85,10 @@
           </button>
         }
       </div>
-      @if (scope.subjects().length > 1) {
+      @if (sectionSubjects().length > 1) {
         <mat-form-field class="field-compact md:ms-auto w-full md:w-48">
-          <mat-select [value]="selectedSubject()" (selectionChange)="selectSubject($event.value)" aria-label="المادة">
-            @for (subject of scope.subjects(); track subject) {
+          <mat-select [value]="selectedSubject()" (selectionChange)="selectSubject($event.value, $event.source)" aria-label="المادة">
+            @for (subject of sectionSubjects(); track subject) {
               <mat-option [value]="subject">{{ subject }}</mat-option>
             }
           </mat-select>

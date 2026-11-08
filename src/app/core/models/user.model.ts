@@ -57,6 +57,8 @@ export interface TeacherProfile {
   subjects?: TeacherAssignedSubject[];
   assignedClasses?: string[];
   assignedSubjects?: string[];
+  // Which classes each subject is taught to (set by the admin on the teachers page)
+  teachingAssignments?: { subject: string; classes: string[] }[];
 }
 
 export interface StudentProfile {

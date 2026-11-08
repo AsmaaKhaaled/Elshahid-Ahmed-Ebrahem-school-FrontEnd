@@ -85,6 +85,14 @@ export class AnnouncementsService {
   }
 
   /**
+   * The announcements addressed to visitors - no sign-in needed
+   * GET /api/v1/announcements/public
+   */
+  getPublic(): Observable<AnnouncementsListResponse> {
+    return this.http.get<AnnouncementsListResponse>(`${this.baseUrl}/public`);
+  }
+
+  /**
    * Fetch unread notifications count for the navbar badge
    * GET /api/v1/announcements/unread-count
    */

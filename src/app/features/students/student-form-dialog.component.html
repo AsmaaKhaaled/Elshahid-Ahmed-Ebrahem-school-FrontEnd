@@ -57,7 +57,7 @@
             matInput
             formControlName="nationalId"
             inputmode="numeric"
-            maxlength="14"
+            maxlength="20"
             placeholder="31102151234567"
             (input)="serverError.set(null)" />
           @if (nationalIdControl?.touched && nationalIdControl?.hasError('required')) {
@@ -137,14 +137,14 @@
             type="tel"
             formControlName="guardianPhone"
             dir="ltr"
-            maxlength="11"
+            maxlength="18"
             placeholder="01012345678"
             (input)="serverError.set(null)" />
           @if (guardianPhoneControl?.touched && guardianPhoneControl?.hasError('required')) {
             <mat-error>رقم الهاتف مطلوب</mat-error>
           }
           @if (guardianPhoneControl?.touched && guardianPhoneControl?.hasError('pattern')) {
-            <mat-error>رقم مصري صحيح (11 رقماً يبدأ بـ 01)</mat-error>
+            <mat-error>موبايل مصري: 11 رقماً يبدأ بـ 010 أو 011 أو 012 أو 015</mat-error>
           }
         </mat-form-field>
 

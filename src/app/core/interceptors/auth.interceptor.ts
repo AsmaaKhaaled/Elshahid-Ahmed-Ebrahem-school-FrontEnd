@@ -33,7 +33,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(clonedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !isLoginRequest) {
+      // Only a signed-in user's session can expire; a visitor (no token) on a public page stays where they are
+      if (error.status === 401 && !isLoginRequest && activeToken) {
         // Clear session and redirect to the matching login page
         tokenService.clearTokens();
         const loginPage = router.url.startsWith('/admin') ? '/admin/login' : '/';

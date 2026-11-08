@@ -37,6 +37,18 @@
         </svg>
         <span>{{ exporting() ? 'جاري التصدير...' : 'تصدير Excel' }}</span>
       </button>
+
+      <!-- Regular students with no class yet (e.g. imported without one): placed in their grade's classes evenly -->
+      @if (studentsWithoutClass()) {
+        <button
+          (click)="distribute()"
+          [disabled]="distributing()"
+          type="button"
+          title="بيتوزعوا على فصول صفهم بالتساوي، والفصل المكتمل مش بياخد حد"
+          class="px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-colors flex items-center gap-2 disabled:opacity-60">
+          <span>{{ distributing() ? 'جاري التوزيع...' : 'توزيع ' + studentsWithoutClass() + ' طالب بدون فصل' }}</span>
+        </button>
+      }
     </div>
   </div>
 
@@ -57,11 +69,9 @@
             </span>
           </div>
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-300 mt-1">
-            <span>كود الطالب (اسم الدخول): <strong class="font-mono text-amber-300">{{ cred.studentCode }}</strong></span>
+            <span>الرقم القومي (اسم الدخول): <strong class="font-mono text-amber-300">{{ cred.nationalId }}</strong></span>
             <span>•</span>
-            <span>كلمة المرور المؤقتة: <strong class="font-mono text-amber-300">{{ cred.initialPassword }}</strong></span>
-            <span>•</span>
-            <span>الرقم القومي: <span class="font-mono text-slate-200">{{ cred.nationalId }}</span></span>
+            <span>كلمة المرور لأول دخول (كود الطالب): <strong class="font-mono text-amber-300">{{ cred.initialPassword }}</strong></span>
             <span>•</span>
             <span>الفصل: <strong class="text-slate-100">فصل {{ cred.className }}</strong></span>
           </div>

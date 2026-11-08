@@ -102,6 +102,53 @@ describe('CurriculumComponent', () => {
     expect(req.request.params.get('page')).toBe('1');
   });
 
+  it('splits the administration\'s curricula by grade', () => {
+    loginAs('SUPER_ADMIN');
+    create();
+    listRequest().flush({
+      data: { curricula: [summary('a', { gradeId: 'G1' }), summary('b', { gradeId: 'G3' })], gradeCounts: { G1: 4, G3: 5 } },
+      meta: meta(9)
+    });
+    fixture.detectChanges();
+
+    // Every grade: each grade's curricula under its heading, with a tab per grade
+    expect(component.gradeTabs().map(t => t.count)).toEqual([9, 4, 0, 5]);
+    expect(component.curriculaByGrade().map(g => g.grade.id)).toEqual(['G1', 'G3']);
+    expect(fixture.nativeElement.textContent).toContain('الصف الأول الإعدادي');
+
+    // One grade: the server filters it, from the first page
+    component.goToPage(2);
+    listRequest().flush({ data: { curricula: [] }, meta: meta(9, 2) });
+    component.selectGrade('G3');
+    const req = listRequest();
+    expect(req.request.params.get('gradeId')).toBe('G3');
+    expect(req.request.params.get('page')).toBe('1');
+  });
+
+  it('gives the teacher their lesson materials as a second tab (not the administration)', () => {
+    loginAs('TEACHER');
+    create();
+    flushList([summary('c1')]);
+    const tabs = () => fixture.nativeElement.querySelectorAll('[role="tablist"][aria-label="المحتوى"] [role="tab"]');
+    expect(tabs().length).toBe(2);
+
+    component.selectView('materials');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-materials')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('المواد التعليمية والملفات');
+
+    component.selectView('curricula');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-materials')).toBeNull();
+  });
+
+  it('shows no content tabs to the administration', () => {
+    loginAs('SUPER_ADMIN');
+    create();
+    flushList([]);
+    expect(fixture.nativeElement.querySelector('[role="tablist"][aria-label="المحتوى"]')).toBeNull();
+  });
+
   it("offers the teacher's subjects that have no curriculum yet, whatever page they're on", () => {
     loginAs('TEACHER');
     create();

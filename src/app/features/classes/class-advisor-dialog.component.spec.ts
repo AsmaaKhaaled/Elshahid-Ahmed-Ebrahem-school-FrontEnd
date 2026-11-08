@@ -7,7 +7,7 @@ import { SchoolClass } from './school-class.model';
 function teacher(id: string, status: Teacher['status'] = 'على رأس العمل'): Teacher {
   return {
     id, name: `معلم ${id}`, nationalId: '', title: '', specialization: 'الرياضيات',
-    email: '', phone: '', subjects: ['الرياضيات'], classes: [], status
+    email: '', phone: '', subjects: ['الرياضيات'], classes: [], assignments: [], status, active: true
   };
 }
 
@@ -16,6 +16,7 @@ const schoolClass: SchoolClass = {
   section: '1/1',
   gradeLevel: 'الصف الأول الإعدادي',
   enrolledStudents: 40,
+  capacity: 45,
   shift: 'صباحي',
   advisorHistory: [{ teacherId: 'current', year: '2026/2027', since: '2026-09-19', reason: 'بداية عام دراسي جديد' }]
 };

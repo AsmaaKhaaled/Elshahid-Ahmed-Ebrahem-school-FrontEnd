@@ -32,6 +32,8 @@ export class AcademicSettingsComponent {
   readonly confirming = signal(false);
 
   readonly termsNewestFirst = computed(() => [...this.calendar.terms()].reverse());
+  // The next term, when it's already in the list (with its planned dates)
+  readonly nextPlanned = computed(() => this.calendar.terms().find(t => t.id === this.next().id) ?? null);
 
   // Days until the current term's planned end (null when no date is set)
   readonly daysLeft = computed(() => {

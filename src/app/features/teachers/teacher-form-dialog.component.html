@@ -7,7 +7,14 @@
       <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-3 gap-y-4 pt-1">
+    @if (isStopped()) {
+      <div class="p-3 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 leading-relaxed" role="status">
+        <p class="font-black text-slate-800">المعلم موقوف (ترك المدرسة)</p>
+        <p class="mt-1">حسابه مقفول ومش بيقدر يدخل المنظومة، ومالوش فصول ولا حصص. سجلاته القديمة (الحضور والدرجات والمناهج) محفوظة. لو رجع المدرسة فعّل حسابه وبعدين حدد مواده وفصوله.</p>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-3 gap-y-4 pt-1" [class.hidden]="isStopped()">
       <mat-form-field class="w-full sm:col-span-4">
         <mat-label>الاسم رباعي</mat-label>
         <span matTextPrefix class="text-slate-500 ml-1">{{ honorific }}</span>
@@ -18,15 +25,16 @@
 
       <mat-form-field class="w-full sm:col-span-2">
         <mat-label>الرقم القومي (14 رقم)</mat-label>
-        <input matInput name="nationalId" required pattern="\d{14}" inputmode="numeric" maxlength="14"
-          [(ngModel)]="draft.nationalId" placeholder="28501011234567" />
-        <mat-error>الرقم القومي يجب أن يكون 14 رقماً</mat-error>
+        <!-- Arabic digits, spaces & dashes are cleaned as typed, so the check runs on the 14 digits -->
+        <input matInput name="nationalId" required pattern="[23]\d{13}" inputmode="numeric" maxlength="20"
+          [ngModel]="draft.nationalId" (ngModelChange)="cleanNationalId($event)" placeholder="28501011234567" />
+        <mat-error>الرقم القومي 14 رقماً ويبدأ بـ 2 أو 3</mat-error>
       </mat-form-field>
 
       <mat-form-field class="w-full sm:col-span-2">
         <mat-label>رقم الهاتف</mat-label>
-        <input matInput type="tel" name="phone" required pattern="01[0125]\d{8}" maxlength="11"
-          [(ngModel)]="draft.phone" placeholder="01012345678" />
+        <input matInput type="tel" name="phone" required pattern="01[0125]\d{8}" maxlength="18"
+          [ngModel]="draft.phone" (ngModelChange)="cleanPhone($event)" placeholder="01012345678" />
         <mat-error>أدخل رقم موبايل مصري صحيح (11 رقم)</mat-error>
       </mat-form-field>
 
@@ -57,7 +65,7 @@
 
       <mat-form-field class="w-full sm:col-span-2">
         <mat-label>المواد التي يدرّسها</mat-label>
-        <mat-select name="subjects" required multiple [(ngModel)]="draft.subjects">
+        <mat-select name="subjects" required multiple [ngModel]="draft.subjects" (ngModelChange)="onSubjectsChange($event)">
           @for (subject of subjects; track subject) {
             <mat-option [value]="subject">{{ subject }}</mat-option>
           }
@@ -71,42 +79,62 @@
         <mat-error>صيغة البريد غير صحيحة</mat-error>
       </mat-form-field>
 
-      <mat-form-field class="w-full sm:col-span-4">
-        <mat-label>الفصول اللي بيدرّسها</mat-label>
-        <mat-select name="classes" multiple [(ngModel)]="draft.classes">
-          @for (group of classGroups(); track group.label) {
-            <mat-optgroup [label]="group.label">
-              @for (section of group.sections; track section) {
-                <mat-option [value]="section">فصل {{ section }}</mat-option>
-              }
-            </mat-optgroup>
-          }
-        </mat-select>
-        <mat-hint>
-          عدد الفصول: <strong>{{ draft.classes.length }}</strong>
-          @if (draft.classes.length) { — {{ draft.classes.join('، ') }} }
-        </mat-hint>
-      </mat-form-field>
+      <!-- One class picker per subject: which classes the teacher teaches that subject to -->
+      @for (assignment of draft.assignments; track assignment.subject) {
+        <mat-form-field class="w-full sm:col-span-4">
+          <mat-label>فصول {{ assignment.subject }}</mat-label>
+          <mat-select [name]="'classes-' + $index" required multiple [(ngModel)]="assignment.classes">
+            @for (group of classGroups(); track group.label) {
+              <mat-optgroup [label]="group.label">
+                @for (section of group.sections; track section) {
+                  <mat-option [value]="section">فصل {{ section }}</mat-option>
+                }
+              </mat-optgroup>
+            }
+          </mat-select>
+          <mat-hint>
+            عدد الفصول: <strong>{{ assignment.classes.length }}</strong>
+            @if (assignment.classes.length) { — {{ assignment.classes.join('، ') }} }
+          </mat-hint>
+          <mat-error>اختر فصلاً واحداً على الأقل لمادة {{ assignment.subject }}</mat-error>
+        </mat-form-field>
+      }
 
-      <mat-form-field class="w-full sm:col-span-4">
-        <mat-label>{{ teacher() ? 'كلمة مرور جديدة لبوابة المعلم (اختياري)' : 'كلمة المرور المبدئية لبوابة المعلم' }}</mat-label>
-        <input matInput type="text" name="password" dir="ltr" autocomplete="new-password" [required]="!teacher()"
-          pattern="(?=.*[a-zA-Z])(?=.*\d).{8,}" [(ngModel)]="password" />
-        <mat-hint>
-          {{ teacher() ? 'سيبها فاضية لو مش عايز تغيرها. ' : '' }}المعلم بيدخل بالرقم القومي وكلمة المرور دي، وأول مرة هيطلب منه يغيرها.
-        </mat-hint>
-        <mat-error>8 حروف على الأقل وفيها حروف إنجليزي وأرقام</mat-error>
-      </mat-form-field>
+      @if (!teacher()) {
+        <mat-form-field class="w-full sm:col-span-4">
+          <mat-label>كلمة المرور المبدئية لبوابة المعلم</mat-label>
+          <input matInput type="text" name="password" dir="ltr" autocomplete="new-password" required
+            pattern="(?=.*[a-zA-Z])(?=.*\d).{8,}" [(ngModel)]="password" />
+          <mat-hint>المعلم بيدخل بالرقم القومي وكلمة المرور دي، وأول مرة هيطلب منه يغيرها.</mat-hint>
+          <mat-error>8 حروف على الأقل وفيها حروف إنجليزي وأرقام</mat-error>
+        </mat-form-field>
+      }
     </div>
 
     @if (serverError()) {
       <p class="text-xs font-semibold text-rose-700 bg-rose-50 rounded-xl px-3 py-2" role="alert">{{ serverError() }}</p>
     }
 
+    @if (confirmingDeactivate()) {
+      <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span>
+          <strong>إيقاف المعلم (ترك المدرسة):</strong> حسابه هيتقفل فوراً ومش هيقدر يدخل المنظومة، وهيتشال من فصوله وجدوله وريادة الفصل ودفتر الحضور.
+          سجلاته القديمة هتفضل محفوظة، وتقدر تفعّله تاني في أي وقت. متأكد؟
+        </span>
+        <div class="flex items-center gap-2 shrink-0">
+          <button (click)="confirmingDeactivate.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-amber-100 font-bold">تراجع</button>
+          <button (click)="confirmDeactivate()" [disabled]="lock.busy()" type="button" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 font-bold">نعم، أوقفه</button>
+        </div>
+      </div>
+    }
+
     @if (confirmingDelete()) {
       <div class="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <span>سيتم حذف المعلم وحساب دخوله وجداوله الأسبوعية نهائياً (سجل حضوره القديم يفضل محفوظ). هل أنت متأكد؟</span>
-        <div class="flex items-center gap-2">
+        <span>
+          الحذف للمعلم اللي اتضاف بالغلط بس: هيتمسح هو وحساب دخوله وحصصه نهائياً.
+          لو المعلم ليه سجلات (حضور أو درجات أو مناهج) الحذف مش هيتم، استخدم "إيقاف المعلم". متأكد؟
+        </span>
+        <div class="flex items-center gap-2 shrink-0">
           <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
           <button (click)="confirmDelete()" [disabled]="lock.busy()" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>
         </div>
@@ -114,8 +142,13 @@
     }
 
     <div class="dialog-foot pt-4 flex items-center justify-between gap-3 border-t border-slate-100">
-      <div>
-        @if (teacher() && !confirmingDelete()) {
+      <div class="flex items-center gap-1">
+        @if (teacher() && !confirmingDelete() && !confirmingDeactivate()) {
+          @if (!isStopped()) {
+            <button (click)="confirmingDeactivate.set(true)" type="button" class="px-4 py-2 rounded-xl text-amber-700 hover:bg-amber-50 font-bold text-xs">
+              إيقاف المعلم
+            </button>
+          }
           <button (click)="confirmingDelete.set(true)" type="button" class="px-4 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs">
             حذف المعلم
           </button>
@@ -123,9 +156,15 @@
       </div>
       <div class="flex items-center gap-3">
         <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
-        <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
-          {{ lock.busy() ? 'جاري الحفظ...' : teacher() ? 'حفظ التعديلات' : 'إضافة المعلم' }}
-        </button>
+        @if (isStopped()) {
+          <button (click)="activate()" [disabled]="lock.busy()" type="button" class="px-5 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs hover:bg-emerald-800 shadow disabled:opacity-60">
+            {{ lock.busy() ? 'جاري التفعيل...' : 'تفعيل المعلم' }}
+          </button>
+        } @else {
+          <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+            {{ lock.busy() ? 'جاري الحفظ...' : teacher() ? 'حفظ التعديلات' : 'إضافة المعلم' }}
+          </button>
+        }
       </div>
     </div>
   </form>

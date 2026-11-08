@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { today } from '../../core/academic/academic-calendar.store';
-import { GRADE_LEVELS } from '../../core/constants/school.constants';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
 import { compareArabic } from '../../shared/utils/arabic-sort';
 import { ClassRoster } from '../students/class-roster.service';
 import {
@@ -45,6 +45,7 @@ function demoStatus(studentId: string, date: string): StudentAttendanceStatus {
 @Injectable({ providedIn: 'root' })
 export class ClassAttendanceStore {
   private readonly roster = inject(ClassRoster);
+  private readonly structure = inject(SchoolStructureStore);
 
   readonly sheets = signal<Record<string, ClassDaySheet>>(this.seed());
 
@@ -113,7 +114,7 @@ export class ClassAttendanceStore {
   private seed(): Record<string, ClassDaySheet> {
     const sheets: Record<string, ClassDaySheet> = {};
     const days = pastSchoolDays(today(), SEEDED_SCHOOL_DAYS);
-    for (const section of GRADE_LEVELS.flatMap(g => g.sections)) {
+    for (const section of this.structure.allSections()) {
       const students = this.roster.studentsOf(section);
       for (const date of days) {
         const marks: ClassDaySheet['marks'] = {};

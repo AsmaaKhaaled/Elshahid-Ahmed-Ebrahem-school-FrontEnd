@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ADMIN_ROLES, AuthService, NotAdminAccountError } from '../../../core/auth/auth.service';
+import { ToastService } from '../../../core/notifications/toast.service';
 import { AuthBrandPanelComponent } from '../../../shared/components/auth-brand-panel/auth-brand-panel.component';
 
 export const MAX_ATTEMPTS = 5;
@@ -34,6 +35,7 @@ export class AdminLoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toasts = inject(ToastService);
 
   readonly maxAttempts = MAX_ATTEMPTS;
   readonly lockMinutes = LOCK_MINUTES;
@@ -98,11 +100,15 @@ export class AdminLoginComponent {
       next: () => {
         this.isLoading.set(false);
         this.saveLock({ failures: 0, lockedUntil: null });
+        this.toasts.success('تم تسجيل الدخول بنجاح.');
       },
       error: err => {
         this.isLoading.set(false);
         this.loginForm.controls.password.reset();
         this.handleLoginError(err);
+        // Also as a toast; a lock is explained in the form itself
+        const message = this.errorMessage() ?? (this.isLocked() ? `تم إيقاف الدخول مؤقتاً لمدة ${LOCK_MINUTES} دقيقة بسبب محاولات خاطئة متكررة.` : null);
+        if (message) this.toasts.error(message);
       }
     });
   }

@@ -32,11 +32,14 @@ import { SCHOOL_DATE_PROVIDERS, dateToIso as toIso, isoToDate as toDate } from '
         [required]="required()" [disabled]="disabled()" [placeholder]="placeholder()" [errorStateMatcher]="errorState"
         [attr.aria-label]="ariaLabel() || label() || null" class="cursor-pointer"
         (click)="picker.open()" (keydown.enter)="picker.open()" (blur)="touched()" (dateChange)="pick($event.value)" />
-      @if (date() && !required() && !disabled()) {
-        <button matIconSuffix type="button" (click)="pick(null)" aria-label="مسح التاريخ"
-          class="me-1 w-6 h-6 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 text-xs leading-none">✕</button>
-      }
-      <mat-datepicker-toggle matIconSuffix [for]="picker" aria-label="فتح التقويم" />
+      <!-- The calendar first, then the clear button after it - in one row so they line up -->
+      <span matIconSuffix class="date-field-actions flex items-center">
+        <mat-datepicker-toggle [for]="picker" aria-label="فتح التقويم" />
+        @if (date() && !required() && !disabled()) {
+          <button type="button" (click)="pick(null)" aria-label="مسح التاريخ"
+            class="date-field-clear flex items-center justify-center w-5 h-5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 text-[10px] leading-none">✕</button>
+        }
+      </span>
       <mat-datepicker #picker panelClass="app-datepicker-panel" />
       @if (hint()) {
         <mat-hint>{{ hint() }}</mat-hint>

@@ -2,20 +2,24 @@ import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@a
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { AcademicCalendarStore, today } from '../../core/academic/academic-calendar.store';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
 import { AdminRouteAccess } from '../../core/admin/admin-permissions';
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { GRADE_LEVELS, SCHOOL_INFO, SCHOOL_SUBJECTS } from '../../core/constants/school.constants';
 import { TermEndAlertComponent } from '../../shared/components/term-end-alert/term-end-alert.component';
 import { BarListChartComponent, BarListItem } from '../../shared/components/charts/bar-list-chart.component';
 import { DonutChartComponent, DonutItem } from '../../shared/components/charts/donut-chart.component';
-import { TeacherAssignedClass } from '../../core/models/user.model';
 import { AnnouncementsStore } from '../announcements/announcements.store';
+import { MyClass } from '../classes/my-class.model';
+import { MyClassesService } from '../classes/my-classes.service';
 import { ClassesStore } from '../classes/classes.store';
 import { currentAdvisor } from '../classes/school-class.model';
 import { ExamsStore, formatTime } from '../exams/exams.store';
 import { WEEKLY_SLOTS, buildSchoolTimetable, findConflicts, sectionCoverage } from '../school-timetable/timetable';
 import { StudentsStore } from '../students/students.store';
-import { TEACHER_STATUSES, WeeklySchedule, teacherDisplayName } from '../teachers/teacher.model';
+import { gradeLabel, gradeOfSection } from '../subjects/curriculum.model';
+import { TeachingScope } from '../teaching/teaching-scope.service';
+import { TEACHER_STATUSES, WeeklySchedule, activeTeachers, teacherDisplayName } from '../teachers/teacher.model';
 import { TeachersStore } from '../teachers/teachers.store';
 import { StudentDashboardComponent } from './student-dashboard.component';
 
@@ -37,6 +41,12 @@ interface FollowUp {
   text: string;
   link: string;
   access: AdminRouteAccess;
+}
+
+// One of the teacher's subjects with the classes they teach it to
+interface TeachingGroup {
+  subject: string;
+  classes: { name: string; gradeLabel: string; roomNumber: string; studentCount: number | null }[];
 }
 
 interface ActivityItem {
@@ -66,34 +76,35 @@ export class DashboardComponent {
   readonly isAdmin = computed(() => this.authService.isAdmin());
   readonly teacherProfile = computed(() => this.authService.teacherProfile());
 
-  readonly teacherClasses = computed<TeacherAssignedClass[]>(() => {
-    const profile = this.teacherProfile();
-    if (profile?.classes && profile.classes.length > 0) {
-      return profile.classes;
-    }
-    return [
-      {
-        id: 'class_id_1',
-        name: '3/2',
-        displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/2',
-        gradeLevel: '3rd Preparatory',
-        roomNumber: '302'
-      },
-      {
-        id: 'class_id_2',
-        name: '3/3',
-        displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/3',
-        gradeLevel: '3rd Preparatory',
-        roomNumber: '303'
-      },
-      {
-        id: 'class_id_3',
-        name: '3/4',
-        displayNameArabic: 'الصف الثالث الإعدادي - فصل 3/4',
-        gradeLevel: '3rd Preparatory',
-        roomNumber: '304'
-      }
-    ];
+  // ---- The teacher: their classes, subject by subject (as the admin assigned them) ----
+  private readonly scope = inject(TeachingScope);
+  private readonly myClassesService = inject(MyClassesService);
+  // Room & students of each class, from the backend
+  private readonly myClasses = signal<MyClass[]>([]);
+
+  readonly teachingGroups = computed<TeachingGroup[]>(() => {
+    const details = new Map(this.myClasses().map(cls => [cls.name, cls]));
+    return this.scope
+      .subjectAssignments()
+      .filter(a => a.classes.length)
+      .map(a => ({
+        subject: a.subject,
+        classes: a.classes.map(name => ({
+          name,
+          gradeLabel: gradeLabel(gradeOfSection(name)),
+          roomNumber: details.get(name)?.roomNumber ?? '',
+          studentCount: details.get(name)?.studentCount ?? null
+        }))
+      }));
+  });
+
+  // A class taking two of the teacher's subjects counts once
+  readonly taughtClassCount = computed(() => new Set(this.teachingGroups().flatMap(g => g.classes.map(c => c.name))).size);
+
+  // e.g. "اللغة العربية والتربية الدينية" (the department until subjects are assigned)
+  readonly teacherSubjectsLabel = computed(() => {
+    const subjects = this.teachingGroups().map(g => g.subject);
+    return subjects.length ? subjects.join(' و') : this.teacherProfile()?.specialization ?? '';
   });
 
   // ---- Admin overview: everything below is computed from the data entered in the system ----
@@ -103,30 +114,37 @@ export class DashboardComponent {
   private readonly examsStore = inject(ExamsStore);
   private readonly announcementsStore = inject(AnnouncementsStore);
   private readonly calendar = inject(AcademicCalendarStore);
+  private readonly structure = inject(SchoolStructureStore);
 
   constructor() {
     this.teachersStore.ensureLoaded();
+    if (this.isTeacher()) {
+      this.myClassesService.getClasses().subscribe({ next: classes => this.myClasses.set(classes), error: () => {} });
+    }
   }
 
   readonly formatTime = formatTime;
   readonly currentTerm = this.calendar.currentTerm;
   readonly latestAnnouncements = this.announcementsStore.latest;
 
+  // Teachers still at the school (stopped ones left it: not counted, scheduled or advisors)
+  private readonly currentTeachers = computed(() => activeTeachers(this.teachersStore.teachers()));
+
   private readonly termSchedules = computed<Record<string, WeeklySchedule>>(
     () => this.teachersStore.schedules()[this.calendar.currentTermId()] ?? {}
   );
-  private readonly timetable = computed(() => buildSchoolTimetable(this.teachersStore.teachers(), this.termSchedules()));
+  private readonly timetable = computed(() => buildSchoolTimetable(this.currentTeachers(), this.termSchedules(), this.structure.allSections()));
   private readonly coverage = computed(() => sectionCoverage(this.timetable()));
   private readonly conflicts = computed(() => findConflicts(this.timetable()));
 
   private readonly teacherCounts = computed(() => {
-    const teachers = this.teachersStore.teachers();
+    const teachers = this.currentTeachers();
     return Object.fromEntries(TEACHER_STATUSES.map(status => [status, teachers.filter(t => t.status === status).length]));
   });
 
   private readonly advisorGaps = computed(() => {
     const year = this.calendar.currentYear();
-    const teachersById = new Map(this.teachersStore.teachers().map(t => [t.id, t]));
+    const teachersById = new Map(this.currentTeachers().map(t => [t.id, t]));
     const missing: string[] = [];
     const onLeave: string[] = [];
     for (const cls of this.classesStore.classes()) {
@@ -146,7 +164,7 @@ export class DashboardComponent {
 
   readonly adminStats = computed<StatTile[]>(() => {
     const students = this.studentsStore.metrics();
-    const teachers = this.teachersStore.teachers().length;
+    const teachers = this.currentTeachers().length;
     const counts = this.teacherCounts();
     const away = teachers - counts['على رأس العمل'];
     const gaps = this.advisorGaps();
@@ -202,8 +220,7 @@ export class DashboardComponent {
   // Weekly periods per teacher, heaviest first
   readonly teacherLoad = computed<BarListItem[]>(() => {
     const schedules = this.termSchedules();
-    return this.teachersStore
-      .teachers()
+    return this.currentTeachers()
       .map(teacher => ({
         label: teacherDisplayName(teacher),
         value: Object.keys(schedules[teacher.id] ?? {}).length,

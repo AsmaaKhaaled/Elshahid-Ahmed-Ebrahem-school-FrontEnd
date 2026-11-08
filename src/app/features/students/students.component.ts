@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, signal, compute
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { SchoolStructureStore } from '../../core/academic/school-structure.store';
 import { GRADE_LEVELS } from '../../core/constants/school.constants';
 import { PAGE_SIZE_OPTIONS, loadPageSize, savePageSize } from '../../shared/components/pagination/page-size';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
@@ -12,6 +13,8 @@ import { StudentImportDialogComponent } from './student-import-dialog.component'
 import { STUDENT_STATUSES, Student, gradeOf } from './student.model';
 import { StudentsStore } from './students.store';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
+import { StudentsService } from '../../core/services/students.service';
+import { apiErrorMessage } from '../../shared/utils/api-error';
 
 const PAGE_SIZE_KEY = 'admin-students';
 
@@ -39,11 +42,14 @@ export class StudentsComponent implements OnInit {
   readonly grades = GRADE_LEVELS;
   readonly studentStatuses = STUDENT_STATUSES;
 
-  readonly gradeSections = computed(() => GRADE_LEVELS.find(grade => grade.id === this.selectedGrade())?.sections ?? []);
+  private readonly structure = inject(SchoolStructureStore);
+  // This year's classes of the chosen grade
+  readonly gradeSections = computed(() => this.structure.grades().find(grade => grade.id === this.selectedGrade())?.sections ?? []);
   // Back to "all sections" whenever the grade filter changes
   readonly selectedSection = linkedSignal<string, string>({ source: this.selectedGrade, computation: () => 'ALL' });
 
   private readonly store = inject(StudentsStore);
+  private readonly studentsService = inject(StudentsService);
   readonly students = this.store.students;
   readonly metrics = this.store.metrics;
   readonly loading = this.store.loading;
@@ -149,7 +155,7 @@ export class StudentsComponent implements OnInit {
         studentName: student.name,
         studentCode: student.code,
         nationalId: student.nationalId,
-        initialPassword: student.initialPassword || 'Student@2026',
+        initialPassword: student.initialPassword || student.code,
         className: student.className
       });
 
@@ -163,9 +169,9 @@ export class StudentsComponent implements OnInit {
   copyNoticeCredentials(cred: CredentialNoticeData): void {
     const text = `بيانات الدخول لطالب بمدرسة الشهيد أحمد إبراهيم حسب الله الإعدادية:
 الاسم: ${cred.studentName}
-كود الطالب (اسم المستخدم): ${cred.studentCode}
-الرقم القومي: ${cred.nationalId}
-كلمة المرور المؤقتة: ${cred.initialPassword}
+الرقم القومي (اسم الدخول): ${cred.nationalId}
+كلمة المرور لأول دخول: كود الطالب ${cred.initialPassword}
+بعد أول دخول يختار الطالب كلمة مرور خاصة به.
 الفصل: فصل ${cred.className}
 رابط الدخول: ${typeof window !== 'undefined' ? window.location.origin : ''}`;
 
@@ -185,7 +191,8 @@ export class StudentsComponent implements OnInit {
       },
       error: err => {
         this.showForm.set(false);
-        this.showNotice(err?.error?.message || 'تعذر حذف الطالب، حاول مرة أخرى.', 'error');
+        // e.g. a student with attendance or grades: marked "منقول" instead of deleted
+        this.showNotice(apiErrorMessage(err, 'تعذر حذف الطالب، حاول مرة أخرى.'), 'error');
       }
     });
   }
@@ -198,6 +205,33 @@ export class StudentsComponent implements OnInit {
     // The imported students are already saved in the backend; reload to show them with their classes
     this.store.loadFromApi();
   }
+  // Regular students with no class yet (e.g. imported from Excel without one)
+  readonly studentsWithoutClass = computed(() => this.students().filter(s => !s.className && s.status === 'منتظم').length);
+  readonly distributing = signal(false);
+
+  /** Places every regular student without a class in their grade's classes, evenly (the backend decides). */
+  distribute(): void {
+    this.distributing.set(true);
+    this.studentsService.distribute().subscribe({
+      next: res => {
+        this.distributing.set(false);
+        const { placedCount, notPlaced } = res.data;
+        const reasons = [...new Set(notPlaced.map(s => s.reason))].join('، ');
+        this.showNotice(
+          notPlaced.length
+            ? `تم توزيع ${placedCount} طالب. ${notPlaced.length} طالب ماتوزعش: ${reasons}`
+            : `تم توزيع ${placedCount} طالب على فصولهم`,
+          notPlaced.length ? 'error' : 'success'
+        );
+        this.store.loadFromApi();
+      },
+      error: err => {
+        this.distributing.set(false);
+        this.showNotice(apiErrorMessage(err, 'تعذر توزيع الطلاب، حاول مرة أخرى.'), 'error');
+      }
+    });
+  }
+
   async exportExcel(): Promise<void> {
     this.exporting.set(true);
     try {

@@ -43,10 +43,11 @@ export interface ImportResult {
   fileError: string | null;
 }
 
-export async function downloadImportTemplate(): Promise<void> {
+/** `grades` = this year's grades with their classes (SchoolStructureStore). */
+export async function downloadImportTemplate(grades: GradeLevel[] = GRADE_LEVELS): Promise<void> {
   const workbook = await newWorkbook();
   const sheet = addStudentsSheet(workbook);
-  const maxSections = Math.max(...GRADE_LEVELS.map(grade => grade.sections.length));
+  const maxSections = Math.max(...grades.map(grade => grade.sections.length));
 
   for (let row = FIRST_DATA_ROW; row < FIRST_DATA_ROW + TEMPLATE_ROWS; row++) {
     sheet.getCell(row, columnIndex('grade')).dataValidation = listValidation(GRADE_LEVELS.map(grade => grade.label), 'اختر الصف من القائمة');
@@ -110,7 +111,7 @@ export async function exportStudents(students: Student[]): Promise<void> {
   await saveWorkbook(workbook, `سجل-الطلاب-${date}.xlsx`);
 }
 
-export async function parseStudentsFile(file: File, existing: Student[]): Promise<ImportResult> {
+export async function parseStudentsFile(file: File, existing: Student[], grades: GradeLevel[] = GRADE_LEVELS): Promise<ImportResult> {
   if (!/\.xlsx$/i.test(file.name)) {
     return failed('الملف لازم يكون Excel بصيغة \u200E.xlsx\u200E (لو الملف \u200E.xls\u200E أو \u200E.csv\u200E افتحه في Excel واحفظه باسم Excel Workbook)');
   }
@@ -147,7 +148,7 @@ export async function parseStudentsFile(file: File, existing: Student[]): Promis
     if (rows.length === MAX_IMPORT_ROWS) {
       return failed(`الملف فيه أكثر من ${MAX_IMPORT_ROWS} طالب - قسّمه على أكثر من ملف`);
     }
-    rows.push(parseRow(r, read));
+    rows.push(parseRow(r, read, grades));
   }
 
   if (!rows.length) return failed('مفيش بيانات طلاب في الملف تحت صف أسماء الأعمدة');
@@ -157,7 +158,7 @@ export async function parseStudentsFile(file: File, existing: Student[]): Promis
   return { rows, fileError: null };
 }
 
-function parseRow(rowNumber: number, read: (key: ColumnKey) => CellValue): ImportRow {
+function parseRow(rowNumber: number, read: (key: ColumnKey) => CellValue, grades: GradeLevel[]): ImportRow {
   const errors: string[] = [];
 
   const name = cellText(read('name')).replace(/\s+/g, ' ');
@@ -182,7 +183,7 @@ function parseRow(rowNumber: number, read: (key: ColumnKey) => CellValue): Impor
     if (!sectionNumber) {
       errors.push('رقم الفصل مطلوب');
       className = '';
-    } else if (!grade.sections.includes(className)) {
+    } else if (!grades.find(g => g.id === grade.id)?.sections.includes(className)) {
       errors.push(`فصل ${className} غير موجود في ${grade.label}`);
     }
   }

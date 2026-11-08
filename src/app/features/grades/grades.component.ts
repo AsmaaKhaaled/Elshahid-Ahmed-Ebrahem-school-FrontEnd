@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+import { MatSelect, MatSelectModule } from '@angular/material/select';
+import { ActivatedRoute } from '@angular/router';
 import { today } from '../../core/academic/academic-calendar.store';
+import { ConfirmService } from '../../core/notifications/confirm.service';
 import { SCHOOL_INFO } from '../../core/constants/school.constants';
 import { CardTableDirective } from '../../shared/directives/card-table.directive';
 import { ClassRoster } from '../students/class-roster.service';
-import { TeachingScope } from '../teaching/teaching-scope.service';
+import { TeachingScope, pickOption } from '../teaching/teaching-scope.service';
 import { exportGradebookExcel } from './gradebook-excel';
 import {
   BookWeeks, CriterionKey, GRADE_CRITERIA, WEEK_TOTAL, WeekMarks, isValidMark, monthAverage, weekLabel, weekStart, weekTotal
@@ -32,6 +34,7 @@ export class GradesComponent {
   readonly scope = inject(TeachingScope);
   private readonly store = inject(GradebookStore);
   private readonly roster = inject(ClassRoster);
+  private readonly confirm = inject(ConfirmService);
 
   readonly school = SCHOOL_INFO;
   readonly title = TITLE;
@@ -52,8 +55,12 @@ export class GradesComponent {
   // ---- Which register: class, subject, month ----
 
   readonly months = this.store.months;
-  readonly selectedSection = signal(this.scope.sections()[0] ?? '');
-  readonly selectedSubject = signal(this.scope.subjects()[0] ?? '');
+  // Opened from the dashboard on one class & subject: ?section=3/2&subject=...
+  private readonly query = inject(ActivatedRoute).snapshot.queryParamMap;
+  readonly selectedSection = signal(pickOption(this.query.get('section'), this.scope.sections()));
+  readonly selectedSubject = signal(pickOption(this.query.get('subject'), this.scope.subjectsFor(this.selectedSection())));
+  // Only the subjects the teacher teaches to the chosen class
+  readonly sectionSubjects = computed(() => this.scope.subjectsFor(this.selectedSection()));
   // The current month by default
   readonly selectedMonthIndex = signal(Math.max(0, this.store.months().length - 1));
   readonly month = computed(() => this.months()[this.selectedMonthIndex()] ?? null);
@@ -111,20 +118,28 @@ export class GradesComponent {
     this.error.set(null);
   }
 
-  selectSection(section: string): void {
-    if (section === this.selectedSection() || !this.leaveUnsaved()) return;
+  async selectSection(section: string): Promise<void> {
+    if (section === this.selectedSection() || !(await this.leaveUnsaved())) return;
     this.selectedSection.set(section);
+    // The class may not take the current subject from this teacher
+    const subjects = this.sectionSubjects();
+    if (!subjects.includes(this.selectedSubject())) this.selectedSubject.set(subjects[0] ?? '');
     this.loadDraft();
   }
 
-  selectSubject(subject: string): void {
-    if (subject === this.selectedSubject() || !this.leaveUnsaved()) return;
+  async selectSubject(subject: string, select?: MatSelect): Promise<void> {
+    if (subject === this.selectedSubject()) return;
+    if (!(await this.leaveUnsaved())) {
+      // The list already shows the new subject; put the current one back
+      if (select) select.value = this.selectedSubject();
+      return;
+    }
     this.selectedSubject.set(subject);
     this.loadDraft();
   }
 
-  selectMonth(index: number): void {
-    if (index === this.selectedMonthIndex() || !this.leaveUnsaved()) return;
+  async selectMonth(index: number): Promise<void> {
+    if (index === this.selectedMonthIndex() || !(await this.leaveUnsaved())) return;
     this.selectedMonthIndex.set(index);
     this.selectedWeekIndex.set(this.currentWeekIndex());
     this.loadDraft();
@@ -202,7 +217,16 @@ export class GradesComponent {
     this.error.set(null);
   }
 
-  private leaveUnsaved(): boolean {
-    return !this.dirty() || confirm('فيه درجات لسه ما اتحفظتش. تحب تسيبها؟');
+  private async leaveUnsaved(): Promise<boolean> {
+    return (
+      !this.dirty() ||
+      this.confirm.ask({
+        title: 'فيه درجات لسه ما اتحفظتش',
+        message: 'لو كمّلت، الدرجات اللي كتبتها ومحفظتهاش هتضيع.',
+        confirmText: 'كمّل من غير حفظ',
+        cancelText: 'ارجع احفظها',
+        tone: 'danger'
+      })
+    );
   }
 }

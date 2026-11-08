@@ -46,9 +46,15 @@
       </div>
     </div>
 
+    @if (editing() && !sections().length) {
+      <p class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-900" role="alert">
+        المعلم مالوش فصول مُسندة. حدد مواده وفصوله من "تعديل البيانات" الأول، وبعدين اعمل جدوله.
+      </p>
+    }
+
     @if (editing()) {
       <div class="flex flex-wrap items-center gap-2 text-xs">
-        <span class="text-slate-500">اختر الفصل لكل حصة، واترك الخانة فارغة لو الحصة فاضية.</span>
+        <span class="text-slate-500">اختر الفصل لكل حصة (فصول المعلم بس)، واترك الخانة فارغة لو الحصة فاضية.</span>
         @if (previousTermSchedule()) {
           <button (click)="copyPreviousTerm()" type="button"
             class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 font-bold text-slate-700">
@@ -86,15 +92,15 @@
                     <mat-form-field class="field-compact field-cell w-full">
                       <mat-select [value]="slot?.section ?? ''" (selectionChange)="setSlot(key, { section: $event.value })" aria-label="الفصل">
                         <mat-option value="">—</mat-option>
-                        @for (section of sections; track section) {
+                        @for (section of sections(); track section) {
                           <mat-option [value]="section">{{ section }}</mat-option>
                         }
                       </mat-select>
                     </mat-form-field>
-                    @if (slot && teacher().subjects.length > 1) {
+                    @if (slot && subjectsFor(slot.section).length > 1) {
                       <mat-form-field class="field-compact field-cell w-full mt-1">
                         <mat-select [value]="slot.subject" (selectionChange)="setSlot(key, { subject: $event.value })" aria-label="المادة">
-                          @for (subject of teacher().subjects; track subject) {
+                          @for (subject of subjectsFor(slot.section); track subject) {
                             <mat-option [value]="subject">{{ subject }}</mat-option>
                           }
                         </mat-select>
@@ -146,9 +152,12 @@
         </button>
       } @else {
         <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
-        <button (click)="editing.set(true)" type="button" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow">
-          تعديل الجدول
-        </button>
+        @if (teacher().active) {
+          <!-- Not before the saved schedule arrived, so an edit never starts from a stale copy -->
+          <button (click)="editing.set(true)" [disabled]="loadingSchedule()" type="button" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">
+            {{ loadingSchedule() ? 'جاري التحميل...' : 'تعديل الجدول' }}
+          </button>
+        }
       }
     </div>
   </div>

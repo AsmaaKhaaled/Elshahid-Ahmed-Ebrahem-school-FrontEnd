@@ -10,7 +10,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <mat-form-field class="w-full">
           <mat-label>المادة</mat-label>
-          <mat-select name="subject" required [(ngModel)]="draft.subject">
+          <mat-select name="subject" required [ngModel]="draft.subject" (ngModelChange)="selectSubject($event)">
             @for (s of scope.subjects(); track s) {
               <mat-option [value]="s">{{ s }}</mat-option>
             }

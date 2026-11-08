@@ -34,13 +34,13 @@ describe('AttendanceComponent', () => {
     return { fixture, component: fixture.componentInstance };
   }
 
-  it('gives the teacher a sheet for one of their own classes only', () => {
+  it('gives the teacher a sheet for one of their own classes only', async () => {
     loginAs('TEACHER');
     const { component } = create();
     expect(component.scope.sections()).toContain(component.selectedSection());
 
     const other = component.scope.sections()[1];
-    component.changeSection(other);
+    await component.changeSection(other);
     expect(component.selectedSection()).toBe(other);
     expect(component.draft().length).toBeGreaterThan(0);
   });

@@ -54,6 +54,13 @@ export interface ExcelImportResult {
   students?: any[];
 }
 
+export interface DistributeResult {
+  placedCount: number;
+  notPlacedCount: number;
+  placed: { id: string; name: string; studentCode: string; className: string }[];
+  notPlaced: { id: string; name: string; reason: string }[];
+}
+
 export interface StudentApiResponse<T> {
   success?: boolean;
   status?: string;
@@ -83,6 +90,14 @@ export class StudentsService {
 
   updateStudent(id: string, payload: Partial<CreateStudentPayload>): Observable<StudentApiResponse<CreatedStudentData>> {
     return this.http.put<StudentApiResponse<CreatedStudentData>>(`${this.apiUrl}/${encodeURIComponent(id)}`, payload);
+  }
+
+  /**
+   * Places regular students without a class in their grade's classes, evenly (a full class takes no one).
+   * POST /students/distribute { gradeLevel? }
+   */
+  distribute(gradeLevel?: string): Observable<StudentApiResponse<DistributeResult>> {
+    return this.http.post<StudentApiResponse<DistributeResult>>(`${this.apiUrl}/distribute`, gradeLevel ? { gradeLevel } : {});
   }
 
   deleteStudent(id: string): Observable<StudentApiResponse<null>> {

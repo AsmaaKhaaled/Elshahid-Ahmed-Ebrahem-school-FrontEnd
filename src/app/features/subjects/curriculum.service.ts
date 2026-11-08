@@ -19,6 +19,8 @@ export interface CurriculaPage {
   meta: PageMeta;
   // A teacher's subjects that already have a curriculum (on any page)
   startedSubjects: string[];
+  // Curricula per grade with the same search, whatever grade is shown: { G1: 12, ... }
+  gradeCounts: Record<string, number>;
 }
 
 export interface CurriculumFilesPage {
@@ -74,12 +76,25 @@ const toFile = (f: ApiFile): CurriculumFile => ({
 export class CurriculumService {
   private readonly api = inject(ApiService);
 
-  list(query: { page: number; limit: number; search?: string }): Observable<CurriculaPage> {
-    const params = { page: query.page, limit: query.limit, ...(query.search && { search: query.search }) };
+  list(query: { page: number; limit: number; search?: string; gradeId?: string }): Observable<CurriculaPage> {
+    const params = {
+      page: query.page,
+      limit: query.limit,
+      ...(query.search && { search: query.search }),
+      ...(query.gradeId && { gradeId: query.gradeId })
+    };
     return this.api
-      .get<{ data: { curricula: ApiSummary[]; startedSubjects?: string[] }; meta: PageMeta }>(BASE, params)
+      .get<{
+        data: { curricula: ApiSummary[]; startedSubjects?: string[]; gradeCounts?: Record<string, number> };
+        meta: PageMeta;
+      }>(BASE, params)
       .pipe(
-        map(res => ({ curricula: res.data.curricula.map(toSummary), meta: res.meta, startedSubjects: res.data.startedSubjects ?? [] }))
+        map(res => ({
+          curricula: res.data.curricula.map(toSummary),
+          meta: res.meta,
+          startedSubjects: res.data.startedSubjects ?? [],
+          gradeCounts: res.data.gradeCounts ?? {}
+        }))
       );
   }
 

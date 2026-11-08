@@ -1,0 +1,145 @@
+<div class="space-y-6">
+  <div>
+    <h2 class="text-2xl font-black text-slate-800 tracking-tight">محتوى الصفحة الرئيسية</h2>
+    <p class="text-xs text-slate-500 mt-1">
+      كلمة المدير وصور أنشطة المدرسة اللي بتظهر للزوار في
+      <a routerLink="/home" class="font-bold text-primary-700 hover:text-primary-900">الصفحة الرئيسية ←</a>
+    </p>
+  </div>
+
+  <!-- ================= كلمة مدير المدرسة ================= -->
+  <form #principalForm="ngForm" (ngSubmit)="savePrincipal(principalForm)" novalidate
+    class="bg-white rounded-2xl shadow-soft border border-slate-100 p-4 sm:p-6 space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="text-base font-black text-slate-800">كلمة مدير المدرسة</h3>
+      @if (principalNotice(); as notice) {
+        <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">{{ notice }}</span>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+      <!-- Photo -->
+      <div class="md:col-span-3 flex flex-col items-center gap-2">
+        <img [src]="principalDraft().photoUrl" [alt]="principalDraft().name"
+          class="w-36 aspect-[5/6] object-cover rounded-2xl ring-4 ring-slate-100 bg-slate-200" />
+        <label class="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-800 hover:bg-primary-100 text-xs font-bold cursor-pointer transition-colors">
+          {{ processingPhoto() ? 'جاري تجهيز الصورة...' : 'تغيير صورة المدير' }}
+          <input type="file" class="sr-only" [accept]="acceptedTypes" (change)="onPrincipalPhoto($event)" [disabled]="processingPhoto()" />
+        </label>
+        @if (photoError(); as error) {
+          <p class="text-[11px] text-rose-600 font-medium text-center">{{ error }}</p>
+        } @else {
+          <p class="text-[11px] text-slate-400 text-center">صورة طولية واضحة (JPG / PNG / WEBP)</p>
+        }
+      </div>
+
+      <!-- Name, title & message -->
+      <div class="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+        <mat-form-field class="w-full">
+          <mat-label>اسم المدير</mat-label>
+          <input matInput name="name" required maxlength="60"
+            [ngModel]="principalDraft().name" (ngModelChange)="updatePrincipal('name', $event)" />
+          <mat-error>الاسم مطلوب</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+          <mat-label>المسمى الوظيفي</mat-label>
+          <input matInput name="title" required maxlength="40" placeholder="مثال: مدير المدرسة"
+            [ngModel]="principalDraft().title" (ngModelChange)="updatePrincipal('title', $event)" />
+          <mat-error>المسمى مطلوب</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full sm:col-span-2">
+          <mat-label>نص الكلمة</mat-label>
+          <textarea matInput name="message" required rows="8" maxlength="1500"
+            [ngModel]="principalDraft().message" (ngModelChange)="updatePrincipal('message', $event)"></textarea>
+          <mat-hint>سيب سطر فاضي بين كل فقرة والتانية</mat-hint>
+          <mat-hint align="end">{{ principalDraft().message.length }} / 1500</mat-hint>
+          <mat-error>اكتب كلمة المدير</mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+      @if (principalDirty()) {
+        <button (click)="discardPrincipal()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">تراجع عن التعديلات</button>
+      }
+      <button type="submit" [disabled]="!principalDirty() || processingPhoto()"
+        class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-50">
+        حفظ كلمة المدير
+      </button>
+    </div>
+  </form>
+
+  <!-- ================= صور أنشطة المدرسة (الكارسور) ================= -->
+  <div class="bg-white rounded-2xl shadow-soft border border-slate-100 p-4 sm:p-6 space-y-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h3 class="text-base font-black text-slate-800">صور أنشطة المدرسة</h3>
+        <p class="text-[11px] text-slate-500 mt-0.5">
+          بتظهر في «من حياة المدرسة» بنفس الترتيب ده - {{ shownCount() }} من {{ slides().length }} ظاهرين
+        </p>
+      </div>
+      <button (click)="openDialog(null)" type="button"
+        class="px-4 py-2.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md shadow-primary-900/10 flex items-center gap-2 transition-all w-fit">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>إضافة صورة</span>
+      </button>
+    </div>
+
+    <ul class="space-y-3">
+      @for (slide of slides(); track slide.id; let first = $first; let last = $last; let i = $index) {
+        <li class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-primary-100 transition-colors"
+          [class.opacity-60]="slide.hidden">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <span class="w-6 text-center text-xs font-black text-slate-400 shrink-0">{{ i + 1 }}</span>
+            <img [src]="slide.src" [alt]="slide.title" class="w-28 aspect-[16/9] object-cover rounded-lg bg-slate-100 shrink-0" />
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-black text-slate-800 truncate">{{ slide.title }}</h4>
+                @if (slide.hidden) {
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">مخفية</span>
+                }
+              </div>
+              <p class="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{{ slide.caption || 'من غير وصف' }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 justify-end shrink-0">
+            <button type="button" (click)="moveSlide(slide.id, -1)" [disabled]="first" aria-label="تقديم الصورة"
+              class="w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" /></svg>
+            </button>
+            <button type="button" (click)="moveSlide(slide.id, 1)" [disabled]="last" aria-label="تأخير الصورة"
+              class="w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <button type="button" (click)="toggleHidden(slide.id)"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">
+              {{ slide.hidden ? 'إظهار' : 'إخفاء' }}
+            </button>
+            <button type="button" (click)="openDialog(slide)"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold text-primary-800 bg-primary-50 hover:bg-primary-100">
+              تعديل
+            </button>
+          </div>
+        </li>
+      } @empty {
+        <li class="rounded-2xl border border-dashed border-slate-200 py-12 text-center space-y-2">
+          <p class="text-sm font-bold text-slate-600">لسه مفيش صور أنشطة</p>
+          <p class="text-xs text-slate-400">قسم «من حياة المدرسة» بيختفي من الصفحة الرئيسية لحد ما تضيف أول صورة.</p>
+        </li>
+      }
+    </ul>
+  </div>
+
+  @if (showDialog()) {
+    <app-gallery-slide-dialog
+      [slide]="editingSlide()"
+      (saved)="saveSlide($event)"
+      (deleted)="deleteSlide($event)"
+      (closed)="showDialog.set(false)" />
+  }
+</div>
