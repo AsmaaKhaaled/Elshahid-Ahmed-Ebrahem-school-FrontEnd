@@ -32,7 +32,7 @@ export class TermEndAlertComponent {
       return `انتهى موعد ${label} منذ ${arabicCount(-alert.daysLeft, 'يوم', 'يومين', 'أيام')}`;
     }
     return alert.daysLeft === 0
-      ? `${label} ينتهي النهارده`
+      ? `${label} ينتهي اليوم`
       : `${label} ينتهي خلال ${arabicCount(alert.daysLeft, 'يوم', 'يومين', 'أيام')}`;
   });
 }

@@ -41,7 +41,7 @@
             <mat-label>الرقم القومي (14 رقم)</mat-label>
             <input matInput name="nationalId" required pattern="\d{14}" inputmode="numeric" maxlength="14" dir="ltr"
               [(ngModel)]="profile.nationalId" />
-            <mat-hint>ده اللي بتدخل بيه على لوحة الإدارة</mat-hint>
+            <mat-hint>هذا ما تدخل به إلى لوحة الإدارة</mat-hint>
             <mat-error>الرقم القومي يجب أن يكون 14 رقماً</mat-error>
           </mat-form-field>
 
@@ -98,8 +98,8 @@
             <mat-label>كلمة المرور الجديدة</mat-label>
             <input matInput [type]="showPassword() ? 'text' : 'password'" name="newPassword" required autocomplete="new-password" dir="ltr"
               [pattern]="passwordPattern" [(ngModel)]="passwords.newPassword" />
-            <mat-hint>8 أحرف على الأقل، فيها حروف وأرقام</mat-hint>
-            <mat-error>8 أحرف على الأقل، فيها حروف إنجليزية وأرقام</mat-error>
+            <mat-hint>8 أحرف على الأقل، تحتوي على حروف وأرقام</mat-hint>
+            <mat-error>8 أحرف على الأقل، تحتوي على حروف إنجليزية وأرقام</mat-error>
           </mat-form-field>
 
           <mat-form-field class="w-full">

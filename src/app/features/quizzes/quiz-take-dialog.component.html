@@ -131,7 +131,7 @@
             <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-500 pt-1">
               <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span> اتجاوب</span>
               <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-amber-400"></span> للمراجعة</span>
-              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-slate-200"></span> لسه</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-slate-200"></span> بدون إجابة</span>
             </div>
           </div>
 
@@ -140,7 +140,7 @@
               <p class="text-xs font-black text-rose-800">تعليمات {{ item.kind }}</p>
               <p class="text-xs text-rose-700 leading-relaxed whitespace-pre-line">{{ item.instructions }}</p>
               @if (item.durationMinutes) {
-                <p class="text-[11px] text-rose-600 font-semibold pt-1">لما الوقت يخلص، اللي جاوبته بيتسلّم لوحده.</p>
+                <p class="text-[11px] text-rose-600 font-semibold pt-1">عند انتهاء الوقت، تُسلَّم إجاباتك تلقائيًا.</p>
               }
             </div>
           }
@@ -203,10 +203,10 @@
 
         @if (unansweredCount()) {
           <p class="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl p-3">
-            ⚠ فيه {{ unansweredCount() }} سؤال من غير إجابة، وهيتحسبوا صفر لو سلّمت دلوقتي.
+            ⚠ يوجد {{ unansweredCount() }} سؤال دون إجابة، وستُحسب بصفر إذا سلّمت الآن.
           </p>
         }
-        <p class="text-[11px] text-slate-500">بعد التسليم مش هتقدر تعدّل إجاباتك.</p>
+        <p class="text-[11px] text-slate-500">بعد التسليم لن تتمكن من تعديل إجاباتك.</p>
 
         <div class="dialog-foot pt-4 flex items-center gap-3 border-t border-slate-100">
           <button type="button" (click)="submit()" class="flex-1 py-2.5 rounded-xl bg-portal-navy hover:bg-slate-900 text-white font-bold text-xs shadow">
@@ -233,7 +233,7 @@
               · {{ item.questions.length }} سؤال
               @if (item.durationMinutes) { · {{ item.durationMinutes }} دقيقة }
             }
-            · متاح لحد {{ item.closesAt | arabicDate:'full' }}
+            · متاح حتى {{ item.closesAt | arabicDate:'full' }}
           </p>
         </div>
         <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
@@ -251,7 +251,7 @@
           @if (done.score != null) {
             <p class="text-lg font-black text-emerald-700">درجتك: {{ done.score }} من {{ item.totalMarks }}</p>
           } @else {
-            <p class="text-sm font-bold text-primary-700">مستني تصحيح المدرس</p>
+            <p class="text-sm font-bold text-primary-700">بانتظار تصحيح المعلم</p>
           }
         </div>
         @if (done.file) {
@@ -269,13 +269,13 @@
                   <span class="text-slate-400">({{ correct ? q.points : 0 }} / {{ q.points }})</span>
                 </p>
                 @if (!correct && showAnswers()) {
-                  <p class="text-xs text-emerald-700 mt-0.5">الإجابة الصح: {{ q.answer }}</p>
+                  <p class="text-xs text-emerald-700 mt-0.5">الإجابة الصحيحة: {{ q.answer }}</p>
                 }
               </li>
             }
           </ol>
           @if (!showAnswers()) {
-            <p class="text-[11px] text-slate-400">الإجابات الصح بتظهر بعد ما الكويز يقفل.</p>
+            <p class="text-[11px] text-slate-400">تظهر الإجابات الصحيحة بعد إغلاق الكويز.</p>
           }
         }
       } @else if (closedForAnswers()) {
@@ -318,7 +318,7 @@
         </div>
         @if (item.durationMinutes) {
           <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-3">
-            ⏱ الوقت بيبدأ أول ما تضغط "ابدأ الحل"، ولما يخلص اللي جاوبته بيتسلّم لوحده.
+            ⏱ يبدأ الوقت بمجرد الضغط على "ابدأ الحل"، وعند انتهائه تُسلَّم إجاباتك تلقائيًا.
           </p>
         }
       }

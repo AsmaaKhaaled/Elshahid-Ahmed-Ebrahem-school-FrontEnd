@@ -137,18 +137,18 @@ export class QuizFormDialogComponent implements OnInit {
 
   private validateContent(): string {
     if (this.mode === 'file') return this.file ? '' : 'ارفع ورقة الأسئلة';
-    if (!this.questions.length) return 'ضيف سؤال واحد على الأقل';
+    if (!this.questions.length) return 'أضف سؤالًا واحدًا على الأقل';
     for (const [i, q] of this.questions.entries()) {
       const n = i + 1;
       if (!q.text.trim()) return `اكتب نص السؤال رقم ${n}`;
       if (!(q.points > 0)) return `حدد درجة السؤال رقم ${n}`;
       if (q.type === 'mcq') {
         const options = q.options.map(o => o.trim()).filter(Boolean);
-        if (options.length < 2) return `السؤال رقم ${n} محتاج اختيارين على الأقل`;
+        if (options.length < 2) return `السؤال رقم ${n} يحتاج إلى اختيارين على الأقل`;
         if (new Set(options).size !== options.length) return `في اختيارات مكررة في السؤال رقم ${n}`;
-        if (!q.answer.trim() || !options.includes(q.answer.trim())) return `اختار الإجابة الصح للسؤال رقم ${n}`;
+        if (!q.answer.trim() || !options.includes(q.answer.trim())) return `اختر الإجابة الصحيحة للسؤال رقم ${n}`;
       }
-      if (!q.answer.trim()) return `اكتب الإجابة الصح للسؤال رقم ${n}`;
+      if (!q.answer.trim()) return `اكتب الإجابة الصحيحة للسؤال رقم ${n}`;
     }
     return '';
   }

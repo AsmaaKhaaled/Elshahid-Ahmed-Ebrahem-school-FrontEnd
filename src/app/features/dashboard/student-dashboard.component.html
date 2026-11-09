@@ -10,9 +10,9 @@
         <h2 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">أهلاً يا {{ auth.userName() }} 👋</h2>
         <p class="text-sm text-slate-300 leading-relaxed">
           @if (dueItems().length) {
-            عندك <strong class="text-white">{{ dueItems().length }}</strong> {{ dueItems().length === 1 ? 'حاجة مطلوبة' : 'حاجات مطلوبة' }} منك، ابدأ بالأقرب في الميعاد.
+            لديك <strong class="text-white">{{ dueItems().length }}</strong> {{ dueItems().length === 1 ? 'مهمة مطلوبة' : 'مهام مطلوبة' }} منك، ابدأ بالأقرب موعدًا.
           } @else {
-            مفيش حاجة مطلوبة منك دلوقتي. راجع دروسك من المناهج والمواد التعليمية.
+            لا توجد مهام مطلوبة منك الآن. راجع دروسك من المناهج والمواد التعليمية.
           }
         </p>
       </div>
@@ -31,12 +31,12 @@
     <a routerLink="/student/assignments" class="block bg-white p-4 sm:p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
       <span class="text-xs font-bold text-slate-500">واجبات مطلوبة</span>
       <span class="mt-2 block text-2xl font-black" [class]="pendingAssignments() ? 'text-amber-600' : 'text-slate-800'">{{ pendingAssignments() }}</span>
-      <span class="mt-1 block text-[11px] font-semibold text-slate-500">{{ pendingAssignments() ? 'لسه متسلمتش' : '✓ سلّمت كله' }}</span>
+      <span class="mt-1 block text-[11px] font-semibold text-slate-500">{{ pendingAssignments() ? 'لم تُسلَّم بعد' : '✓ تم تسليم الجميع' }}</span>
     </a>
     <a routerLink="/student/quizzes" class="block bg-white p-4 sm:p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
       <span class="text-xs font-bold text-slate-500">كويزات واختبارات مفتوحة</span>
       <span class="mt-2 block text-2xl font-black" [class]="pendingQuizzes() ? 'text-amber-600' : 'text-slate-800'">{{ pendingQuizzes() }}</span>
-      <span class="mt-1 block text-[11px] font-semibold text-slate-500">{{ pendingQuizzes() ? 'مستنية حلك' : '✓ حليت كله' }}</span>
+      <span class="mt-1 block text-[11px] font-semibold text-slate-500">{{ pendingQuizzes() ? 'بانتظار حلك' : '✓ تم حل الجميع' }}</span>
     </a>
     <a routerLink="/student/materials" class="block bg-white p-4 sm:p-5 rounded-2xl shadow-soft border border-slate-100/80 hover:shadow-md transition-shadow">
       <span class="text-xs font-bold text-slate-500">مواد تعليمية جديدة</span>
@@ -50,7 +50,7 @@
         <span class="mt-1 block text-[11px] font-semibold text-slate-500">من {{ avg.count }} {{ avg.count === 1 ? 'تقييم' : 'تقييمات' }} اتصححت</span>
       } @else {
         <span class="mt-2 block text-2xl font-black text-slate-300">—</span>
-        <span class="mt-1 block text-[11px] font-semibold text-slate-500">لسه مفيش درجات</span>
+        <span class="mt-1 block text-[11px] font-semibold text-slate-500">لا توجد درجات بعد</span>
       }
     </div>
   </div>
@@ -72,14 +72,14 @@
                 [class]="item.kind === 'واجب' ? 'bg-amber-50 text-amber-800' : 'bg-primary-50 text-primary-800'">{{ item.kind }}</span>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-bold text-slate-800">{{ item.title }}</p>
-                <p class="text-[11px] text-slate-500">{{ item.subject }} · لحد {{ item.due | arabicDate:'dateOnly' }}</p>
+                <p class="text-[11px] text-slate-500">{{ item.subject }} · حتى {{ item.due | arabicDate:'dateOnly' }}</p>
               </div>
               <span class="w-fit text-[11px] font-bold px-2.5 py-1 rounded-full"
                 [class]="label.urgent ? 'bg-rose-50 text-rose-700' : 'bg-white text-slate-600 border border-slate-200'">{{ label.text }}</span>
             </a>
           </li>
         } @empty {
-          <li class="rounded-xl bg-emerald-50 px-3 py-6 text-center text-xs font-bold text-emerald-800">✓ مفيش واجبات ولا كويزات مستنياك</li>
+          <li class="rounded-xl bg-emerald-50 px-3 py-6 text-center text-xs font-bold text-emerald-800">✓ لا توجد واجبات أو كويزات بانتظارك</li>
         }
       </ul>
     </section>
@@ -108,7 +108,7 @@
             }
           </li>
         } @empty {
-          <li class="text-xs text-slate-400 py-4 text-center">مدرسين فصلك لسه منزلوش المناهج</li>
+          <li class="text-xs text-slate-400 py-4 text-center">لم يرفع معلمو فصلك المناهج بعد</li>
         }
       </ul>
     </section>
@@ -137,7 +137,7 @@
             }
           </li>
         } @empty {
-          <li class="text-xs text-slate-400 py-4 text-center md:col-span-2">مفيش مواد منشورة لفصلك لسه</li>
+          <li class="text-xs text-slate-400 py-4 text-center md:col-span-2">لا توجد مواد منشورة لفصلك بعد</li>
         }
       </ul>
     </section>
@@ -150,7 +150,7 @@
           <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-500">قريباً</span>
         </div>
         <p class="text-xs text-slate-500 leading-relaxed">
-          هتقدر تتفرج على فيديوهات شرح المدرسين جوه حسابك. لحد ما تتفعّل، المدرسين بينزلوا لينكات الفيديو في المواد التعليمية.
+          ستتمكن من مشاهدة فيديوهات شرح المعلمين داخل حسابك. وحتى يتم تفعيل هذه الخدمة، ينشر المعلمون روابط الفيديو في المواد التعليمية.
         </p>
       </section>
     </div>

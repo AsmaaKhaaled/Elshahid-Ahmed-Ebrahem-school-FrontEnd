@@ -94,7 +94,7 @@
               </span>
             } @else {
               <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap bg-slate-200 text-slate-700"
-                title="ترك المدرسة: حسابه مقفول وسجلاته محفوظة">
+                title="ترك المدرسة: حسابه مغلق وسجلاته محفوظة">
                 موقوف
               </span>
             }
@@ -106,7 +106,7 @@
               <span class="font-semibold">{{ teacher.specialization }}</span>
             </div>
             <div class="flex items-start justify-between gap-3 text-slate-600">
-              <span class="text-slate-400 shrink-0">الفصول اللي بيدرّسها:</span>
+              <span class="text-slate-400 shrink-0">الفصول التي يدرّسها:</span>
               <span class="font-semibold text-primary-700 text-left">
                 {{ teacher.classes.length }} فصول
                 @if (teacher.classes.length) {
@@ -162,7 +162,7 @@
         @if (loading()) {
           جاري تحميل المعلمين...
         } @else if (!teachers().length && !loadError()) {
-          لا يوجد معلمون مسجلون بعد. أضف أول معلم من زرار "إضافة معلم جديد".
+          لا يوجد معلمون مسجلون بعد. أضف أول معلم من زر "إضافة معلم جديد".
         } @else if (selectedState() === 'STOPPED' && !stoppedCount() && !loadError()) {
           لا يوجد معلمون موقوفون.
         } @else if (!loadError()) {

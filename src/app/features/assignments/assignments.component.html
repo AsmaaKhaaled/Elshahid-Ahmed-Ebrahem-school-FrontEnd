@@ -8,7 +8,7 @@
         } @else {
           واجبات فصل {{ scope.studentSection() }}
           @if (pendingCount()) {
-            · <strong class="text-amber-700">{{ pendingCount() }} واجب مستني تسليمك</strong>
+            · <strong class="text-amber-700">{{ pendingCount() }} واجب بانتظار تسليمك</strong>
           }
         }
       </p>
@@ -78,9 +78,9 @@
               @if (mine?.score != null) {
                 <span class="text-emerald-700">✓ اتصحح: {{ mine!.score }} من {{ item.maxScore }}</span>
               } @else if (mine) {
-                <span class="text-primary-700">✓ سلّمت · مستني التصحيح</span>
+                <span class="text-primary-700">✓ سلّمت · بانتظار التصحيح</span>
               } @else if (status === 'نشط ومتاح') {
-                <span class="text-amber-700">لسه مسلّمتش</span>
+                <span class="text-amber-700">لم تسلّم بعد</span>
               } @else {
                 <span class="text-rose-600">فات ميعاد التسليم</span>
               }
@@ -122,9 +122,9 @@
     } @empty {
       <div class="col-span-full text-center py-8 text-slate-400 text-sm">
         @if (scope.isTeacher()) {
-          لسه منشرتش واجبات. اضغط "إضافة واجب دراسي جديد" عشان تبدأ.
+          لم تنشر أي واجبات بعد. اضغط "إضافة واجب دراسي جديد" للبدء.
         } @else {
-          مفيش واجبات لفصلك لسه.
+          لا توجد واجبات لفصلك بعد.
         }
       </div>
     }

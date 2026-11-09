@@ -28,7 +28,7 @@
         {{ currentTerm().label }}
         @if (reminder) {
           <span class="font-semibold">
-            · {{ reminder.kind === 'overdue' ? 'انتهى موعده' : reminder.daysLeft === 0 ? 'ينتهي النهارده' : 'ينتهي خلال ' + daysText(reminder.daysLeft) }}
+            · {{ reminder.kind === 'overdue' ? 'انتهى موعده' : reminder.daysLeft === 0 ? 'ينتهي اليوم' : 'ينتهي خلال ' + daysText(reminder.daysLeft) }}
           </span>
         }
       </a>

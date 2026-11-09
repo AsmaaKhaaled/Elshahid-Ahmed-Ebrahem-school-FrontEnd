@@ -38,7 +38,7 @@ describe('MaterialsComponent', () => {
     create();
     const section = component.scope.studentSection();
     store.saveMaterial({
-      id: 'other', title: 'لفصل تاني', description: '', subject: 'العلوم', teacherId: '1',
+      id: 'other', title: 'لفصل آخر', description: '', subject: 'العلوم', teacherId: '1',
       sections: ['1/1'], files: [], link: 'https://example.com', publishedAt: new Date().toISOString()
     });
     expect(component.filteredMaterials().length).toBeGreaterThan(0);

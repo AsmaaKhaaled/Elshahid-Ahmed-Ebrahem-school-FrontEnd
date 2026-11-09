@@ -36,7 +36,7 @@
         <span class="text-lg font-black text-emerald-600">{{ stats().passed }}</span>
       </div>
       <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-        <span class="text-[11px] text-slate-500 block">مستني تصحيح</span>
+        <span class="text-[11px] text-slate-500 block">بانتظار التصحيح</span>
         <span class="text-lg font-black" [class]="stats().ungraded ? 'text-amber-600' : 'text-slate-800'">{{ stats().ungraded }}</span>
       </div>
     </div>
@@ -70,7 +70,7 @@
           }
         </li>
       } @empty {
-        <li class="text-center py-8 text-slate-400 text-sm">محدش سلّم لسه.</li>
+        <li class="text-center py-8 text-slate-400 text-sm">لم يسلّم أحد بعد.</li>
       }
     </ul>
   </div>

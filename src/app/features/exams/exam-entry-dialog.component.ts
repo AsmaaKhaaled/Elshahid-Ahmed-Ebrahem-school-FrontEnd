@@ -64,7 +64,7 @@ export class ExamEntryDialogComponent implements OnInit {
       return start < otherStart + e.durationMinutes && otherStart < end;
     });
     if (overlap) {
-      this.error.set(`الوقت ده متعارض مع امتحان ${overlap.subject} في نفس اليوم (${formatTime(overlap.startTime)}).`);
+      this.error.set(`هذا الوقت يتعارض مع امتحان ${overlap.subject} في نفس اليوم (${formatTime(overlap.startTime)}).`);
       return;
     }
 

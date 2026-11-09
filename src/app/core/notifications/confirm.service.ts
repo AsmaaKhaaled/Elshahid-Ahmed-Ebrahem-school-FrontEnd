@@ -15,7 +15,7 @@ interface ConfirmRequest extends ConfirmOptions {
 
 /**
  * The system's own confirmation dialog, in place of the browser's confirm():
- *   if (!(await confirmService.ask({ title: 'فيه درجات لسه ما اتحفظتش' }))) return;
+ *   if (!(await confirmService.ask({ title: 'توجد درجات لم يتم حفظها بعد' }))) return;
  * Shown by the notifications host in the app root.
  */
 @Injectable({ providedIn: 'root' })

@@ -30,17 +30,17 @@ describe('NotificationsHostComponent', () => {
   it('answers the confirmation with the button the user clicks', async () => {
     const confirm = TestBed.inject(ConfirmService);
 
-    const leave = confirm.ask({ title: 'فيه درجات لسه ما اتحفظتش', confirmText: 'كمّل من غير حفظ', cancelText: 'ارجع احفظها' });
+    const leave = confirm.ask({ title: 'توجد درجات لم يتم حفظها بعد', confirmText: 'المتابعة دون حفظ', cancelText: 'العودة للحفظ' });
     fixture.detectChanges();
-    expect(text()).toContain('فيه درجات لسه ما اتحفظتش');
-    button('ارجع احفظها').click();
+    expect(text()).toContain('توجد درجات لم يتم حفظها بعد');
+    button('العودة للحفظ').click();
     expect(await leave).toBeFalse();
 
-    const leaveAgain = confirm.ask({ title: 'فيه درجات لسه ما اتحفظتش', confirmText: 'كمّل من غير حفظ' });
+    const leaveAgain = confirm.ask({ title: 'توجد درجات لم يتم حفظها بعد', confirmText: 'المتابعة دون حفظ' });
     fixture.detectChanges();
-    button('كمّل من غير حفظ').click();
+    button('المتابعة دون حفظ').click();
     expect(await leaveAgain).toBeTrue();
     fixture.detectChanges();
-    expect(text()).not.toContain('فيه درجات لسه ما اتحفظتش');
+    expect(text()).not.toContain('توجد درجات لم يتم حفظها بعد');
   });
 });

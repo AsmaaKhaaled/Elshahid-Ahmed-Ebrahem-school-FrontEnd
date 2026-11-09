@@ -20,7 +20,7 @@ import { Holiday } from './teacher-attendance.model';
         <div class="dialog-head flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
             <h3 class="font-black text-slate-800 text-lg">تسجيل يوم إجازة</h3>
-            <p class="text-xs text-slate-500 mt-0.5">الجمعة والسبت إجازة تلقائياً، سجّل هنا أي إجازة رسمية تانية.</p>
+            <p class="text-xs text-slate-500 mt-0.5">الجمعة والسبت إجازة تلقائياً، سجّل هنا أي إجازة رسمية أخرى.</p>
           </div>
           <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600" aria-label="إغلاق">✕</button>
         </div>
@@ -28,7 +28,7 @@ import { Holiday } from './teacher-attendance.model';
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <app-date-field label="من يوم" name="startDate" required [(ngModel)]="draft.startDate" error="اختر يوم البداية" />
           <app-date-field label="إلى يوم (اختياري)" name="endDate" [(ngModel)]="draft.endDate" [min]="draft.startDate"
-            hint='سيبه فاضي لو الإجازة يوم واحد' />
+            hint='اتركه فارغًا إذا كانت الإجازة يومًا واحدًا' />
         </div>
 
         <mat-form-field class="w-full">

@@ -44,7 +44,7 @@
           (click)="distribute()"
           [disabled]="distributing()"
           type="button"
-          title="بيتوزعوا على فصول صفهم بالتساوي، والفصل المكتمل مش بياخد حد"
+          title="يتم توزيعهم على فصول صفهم بالتساوي، ولا يستقبل الفصل المكتمل طلابًا جددًا"
           class="px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-colors flex items-center gap-2 disabled:opacity-60">
           <span>{{ distributing() ? 'جاري التوزيع...' : 'توزيع ' + studentsWithoutClass() + ' طالب بدون فصل' }}</span>
         </button>

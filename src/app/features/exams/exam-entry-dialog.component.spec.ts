@@ -57,7 +57,7 @@ describe('ExamEntryDialogComponent', () => {
     component.save(validForm);
 
     expect(saved.length).toBe(0);
-    expect(component.error()).toContain('متعارض');
+    expect(component.error()).toContain('يتعارض');
   });
 
   it('accepts an exam right after the previous one ends', () => {

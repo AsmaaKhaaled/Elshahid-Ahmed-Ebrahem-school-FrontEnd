@@ -39,9 +39,9 @@
           </p>
           <p class="text-xs text-primary-200 font-semibold">
             @if (taughtClassCount()) {
-              مسند ليك {{ taughtClassCount() }} فصول في {{ teachingGroups().length }} مواد للفصل الدراسي الحالي.
+              مسند إليك {{ taughtClassCount() }} فصول في {{ teachingGroups().length }} مواد للفصل الدراسي الحالي.
             } @else {
-              لسه مفيش فصول مسندة ليك.
+              لا توجد فصول مسندة إليك بعد.
             }
           </p>
         } @else {
@@ -201,7 +201,7 @@
           </div>
           <div>
             <h3 class="font-black text-slate-900 text-base md:text-lg">موادي وفصولها</h3>
-            <p class="text-xs text-slate-500 mt-0.5">كل مادة بتدرّسها والفصول اللي الإدارة أسندتها ليك فيها</p>
+            <p class="text-xs text-slate-500 mt-0.5">كل مادة تدرّسها والفصول التي أسندتها إليك الإدارة</p>
           </div>
         </div>
 
@@ -258,7 +258,7 @@
           </div>
         </section>
       } @empty {
-        <p class="text-center py-8 text-sm text-slate-400">لسه مفيش فصول مسندة ليك، تواصل مع الإدارة.</p>
+        <p class="text-center py-8 text-sm text-slate-400">لا توجد فصول مسندة إليك بعد، يرجى التواصل مع الإدارة.</p>
       }
     </div>
   }
@@ -331,7 +331,7 @@
             }
           </ul>
         } @else {
-          <p class="rounded-xl bg-emerald-50 px-3 py-4 text-center text-xs font-bold text-emerald-800">✓ كل حاجة تمام، مفيش حاجة محتاجة تدخل</p>
+          <p class="rounded-xl bg-emerald-50 px-3 py-4 text-center text-xs font-bold text-emerald-800">✓ كل شيء على ما يرام، ولا يوجد ما يحتاج إلى متابعة</p>
         }
       </section>
 

@@ -113,11 +113,11 @@
           } @else {
             @if (d.date < d.today) {
               <p class="text-xs font-semibold text-amber-800">
-                ده يوم فات ومفتوح للتعديل. اعتمده لما تخلص، لأنه مش هيتعتمد تلقائياً.
+                هذا يوم سابق مفتوح للتعديل. اعتمده عند الانتهاء، لأنه لن يُعتمد تلقائيًا.
               </p>
             } @else {
               <p class="text-xs text-slate-500">
-                احفظ أول بأول، واعتمد الدفتر في آخر اليوم. لو ما اتعتمدش، هيتعتمد تلقائياً بعد انتهاء اليوم.
+                احفظ أول بأول، واعتمد الدفتر في آخر اليوم. إذا لم يُعتمد، فسيُعتمد تلقائيًا بعد انتهاء اليوم.
               </p>
             }
             <div class="flex flex-wrap items-center gap-2">
@@ -144,9 +144,9 @@
         @if (confirmingClose()) {
           <div class="px-4 py-3 bg-emerald-50/70 border-b border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs" role="alertdialog">
             <span class="text-emerald-900 font-semibold">
-              بعد الاعتماد الدفتر هيتقفل ويتنقل للأرشيف.
+              بعد الاعتماد سيُغلق الدفتر ويُنقل إلى الأرشيف.
               @if (unmarkedCount()) {
-                <strong>{{ unmarkedCount() }} معلم</strong> لسه ماتسجلوش وهيتسجلوا "لم يُسجل".
+                <strong>{{ unmarkedCount() }} معلم</strong> لم يتم تسجيلهم بعد، وسيتم تسجيلهم بحالة "لم يُسجل".
               }
             </span>
             <div class="flex items-center gap-2">
@@ -245,7 +245,7 @@
     <div class="flex items-center justify-between gap-3">
       <div>
         <h3 class="font-bold text-slate-800 text-base">الإجازات الرسمية</h3>
-        <p class="text-xs text-slate-500 mt-0.5">غير الجمعة والسبت. أيام الإجازة مابيتفتحلهاش دفتر ومش بتتحسب غياب.</p>
+        <p class="text-xs text-slate-500 mt-0.5">غير الجمعة والسبت. لا يُفتح دفتر لأيام الإجازة ولا تُحسب غيابًا.</p>
       </div>
     </div>
     @if (holidaysError()) {
@@ -278,7 +278,7 @@
     <div class="px-5 py-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
       <div>
         <h3 class="font-bold text-slate-800 text-base">سجل الأيام المعتمدة</h3>
-        <p class="text-xs text-slate-500 mt-0.5">كل يوم بيتنقل هنا بعد اعتماده، ويفضل محفوظ للرجوع له في أي وقت.</p>
+        <p class="text-xs text-slate-500 mt-0.5">يُنقل كل يوم إلى هنا بعد اعتماده، ويظل محفوظًا للرجوع إليه في أي وقت.</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button (click)="exportExcel()" [disabled]="!!exporting() || !archive()?.meta?.total" type="button"

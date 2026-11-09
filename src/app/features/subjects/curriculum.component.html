@@ -61,7 +61,7 @@
           @if (scope.isTeacher()) {
             <button type="button" (click)="openFileDialog()"
               class="px-3.5 py-2 rounded-xl bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs shadow-md transition-all">
-              📤 رفع ملف أو لينك
+              📤 رفع ملف أو رابط
             </button>
           }
         </div>
@@ -99,7 +99,7 @@
                   {{ f.title }}
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">{{ kind?.icon }} {{ kind?.label }}</span>
                   @if (!f.forStudents) {
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">ليك انت بس</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">لك وحدك</span>
                   }
                 </p>
                 @if (f.file; as stored) {
@@ -136,9 +136,9 @@
                 <p class="text-3xl" aria-hidden="true">📚</p>
                 <p class="text-sm text-slate-400">
                   @if (scope.isTeacher()) {
-                    لسه مرفعتش حاجة للمنهج ده. ارفع كتاب الوزارة وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات.
+                    لم ترفع أي ملفات لهذا المنهج بعد. ارفع كتاب الوزارة وتوزيع المنهج ونماذج الامتحانات، كملفات أو روابط.
                   } @else {
-                    مفيش ملفات منهج متاحة لسه.
+                    لا توجد ملفات منهج متاحة بعد.
                   }
                 </p>
               </li>
@@ -161,7 +161,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <h3 class="font-black text-slate-800">خطة المنهج والأهداف</h3>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">للمعلم والإدارة بس</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">للمعلم والإدارة فقط</span>
             </div>
             @if (scope.isTeacher()) {
               <button type="button" (click)="openPlanDialog()"
@@ -203,7 +203,7 @@
             </ol>
           } @else if (!cur.planFile) {
             <p class="text-sm text-slate-400 text-center py-4">
-              {{ scope.isTeacher() ? 'لسه مكتبتش خطة المنهج والأهداف. اكتبها أسبوع بأسبوع أو ارفع ملف الخطة.' : 'المعلم لسه مكتبش خطة المنهج.' }}
+              {{ scope.isTeacher() ? 'لم تكتب خطة المنهج والأهداف بعد. اكتبها أسبوعًا بأسبوع أو ارفع ملف الخطة.' : 'لم يكتب المعلم خطة المنهج بعد.' }}
             </p>
           }
         </section>
@@ -234,11 +234,11 @@
           <h2 class="text-2xl font-black text-slate-800 tracking-tight">المناهج والمواد الدراسية</h2>
           <p class="text-xs text-slate-500 mt-1">
             @if (scope.isTeacher()) {
-              ارفع منهج الوزارة لكل مادة بتدرّسها: الكتاب وتوزيع المنهج ونماذج الامتحانات، كملفات أو لينكات، واكتب خطة المنهج والأهداف
+              ارفع منهج الوزارة لكل مادة تدرّسها: الكتاب وتوزيع المنهج ونماذج الامتحانات، كملفات أو روابط، واكتب خطة المنهج والأهداف
             } @else if (scope.isStudent()) {
               مناهج مواد فصل {{ scope.studentSection() }}: كتب الوزارة وتوزيع المنهج ونماذج الامتحانات
             } @else {
-              مناهج كل المعلمين: ملفات الوزارة اللي رفعوها، وخطة المنهج والأهداف لكل مادة
+              مناهج كل المعلمين: ملفات الوزارة التي رفعوها، وخطة المنهج والأهداف لكل مادة
             }
           </p>
         </div>
@@ -302,7 +302,7 @@
             @for (kind of kindsOf(cur); track kind.id) {
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{{ kind.icon }} {{ kind.label }}</span>
             } @empty {
-              <span class="text-[11px] text-slate-400">لسه مفيش ملفات</span>
+              <span class="text-[11px] text-slate-400">لا توجد ملفات بعد</span>
             }
           </div>
 
@@ -344,7 +344,7 @@
           <button type="button" (click)="openForm(null, subject)"
             class="text-right rounded-2xl p-5 border-2 border-dashed border-slate-200 hover:border-primary-300 hover:bg-primary-50/40 transition-all flex flex-col justify-center gap-1 min-h-40">
             <span class="text-base font-black text-slate-700">{{ subject }}</span>
-            <span class="text-xs text-slate-500">لسه مرفعتش منهج المادة دي</span>
+            <span class="text-xs text-slate-500">لم ترفع منهج هذه المادة بعد</span>
             <span class="text-xs font-bold text-primary-700 mt-2">+ ارفع المنهج</span>
           </button>
         }
@@ -352,15 +352,15 @@
         @if (list() && !curricula().length && !subjectsWithoutCurriculum().length) {
           <div class="col-span-full text-center py-10 text-slate-400 text-sm">
             @if (search().trim()) {
-              مفيش مناهج تطابق البحث.
+              لا توجد مناهج تطابق البحث.
             } @else if (selectedGrade()) {
-              المعلمين لسه منزلوش مناهج للصف ده.
+              لم يرفع المعلمون مناهج لهذا الصف بعد.
             } @else if (scope.isTeacher()) {
-              اضغط "منهج مادة جديد" عشان تبدأ.
+              اضغط "منهج مادة جديد" للبدء.
             } @else if (scope.isStudent()) {
-              مدرسين فصلك لسه منزلوش المناهج.
+              لم يرفع معلمو فصلك المناهج بعد.
             } @else {
-              المعلمين لسه منزلوش مناهج.
+              لم يرفع المعلمون مناهج بعد.
             }
           </div>
         } @else if (!list() && loadingList()) {

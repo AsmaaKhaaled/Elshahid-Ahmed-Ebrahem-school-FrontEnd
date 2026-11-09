@@ -22,7 +22,7 @@
         class="py-2 rounded-lg text-xs font-bold transition-all">📎 رفع ملف</button>
       <button type="button" role="radio" [attr.aria-checked]="source === 'link'" (click)="source = 'link'; fileError.set('')"
         [class]="source === 'link' ? 'bg-white text-primary-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
-        class="py-2 rounded-lg text-xs font-bold transition-all">🔗 لينك</button>
+        class="py-2 rounded-lg text-xs font-bold transition-all">🔗 رابط</button>
     </div>
 
     @if (source === 'file') {
@@ -44,7 +44,7 @@
         <mat-label>اللينك</mat-label>
         <input matInput type="url" name="link" dir="ltr" required pattern="https?://.+" [(ngModel)]="link" placeholder="https://" />
         <mat-hint>موقع الوزارة، بنك المعرفة، درايف...</mat-hint>
-        <mat-error>حط لينك صحيح بيبدأ بـ https://</mat-error>
+        <mat-error>أدخل رابطًا صحيحًا يبدأ بـ https://</mat-error>
       </mat-form-field>
     }
 
@@ -58,7 +58,7 @@
       <input type="checkbox" name="forStudents" [(ngModel)]="forStudents" class="mt-1 w-4 h-4 rounded accent-primary-700" />
       <span>
         <span class="font-bold">يظهر للطلاب</span>
-        <span class="block text-[11px] text-slate-500">لو شلت العلامة الملف هيبقى ليك انت بس (زي دليل المعلم)</span>
+        <span class="block text-[11px] text-slate-500">إذا أزلت العلامة سيكون الملف لك وحدك (مثل دليل المعلم)</span>
       </span>
     </label>
 

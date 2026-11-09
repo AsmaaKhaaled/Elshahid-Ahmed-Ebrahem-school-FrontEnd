@@ -29,13 +29,13 @@
       </div>
 
       <mat-form-field class="w-full">
-        <mat-label>الفصول اللي بتدرس المنهج ده</mat-label>
+        <mat-label>الفصول التي تدرس هذا المنهج</mat-label>
         <mat-select name="sections" required multiple [(ngModel)]="draft.sections" [disabled]="!draft.gradeId">
           @for (section of sectionOptions(); track section) {
             <mat-option [value]="section">فصل {{ section }}</mat-option>
           }
         </mat-select>
-        <mat-hint>طلاب الفصول دي بس هيشوفوا المنهج</mat-hint>
+        <mat-hint>سيرى طلاب هذه الفصول فقط المنهج</mat-hint>
         <mat-error>اختر فصل واحد على الأقل</mat-error>
       </mat-form-field>
 
@@ -50,7 +50,7 @@
         <p class="text-xs text-rose-600 font-semibold" role="alert">{{ serverError() }}</p>
       }
       @if (!curriculum()) {
-        <p class="text-[11px] text-slate-500">بعد الحفظ تقدر تضيف الوحدات والدروس وترفع كتاب الوزارة وباقي ملفات المنهج.</p>
+        <p class="text-[11px] text-slate-500">بعد الحفظ يمكنك إضافة الوحدات والدروس ورفع كتاب الوزارة وباقي ملفات المنهج.</p>
       }
     </div>
 

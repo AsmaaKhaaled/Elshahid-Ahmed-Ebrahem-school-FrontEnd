@@ -78,7 +78,7 @@
             placeholder="STD-2026-006"
             (input)="serverError.set(null)" />
           @if (!student()) {
-            <mat-hint class="text-[11px] text-slate-400">اتولد تلقائياً - تقدر تغيّره</mat-hint>
+            <mat-hint class="text-[11px] text-slate-400">تم إنشاؤه تلقائيًا - يمكنك تغييره</mat-hint>
           }
           @if (studentCodeControl?.touched && studentCodeControl?.hasError('required')) {
             <mat-error>كود الطالب مطلوب</mat-error>
