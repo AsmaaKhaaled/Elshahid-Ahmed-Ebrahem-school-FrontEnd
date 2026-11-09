@@ -72,6 +72,7 @@ export class HomeContentStore {
   }
 
   private syncFromBackend(): void {
+    // 1. Sync Principal's Word
     this.api.getPrincipalWord().subscribe({
       next: res => {
         if (res?.data && res.data.name) {
@@ -85,7 +86,24 @@ export class HomeContentStore {
         // Fallback silently to localStorage/defaults if backend is not yet deployed
       }
     });
+
+    // 2. Sync Gallery Slides (Fetch with includeHidden=true so admin panel sees all)
+    this.api.getGallerySlides(true).subscribe({
+      next: res => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          this.slides.set(res.data);
+          try {
+            localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(res.data));
+          } catch {}
+        }
+      },
+      error: err => {
+        console.warn('[HomeContentStore] Failed to fetch gallery slides from server, using local fallback.', err?.message);
+      }
+    });
   }
+
+  // --- إدارة كلمة المدير (Principal's Word) ---
 
   savePrincipal(principal: PrincipalWord): void {
     // 1. Instant optimistic update
@@ -115,27 +133,77 @@ export class HomeContentStore {
     });
   }
 
+  // --- إدارة صور الأنشطة المدرسية (School Gallery Slides) ---
+
   saveSlide(slide: GallerySlide): void {
-    this.slides.update(list => {
-      const updated = list.some(s => s.id === slide.id) ? list.map(s => (s.id === slide.id ? slide : s)) : [...list, slide];
+    const exists = this.slides().some(s => s.id === slide.id);
+
+    if (exists && !slide.id.startsWith('temp-')) {
+      // تعديل صورة موجودة (Optimistic Update)
+      this.slides.update(list => list.map(s => (s.id === slide.id ? slide : s)));
       try {
-        localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(updated));
+        localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(this.slides()));
       } catch {}
-      return updated;
-    });
+
+      this.api.updateGallerySlide(slide.id, slide).subscribe({
+        next: res => {
+          if (res?.data) {
+            this.slides.update(list => list.map(s => (s.id === slide.id ? res.data : s)));
+            try {
+              localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(this.slides()));
+            } catch {}
+          }
+        },
+        error: err => {
+          console.error('[HomeContentStore] Failed to update slide on server', err);
+        }
+      });
+    } else {
+      // إضافة صورة جديدة
+      const tempId = slide.id || `temp-${crypto.randomUUID()}`;
+      const optimisticSlide: GallerySlide = { ...slide, id: tempId };
+      this.slides.update(list => [...list, optimisticSlide]);
+      try {
+        localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(this.slides()));
+      } catch {}
+
+      this.api.createGallerySlide({
+        title: slide.title,
+        caption: slide.caption,
+        src: slide.src,
+        hidden: slide.hidden
+      }).subscribe({
+        next: res => {
+          if (res?.data) {
+            this.slides.update(list => list.map(s => (s.id === tempId ? res.data : s)));
+            try {
+              localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(this.slides()));
+            } catch {}
+          }
+        },
+        error: err => {
+          console.error('[HomeContentStore] Failed to create slide on server', err);
+        }
+      });
+    }
   }
 
   deleteSlide(slideId: string): void {
-    this.slides.update(list => {
-      const updated = list.filter(s => s.id !== slideId);
-      try {
-        localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
+    this.slides.update(list => list.filter(s => s.id !== slideId));
+    try {
+      localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(this.slides()));
+    } catch {}
+
+    if (!slideId.startsWith('temp-')) {
+      this.api.deleteGallerySlide(slideId).subscribe({
+        error: err => {
+          console.error('[HomeContentStore] Failed to delete slide on server', err);
+        }
+      });
+    }
   }
 
-  /** Moves a photo one place earlier (-1) or later (+1) in the carousel. */
+  /** Moves a photo one place earlier (-1) or later (+1) in the carousel and reorders on backend. */
   moveSlide(slideId: string, step: -1 | 1): void {
     this.slides.update(list => {
       const from = list.findIndex(s => s.id === slideId);
@@ -146,17 +214,39 @@ export class HomeContentStore {
       try {
         localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(moved));
       } catch {}
+
+      // إرسال الترتيب الجديد للباك إند
+      const slideIds = moved.map(s => s.id).filter(id => !id.startsWith('temp-'));
+      if (slideIds.length > 0) {
+        this.api.reorderGallerySlides(slideIds).subscribe({
+          error: err => {
+            console.error('[HomeContentStore] Failed to reorder slides on server', err);
+          }
+        });
+      }
+
       return moved;
     });
   }
 
+  /** تبديل حالة الإخفاء/الإظهار */
   toggleHidden(slideId: string): void {
-    this.slides.update(list => {
-      const updated = list.map(s => (s.id === slideId ? { ...s, hidden: !s.hidden } : s));
-      try {
-        localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
+    this.slides.update(list => list.map(s => (s.id === slideId ? { ...s, hidden: !s.hidden } : s)));
+    try {
+      localStorage.setItem(STORAGE_KEY_SLIDES, JSON.stringify(this.slides()));
+    } catch {}
+
+    if (!slideId.startsWith('temp-')) {
+      this.api.toggleHiddenSlide(slideId).subscribe({
+        error: err => {
+          console.error('[HomeContentStore] Failed to toggle hidden on server', err);
+        }
+      });
+    }
+  }
+
+  /** Alias method for convenience */
+  toggleSlideHidden(slideId: string): void {
+    this.toggleHidden(slideId);
   }
 }
