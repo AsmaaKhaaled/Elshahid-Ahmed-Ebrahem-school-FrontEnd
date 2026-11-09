@@ -5,7 +5,7 @@ export const HONOR_KINDS: { id: HonorKind; label: string }[] = [
   { id: 'STUDENT', label: 'الطلاب المتفوقون' }
 ];
 
-/** One person on the honor roll, shown on the home page. */
+/** One person on the honor roll, shown on the home page and managed from the admin panel. */
 export interface HonorEntry {
   id: string;
   kind: HonorKind;
@@ -13,10 +13,17 @@ export interface HonorEntry {
   name: string;
   // Resized data URL or remote URL; empty = initial-letter avatar
   photoUrl: string;
-  // Teachers only
+  // Teachers only (supports single or multiple subjects)
+  subjects?: string[];
   subject: string;
   // Students only, e.g. "2/3"
   section: string;
   // Short reason, e.g. "الأول على الصف الثالث الإعدادي"
   achievement: string;
+  teacherId?: string | null;
+  studentId?: string | null;
+  academicYear?: string;
+  term?: string;
+  order?: number;
+  isActive?: boolean;
 }

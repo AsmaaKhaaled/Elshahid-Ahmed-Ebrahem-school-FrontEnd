@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ElementRef, viewChild, WritableSignal, DestroyRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
@@ -36,6 +36,14 @@ interface AcademicPillar {
   styleUrl: './home.component.css'
 })
 export class HomeComponent {
+  constructor() {
+    this.startTeacherAutoplay();
+    this.startStudentAutoplay();
+    this.destroyRef.onDestroy(() => {
+      this.stopTeacherAutoplay();
+      this.stopStudentAutoplay();
+    });
+  }
   readonly authService = inject(AuthService);
   readonly academicYear = inject(AcademicCalendarStore).currentYear;
   readonly academicTerm = inject(AcademicCalendarStore).currentTerm;
@@ -173,6 +181,171 @@ export class HomeComponent {
   readonly honorTeachers = this.honorRoll.teachers;
   readonly honorStudents = this.honorRoll.students;
   readonly teacherHonorific = TEACHER_HONORIFIC;
+
+  // Carousel View Children & State (Activated when items > 3)
+  readonly teachersCarousel = viewChild<ElementRef<HTMLElement>>('teachersCarousel');
+  readonly studentsCarousel = viewChild<ElementRef<HTMLElement>>('studentsCarousel');
+  readonly teacherCarouselIndex = signal<number>(0);
+  readonly studentCarouselIndex = signal<number>(0);
+
+  private readonly destroyRef = inject(DestroyRef);
+
+  // Autoplay intervals & hover pause state
+  private teacherAutoplayInterval?: ReturnType<typeof setInterval>;
+  private studentAutoplayInterval?: ReturnType<typeof setInterval>;
+  readonly isTeacherHovered = signal<boolean>(false);
+  readonly isStudentHovered = signal<boolean>(false);
+
+  private isElementInViewport(el: HTMLElement): boolean {
+    const rect = el.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+    return rect.top < windowHeight && rect.bottom > 0;
+  }
+
+  startTeacherAutoplay(): void {
+    this.stopTeacherAutoplay();
+    this.teacherAutoplayInterval = setInterval(() => {
+      const el = this.teachersCarousel()?.nativeElement;
+      if (!el) return;
+      // Only autoplay if carousel is currently visible on the screen and not hovered
+      if (!this.isTeacherHovered() && this.honorTeachers().length > 3 && this.isElementInViewport(el)) {
+        this.nextTeacher();
+      }
+    }, 4000);
+  }
+
+  stopTeacherAutoplay(): void {
+    if (this.teacherAutoplayInterval) {
+      clearInterval(this.teacherAutoplayInterval);
+      this.teacherAutoplayInterval = undefined;
+    }
+  }
+
+  onTeacherMouseEnter(): void {
+    this.isTeacherHovered.set(true);
+  }
+
+  onTeacherMouseLeave(): void {
+    this.isTeacherHovered.set(false);
+  }
+
+  startStudentAutoplay(): void {
+    this.stopStudentAutoplay();
+    this.studentAutoplayInterval = setInterval(() => {
+      const el = this.studentsCarousel()?.nativeElement;
+      if (!el) return;
+      // Only autoplay if carousel is currently visible on the screen and not hovered
+      if (!this.isStudentHovered() && this.honorStudents().length > 3 && this.isElementInViewport(el)) {
+        this.nextStudent();
+      }
+    }, 4000);
+  }
+
+  stopStudentAutoplay(): void {
+    if (this.studentAutoplayInterval) {
+      clearInterval(this.studentAutoplayInterval);
+      this.studentAutoplayInterval = undefined;
+    }
+  }
+
+  onStudentMouseEnter(): void {
+    this.isStudentHovered.set(true);
+  }
+
+  onStudentMouseLeave(): void {
+    this.isStudentHovered.set(false);
+  }
+
+  goToTeacher(index: number): void {
+    const el = this.teachersCarousel()?.nativeElement;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>('[data-card-index]');
+    const targetCard = cards[index];
+    if (targetCard) {
+      // Scroll the container horizontally ONLY - NEVER scroll the window vertically!
+      const containerRect = el.getBoundingClientRect();
+      const cardRect = targetCard.getBoundingClientRect();
+      const deltaX = cardRect.right - containerRect.right;
+      el.scrollBy({ left: deltaX, behavior: 'smooth' });
+      this.teacherCarouselIndex.set(index);
+    }
+  }
+
+  nextTeacher(): void {
+    const total = this.honorTeachers().length;
+    if (total <= 1) return;
+    const nextIdx = (this.teacherCarouselIndex() + 1) % total;
+    this.goToTeacher(nextIdx);
+  }
+
+  prevTeacher(): void {
+    const total = this.honorTeachers().length;
+    if (total <= 1) return;
+    const prevIdx = (this.teacherCarouselIndex() - 1 + total) % total;
+    this.goToTeacher(prevIdx);
+  }
+
+  onTeachersScroll(): void {
+    const el = this.teachersCarousel()?.nativeElement;
+    if (!el) return;
+    this.updateActiveIndexOnScroll(el, this.teacherCarouselIndex);
+  }
+
+  goToStudent(index: number): void {
+    const el = this.studentsCarousel()?.nativeElement;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>('[data-card-index]');
+    const targetCard = cards[index];
+    if (targetCard) {
+      // Scroll the container horizontally ONLY - NEVER scroll the window vertically!
+      const containerRect = el.getBoundingClientRect();
+      const cardRect = targetCard.getBoundingClientRect();
+      const deltaX = cardRect.right - containerRect.right;
+      el.scrollBy({ left: deltaX, behavior: 'smooth' });
+      this.studentCarouselIndex.set(index);
+    }
+  }
+
+  nextStudent(): void {
+    const total = this.honorStudents().length;
+    if (total <= 1) return;
+    const nextIdx = (this.studentCarouselIndex() + 1) % total;
+    this.goToStudent(nextIdx);
+  }
+
+  prevStudent(): void {
+    const total = this.honorStudents().length;
+    if (total <= 1) return;
+    const prevIdx = (this.studentCarouselIndex() - 1 + total) % total;
+    this.goToStudent(prevIdx);
+  }
+
+  onStudentsScroll(): void {
+    const el = this.studentsCarousel()?.nativeElement;
+    if (!el) return;
+    this.updateActiveIndexOnScroll(el, this.studentCarouselIndex);
+  }
+
+  private updateActiveIndexOnScroll(container: HTMLElement, targetSignal: WritableSignal<number>): void {
+    const cards = container.querySelectorAll<HTMLElement>('[data-card-index]');
+    if (!cards.length) return;
+    const containerRect = container.getBoundingClientRect();
+    // In RTL, the "start" alignment is the container's right edge
+    const startX = containerRect.right;
+    let closestIndex = 0;
+    let minDiff = Infinity;
+    cards.forEach((card, idx) => {
+      const cardRect = card.getBoundingClientRect();
+      const diff = Math.abs(cardRect.right - startX);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIndex = idx;
+      }
+    });
+    if (targetSignal() !== closestIndex) {
+      targetSignal.set(closestIndex);
+    }
+  }
 
   // School Notices Matching Screenshot
   readonly notices: SchoolNotice[] = [

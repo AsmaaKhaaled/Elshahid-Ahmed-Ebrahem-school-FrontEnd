@@ -20,6 +20,7 @@ export class HomeContentComponent {
   private readonly store = inject(HomeContentStore);
 
   readonly acceptedTypes = ACCEPTED_PHOTO_TYPES.join(',');
+  readonly isSaving = this.store.isSaving;
   private noticeTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
@@ -80,8 +81,8 @@ export class HomeContentComponent {
     });
     this.principalDraft.set(this.toDraft());
     clearTimeout(this.noticeTimer);
-    this.principalNotice.set('تم حفظ كلمة المدير، وظهرت في الصفحة الرئيسية.');
-    this.noticeTimer = setTimeout(() => this.principalNotice.set(null), 4000);
+    this.principalNotice.set('تم حفظ وتحديث كلمة مدير المدرسة بنجاح في الصفحة الرئيسية.');
+    this.noticeTimer = setTimeout(() => this.principalNotice.set(null), 6000);
   }
 
   discardPrincipal(): void {

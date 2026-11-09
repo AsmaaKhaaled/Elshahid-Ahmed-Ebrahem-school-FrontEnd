@@ -13,14 +13,33 @@
     <div class="flex items-center justify-between gap-3">
       <h3 class="text-base font-black text-slate-800">كلمة مدير المدرسة</h3>
       @if (principalNotice(); as notice) {
-        <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">{{ notice }}</span>
+        <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+          ✓ تم الحفظ
+        </span>
       }
     </div>
+
+    @if (principalNotice(); as notice) {
+      <div class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <span class="text-xs font-bold">{{ notice }}</span>
+        </div>
+        <a routerLink="/home" target="_blank"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shrink-0 shadow-xs">
+          <span>معاينة في الرئيسية ↗</span>
+        </a>
+      </div>
+    }
 
     <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
       <!-- Photo -->
       <div class="md:col-span-3 flex flex-col items-center gap-2">
-        <img [src]="principalDraft().photoUrl" [alt]="principalDraft().name"
+        <img [src]="principalDraft().photoUrl || 'images/principal-placeholder.svg'" [alt]="principalDraft().name"
           class="w-36 aspect-[5/6] object-cover rounded-2xl ring-4 ring-slate-100 bg-slate-200" />
         <label class="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-800 hover:bg-primary-100 text-xs font-bold cursor-pointer transition-colors">
           {{ processingPhoto() ? 'جاري تجهيز الصورة...' : 'تغيير صورة المدير' }}
@@ -64,9 +83,17 @@
       @if (principalDirty()) {
         <button (click)="discardPrincipal()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">تراجع عن التعديلات</button>
       }
-      <button type="submit" [disabled]="!principalDirty() || processingPhoto()"
-        class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-50">
-        حفظ كلمة المدير
+      <button type="submit" [disabled]="!principalDirty() || processingPhoto() || isSaving()"
+        class="px-5 py-2.5 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-50 flex items-center gap-2">
+        @if (isSaving()) {
+          <span class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span>جاري الحفظ...</span>
+        } @else {
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>حفظ كلمة المدير</span>
+        }
       </button>
     </div>
   </form>
