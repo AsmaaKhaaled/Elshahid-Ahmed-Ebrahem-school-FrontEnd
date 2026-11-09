@@ -25,7 +25,7 @@ export class TeachingStore {
       files: [{ name: 'ملخص-الكسور-العشرية.pdf', size: 1.4 * MB, url: '' }], publishedAt: ago(1 * MIN)
     },
     {
-      id: 'm-2', title: 'ملخص الوحدة الأولى: المعادلات', description: 'كل قوانين الوحدة في ورقتين، اطبعوها قبل الحصة الجاية.',
+      id: 'm-2', title: 'ملخص الوحدة الأولى: المعادلات', description: 'كل قوانين الوحدة في ورقتين، اطبعوها قبل الحصة القادمة.',
       subject: 'الرياضيات', teacherId: '1', sections: ['3/2', '3/3'],
       files: [{ name: 'ملخص-المعادلات.pdf', size: 2.1 * MB, url: '' }, { name: 'تمارين-إضافية.docx', size: 0.3 * MB, url: '' }],
       publishedAt: ago(3 * HOUR)
@@ -36,7 +36,7 @@ export class TeachingStore {
       files: [{ name: 'Unit3-Vocabulary.pdf', size: 0.8 * MB, url: '' }], publishedAt: ago(6 * HOUR)
     },
     {
-      id: 'm-4', title: 'تجربة عملية: الخلية تحت المجهر', description: 'فيديو التجربة اللي اتعملت في المعمل.',
+      id: 'm-4', title: 'تجربة عملية: الخلية تحت المجهر', description: 'فيديو التجربة التي أُجريت في المعمل.',
       subject: 'العلوم', teacherId: '3', sections: ['1/1'],
       files: [], link: 'https://www.youtube.com/', publishedAt: ago(1 * DAY)
     },
@@ -50,13 +50,13 @@ export class TeachingStore {
   readonly quizzes = signal<Quiz[]>([
     {
       id: 'q-1', kind: 'كويز', mode: 'online', title: 'كويز سريع: المعادلات من الدرجة الأولى',
-      instructions: 'اقرأ كل سؤال كويس قبل ما تجاوب. معاك 15 دقيقة.',
+      instructions: 'اقرأ كل سؤال جيدًا قبل الإجابة. لديك 15 دقيقة.',
       subject: 'الرياضيات', teacherId: '1', sections: ['3/2', '3/3'],
       publishedAt: ago(2 * HOUR), closesAt: ahead(2 * DAY), durationMinutes: 15, totalMarks: 5,
       questions: [
         { id: 'q-1-1', type: 'mcq', text: 'حل المعادلة: س + 5 = 12', options: ['5', '7', '12', '17'], answer: '7', points: 2 },
         { id: 'q-1-2', type: 'truefalse', text: 'المعادلة 2س = 10 حلها س = 5', options: [], answer: 'صح', points: 1 },
-        { id: 'q-1-3', type: 'short', text: 'لو 3س = 21 يبقى س = ؟', options: [], answer: '7', points: 2 }
+        { id: 'q-1-3', type: 'short', text: 'إذا كان 3س = 21 فإن س = ؟', options: [], answer: '7', points: 2 }
       ]
     },
     {

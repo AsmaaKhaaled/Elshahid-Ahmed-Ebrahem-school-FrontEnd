@@ -151,7 +151,7 @@ export class GradesComponent {
 
   save(): void {
     if (this.invalidCount()) {
-      this.error.set(`فيه ${this.invalidCount()} درجة أكبر من الدرجة النهائية أو أقل من صفر. صلّحها الأول.`);
+      this.error.set(`توجد ${this.invalidCount()} درجة أكبر من الدرجة النهائية أو أقل من صفر. يرجى تصحيحها أولًا.`);
       return;
     }
     this.store.saveWeeks(this.selectedSection(), this.selectedSubject(), this.draft());
@@ -221,10 +221,10 @@ export class GradesComponent {
     return (
       !this.dirty() ||
       this.confirm.ask({
-        title: 'فيه درجات لسه ما اتحفظتش',
-        message: 'لو كمّلت، الدرجات اللي كتبتها ومحفظتهاش هتضيع.',
-        confirmText: 'كمّل من غير حفظ',
-        cancelText: 'ارجع احفظها',
+        title: 'توجد درجات لم يتم حفظها بعد',
+        message: 'إذا تابعت، ستضيع الدرجات التي كتبتها ولم تحفظها.',
+        confirmText: 'المتابعة دون حفظ',
+        cancelText: 'العودة للحفظ',
         tone: 'danger'
       })
     );

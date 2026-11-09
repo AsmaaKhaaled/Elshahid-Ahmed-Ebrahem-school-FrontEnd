@@ -10,7 +10,7 @@
     @if (isStopped()) {
       <div class="p-3 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 leading-relaxed" role="status">
         <p class="font-black text-slate-800">المعلم موقوف (ترك المدرسة)</p>
-        <p class="mt-1">حسابه مقفول ومش بيقدر يدخل المنظومة، ومالوش فصول ولا حصص. سجلاته القديمة (الحضور والدرجات والمناهج) محفوظة. لو رجع المدرسة فعّل حسابه وبعدين حدد مواده وفصوله.</p>
+        <p class="mt-1">حسابه مغلق ولا يمكنه دخول المنظومة، وليس له فصول أو حصص. سجلاته القديمة (الحضور والدرجات والمناهج) محفوظة. إذا عاد إلى المدرسة، فعّل حسابه ثم حدد مواده وفصوله.</p>
       </div>
     }
 
@@ -19,7 +19,7 @@
         <mat-label>الاسم رباعي</mat-label>
         <span matTextPrefix class="text-slate-500 ml-1">{{ honorific }}</span>
         <input matInput name="name" required [(ngModel)]="draft.name" placeholder="مثال: شريف فؤاد عبد الهادي" />
-        <mat-hint>اللقب ({{ honorific }}) بيتضاف تلقائياً قبل الاسم</mat-hint>
+        <mat-hint>اللقب ({{ honorific }}) يُضاف تلقائيًا قبل الاسم</mat-hint>
         <mat-error>اسم المعلم مطلوب</mat-error>
       </mat-form-field>
 
@@ -105,7 +105,7 @@
           <mat-label>كلمة المرور المبدئية لبوابة المعلم</mat-label>
           <input matInput type="text" name="password" dir="ltr" autocomplete="new-password" required
             pattern="(?=.*[a-zA-Z])(?=.*\d).{8,}" [(ngModel)]="password" />
-          <mat-hint>المعلم بيدخل بالرقم القومي وكلمة المرور دي، وأول مرة هيطلب منه يغيرها.</mat-hint>
+          <mat-hint>يدخل المعلم بالرقم القومي وكلمة المرور هذه، وسيُطلب منه تغييرها عند أول دخول.</mat-hint>
           <mat-error>8 حروف على الأقل وفيها حروف إنجليزي وأرقام</mat-error>
         </mat-form-field>
       }
@@ -118,8 +118,8 @@
     @if (confirmingDeactivate()) {
       <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <span>
-          <strong>إيقاف المعلم (ترك المدرسة):</strong> حسابه هيتقفل فوراً ومش هيقدر يدخل المنظومة، وهيتشال من فصوله وجدوله وريادة الفصل ودفتر الحضور.
-          سجلاته القديمة هتفضل محفوظة، وتقدر تفعّله تاني في أي وقت. متأكد؟
+          <strong>إيقاف المعلم (ترك المدرسة):</strong> سيُغلق حسابه فورًا ولن يتمكن من دخول المنظومة، وسيُحذف من فصوله وجدوله وريادة الفصل ودفتر الحضور.
+          ستظل سجلاته القديمة محفوظة، ويمكنك إعادة تفعيله في أي وقت. هل أنت متأكد؟
         </span>
         <div class="flex items-center gap-2 shrink-0">
           <button (click)="confirmingDeactivate.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-amber-100 font-bold">تراجع</button>
@@ -131,8 +131,8 @@
     @if (confirmingDelete()) {
       <div class="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <span>
-          الحذف للمعلم اللي اتضاف بالغلط بس: هيتمسح هو وحساب دخوله وحصصه نهائياً.
-          لو المعلم ليه سجلات (حضور أو درجات أو مناهج) الحذف مش هيتم، استخدم "إيقاف المعلم". متأكد؟
+          الحذف مخصص للمعلم الذي أُضيف بالخطأ فقط: سيُحذف هو وحساب دخوله وحصصه نهائيًا.
+          إذا كانت للمعلم سجلات (حضور أو درجات أو مناهج) فلن يتم الحذف، استخدم "إيقاف المعلم". هل أنت متأكد؟
         </span>
         <div class="flex items-center gap-2 shrink-0">
           <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>

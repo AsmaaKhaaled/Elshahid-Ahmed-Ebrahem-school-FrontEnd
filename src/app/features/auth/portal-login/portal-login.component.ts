@@ -29,7 +29,7 @@ const PORTALS: Record<PortalRole, PortalConfig> = {
     identifierMaxLength: 14,
     // First sign-in: the school's student code; after that, the password the student chose
     passwordLabel: 'كود الطالب أو كلمة المرور',
-    passwordHint: 'أول مرة؟ اكتب كود الطالب المدرسي، وبعدها هتختار كلمة مرور خاصة بيك.',
+    passwordHint: 'أول مرة؟ اكتب كود الطالب المدرسي، وبعدها ستختار كلمة مرور خاصة بك.',
     missingMessage: 'يرجى إدخال الرقم القومي للطالب وكود الطالب (أو كلمة المرور)',
     failedMessage: 'تعذر تسجيل الدخول. يرجى التأكد من الرقم القومي وكود الطالب أو الاتصال بإدارة المدرسة.',
     demo: { identifier: '30805121234567', password: 'STU-2026-001', label: 'عمر طارق' }

@@ -203,10 +203,10 @@ describe('CurriculumComponent', () => {
     component.openForm(null);
     component.saveCurriculum({ subject: 'الرياضيات', gradeId: 'G3', sections: ['3/2'], description: '' });
     http.expectOne(r => r.url === API && r.method === 'POST')
-      .flush({ message: 'عندك منهج للمادة دي في الصف ده بالفعل' }, { status: 409, statusText: 'Conflict' });
+      .flush({ message: 'لديك منهج لهذه المادة في هذا الصف بالفعل' }, { status: 409, statusText: 'Conflict' });
 
     expect(component.formOpen()).toBeTrue();
-    expect(component.saveError()).toBe('عندك منهج للمادة دي في الصف ده بالفعل');
+    expect(component.saveError()).toBe('لديك منهج لهذه المادة في هذا الصف بالفعل');
   });
 
   it('saves the plan, then the plan document', () => {

@@ -33,7 +33,7 @@
             <p class="text-xs text-slate-600">ملاحظة المدرس: {{ prev.feedback }}</p>
           }
         } @else {
-          <p class="text-xs text-slate-500">مستني تصحيح المدرس</p>
+          <p class="text-xs text-slate-500">بانتظار تصحيح المعلم</p>
         }
       </div>
     }
@@ -41,7 +41,7 @@
     @if (canSubmit()) {
       <div class="space-y-3 pt-1">
         <mat-form-field class="w-full">
-          <mat-label>إجابتك أو ملاحظة للمدرس (اختياري لو هترفع ملف)</mat-label>
+          <mat-label>إجابتك أو ملاحظة للمدرس (اختياري عند رفع ملف)</mat-label>
           <textarea matInput name="note" rows="3" [(ngModel)]="note" (ngModelChange)="emptyError.set(false)"></textarea>
         </mat-form-field>
 

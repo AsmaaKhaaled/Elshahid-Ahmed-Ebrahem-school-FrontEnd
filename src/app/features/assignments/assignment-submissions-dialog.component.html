@@ -7,7 +7,7 @@
         <p class="text-xs text-slate-500 mt-1">
           فصل {{ item.section }} · {{ item.totalSubmissions }} من {{ item.totalStudents }} طالب سلّموا
           @if (ungraded()) {
-            · <span class="font-bold text-amber-700">{{ ungraded() }} مستني تصحيح</span>
+            · <span class="font-bold text-amber-700">{{ ungraded() }} بانتظار التصحيح</span>
           }
         </p>
       </div>
@@ -15,7 +15,7 @@
     </div>
 
     @if (submissions().length < item.totalSubmissions) {
-      <p class="text-[11px] text-slate-400">بيانات تجريبية: ظاهر هنا آخر التسليمات بس لحد ما يتربط الباك اند.</p>
+      <p class="text-[11px] text-slate-400">بيانات تجريبية: تظهر هنا آخر التسليمات فقط إلى أن يتم الربط بالخادم.</p>
     }
 
     <ul class="space-y-3">
@@ -48,11 +48,11 @@
             </button>
           </div>
           @if (savedId() === sub.id) {
-            <p class="text-[11px] font-bold text-emerald-700">✓ اتحفظت الدرجة وظهرت للطالب</p>
+            <p class="text-[11px] font-bold text-emerald-700">✓ تم حفظ الدرجة وظهرت للطالب</p>
           }
         </li>
       } @empty {
-        <li class="text-center py-8 text-slate-400 text-sm">محدش سلّم لسه.</li>
+        <li class="text-center py-8 text-slate-400 text-sm">لم يسلّم أحد بعد.</li>
       }
     </ul>
   </div>

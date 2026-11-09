@@ -15,7 +15,7 @@ export const MAX_FILE_MB = 20;
 // Teachers share a video link (YouTube, Drive) instead.
 export const FILE_ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.zip';
 const MEDIA_FILE = /\.(mp4|mov|avi|mkv|webm|wmv|m4v|mp3|wav|m4a|ogg)$/i;
-export const VIDEO_UPLOAD_SOON = 'رفع الفيديو على المنصة قريباً، حالياً حط لينك الفيديو (يوتيوب أو درايف)';
+export const VIDEO_UPLOAD_SOON = 'رفع الفيديو على المنصة قريباً، حاليًا أضف رابط الفيديو (يوتيوب أو درايف)';
 
 /** Reads the files picked in an <input type="file">; files over MAX_FILE_MB and videos are refused. */
 export function readPickedFiles(event: Event): { files: TeachingFile[]; error: string } {

@@ -4,11 +4,11 @@
       <h2 class="text-2xl font-black text-slate-800 tracking-tight">الكويزات والاختبارات القصيرة</h2>
       <p class="text-xs text-slate-500 mt-1">
         @if (scope.isTeacher()) {
-          اعمل كويز أونلاين بتصحيح تلقائي، أو ارفع ورقة أسئلة والطلاب يرفعوا حلولهم
+          أنشئ كويزًا إلكترونيًا بتصحيح تلقائي، أو ارفع ورقة أسئلة ليرفع الطلاب حلولهم
         } @else {
           كويزات واختبارات فصل {{ scope.studentSection() }}
           @if (pendingCount()) {
-            · <strong class="text-amber-700">{{ pendingCount() }} مستني حلك</strong>
+            · <strong class="text-amber-700">{{ pendingCount() }} بانتظار حلك</strong>
           }
         }
       </p>
@@ -43,7 +43,7 @@
           <div class="flex items-start justify-between gap-2">
             <span class="text-xs font-bold text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full">{{ item.kind }} · {{ item.subject }}</span>
             <span [class]="closed ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'" class="text-xs font-bold px-2 py-0.5 rounded-md">
-              {{ closed ? 'مقفول' : 'متاح' }}
+              {{ closed ? 'مغلق' : 'متاح' }}
             </span>
           </div>
           <h3 class="text-lg font-bold text-slate-800 leading-snug">{{ item.title }}</h3>
@@ -60,7 +60,7 @@
             <p class="text-sm font-bold text-slate-700 pt-1">
               {{ attemptsCount(item) }} طالب سلّموا
               @if (ungradedCount(item); as count) {
-                · <span class="text-amber-700">{{ count }} مستني تصحيح</span>
+                · <span class="text-amber-700">{{ count }} بانتظار التصحيح</span>
               }
             </p>
           } @else {
@@ -69,9 +69,9 @@
               @if (mine?.score != null) {
                 <span class="text-emerald-700">✓ درجتك: {{ mine!.score }} من {{ item.totalMarks }}</span>
               } @else if (mine) {
-                <span class="text-primary-700">✓ سلّمت · مستني التصحيح</span>
+                <span class="text-primary-700">✓ سلّمت · بانتظار التصحيح</span>
               } @else if (!closed) {
-                <span class="text-amber-700">لسه محلّتش</span>
+                <span class="text-amber-700">لم تحل بعد</span>
               } @else {
                 <span class="text-rose-600">فاتك</span>
               }
@@ -81,7 +81,7 @@
 
         <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-sm">
           <div>
-            <span class="text-slate-400 block text-xs">متاح لحد:</span>
+            <span class="text-slate-400 block text-xs">متاح حتى:</span>
             <span class="font-semibold text-slate-700">{{ item.closesAt | arabicDate:'short' }}</span>
           </div>
 
@@ -108,9 +108,9 @@
     } @empty {
       <div class="col-span-full text-center py-10 text-slate-400 text-sm">
         @if (scope.isTeacher()) {
-          لسه معملتش كويزات. اضغط "كويز أو اختبار جديد" عشان تبدأ.
+          لم تنشئ كويزات بعد. اضغط "كويز أو اختبار جديد" للبدء.
         } @else {
-          مفيش كويزات لفصلك لسه.
+          لا توجد كويزات لفصلك بعد.
         }
       </div>
     }

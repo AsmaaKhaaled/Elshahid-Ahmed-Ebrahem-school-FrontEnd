@@ -2,7 +2,7 @@
   <div>
     <h2 class="text-2xl font-black text-slate-800 tracking-tight">العام والفصل الدراسي</h2>
     <p class="text-xs text-slate-500 mt-1">
-      إنهاء الفصل الحالي وبدء الفصل التالي، وإضافة الفصول والسنوات الجديدة. أي تغيير هنا بيتطبق على النظام كله.
+      إنهاء الفصل الحالي وبدء الفصل التالي، وإضافة الفصول والسنوات الجديدة. أي تغيير هنا يُطبَّق على النظام كله.
     </p>
   </div>
 
@@ -24,14 +24,14 @@
           [class]="!reminder ? 'text-slate-600' : reminder.kind === 'overdue' ? 'text-rose-600' : 'text-amber-700'">
           الانتهاء المتوقع: {{ current().plannedEndDate | arabicDate:'dateOnly' }}
           @if (reminder?.kind === 'overdue') {
-            — انتهى الموعد، أنهِ الفصل لما تخلص المدرسة كل متعلقاته
+            — انتهى الموعد، أنهِ الفصل بعد أن تنتهي المدرسة من جميع متعلقاته
           } @else if (daysLeft() !== null) {
-            — {{ daysLeft() === 0 ? 'ينتهي النهارده' : 'متبقي ' + daysText(daysLeft()!) }}
+            — {{ daysLeft() === 0 ? 'ينتهي اليوم' : 'متبقي ' + daysText(daysLeft()!) }}
           }
         </span>
       } @else {
         <span class="text-xs mt-1 block font-semibold text-amber-700">
-          لم يتم تحديد تاريخ الانتهاء المتوقع — حدده من الجدول تحت عشان النظام ينبهك قبل نهاية الفصل
+          لم يتم تحديد تاريخ الانتهاء المتوقع — حدده من الجدول أدناه لكي ينبهك النظام قبل نهاية الفصل
         </span>
       }
       <!-- The next term's start, as planned (only once it was added to the list) -->
@@ -41,7 +41,7 @@
           @if (planned.plannedStartDate) {
             البداية المتوقعة {{ planned.plannedStartDate | arabicDate:'dateOnly' }}
           } @else {
-            <span class="font-semibold text-amber-700">لسه متحددش تاريخ بدايته</span>
+            <span class="font-semibold text-amber-700">لم يتم تحديد تاريخ بدايته بعد</span>
           }
         </span>
       }
@@ -62,15 +62,15 @@
       </h3>
       <ul class="text-xs text-rose-900/90 space-y-1.5 list-disc pr-5">
         <li>
-          هيتسجل النهارده ({{ todayDate | arabicDate:'dateOnly' }}) كتاريخ انتهاء {{ current().label }}
+          سيتم تسجيل تاريخ اليوم ({{ todayDate | arabicDate:'dateOnly' }}) كتاريخ انتهاء {{ current().label }}
           وتاريخ بداية {{ next().label }}.
         </li>
-        <li class="font-bold">الخطوة دي نهائية: الفصل المنتهي مش هينفع يرجع فصل حالي تاني.</li>
-        <li>كل صفحات النظام هتعرض بيانات {{ next().label }}، والجداول الأسبوعية وجداول الامتحانات هتبدأ فاضية (تقدر تنسخ جدول المعلم من الفصل السابق).</li>
+        <li class="font-bold">هذه الخطوة نهائية: لا يمكن إعادة الفصل المنتهي ليكون الفصل الحالي مرة أخرى.</li>
+        <li>ستعرض كل صفحات النظام بيانات {{ next().label }}، وستبدأ الجداول الأسبوعية وجداول الامتحانات فارغة (يمكنك نسخ جدول المعلم من الفصل السابق).</li>
         @if (next().year !== current().year) {
-          <li>ده عام دراسي جديد ({{ next().year }}): رواد الفصول محتاجين يتعيّنوا من جديد من صفحة الفصول الدراسية.</li>
+          <li>هذا عام دراسي جديد ({{ next().year }}): يجب تعيين رواد الفصول من جديد من صفحة الفصول الدراسية.</li>
         }
-        <li>بيانات الفصول المنتهية بتفضل محفوظة وتقدر تتصفحها في أي وقت.</li>
+        <li>تظل بيانات الفصول المنتهية محفوظة ويمكنك تصفحها في أي وقت.</li>
       </ul>
       <div class="flex items-center gap-2 pt-1">
         <button (click)="confirmNextTerm()" type="button"
@@ -91,7 +91,7 @@
       <div>
         <h3 class="font-bold text-slate-800 text-base">سجل السنوات والفصول الدراسية</h3>
         <p class="text-xs text-slate-500 mt-0.5">
-          ضيف الفصل أو العام الجديد قبل بدايته وحدد مواعيد بدايته ونهايته من خريطة الوزارة. لو الوزارة غيرت المواعيد، عدّلها من هنا
+          أضف الفصل أو العام الجديد قبل بدايته، وحدد موعدي بدايته ونهايته من خريطة الوزارة. إذا غيرت الوزارة المواعيد، عدّلها من هنا
         </p>
       </div>
       <button (click)="calendar.addNextTerm()" type="button"

@@ -279,10 +279,10 @@ export class AttendanceComponent {
     return (
       !this.dirty() ||
       this.confirm.ask({
-        title: 'فيه تعديلات في دفتر اليوم لسه ما اتحفظتش',
-        message: 'لو كمّلت، الغياب اللي سجلته ومحفظتهوش هيضيع.',
-        confirmText: 'كمّل من غير حفظ',
-        cancelText: 'ارجع احفظه',
+        title: 'توجد تعديلات في دفتر اليوم لم يتم حفظها بعد',
+        message: 'إذا تابعت، سيضيع الغياب الذي سجلته ولم تحفظه.',
+        confirmText: 'المتابعة دون حفظ',
+        cancelText: 'العودة للحفظ',
         tone: 'danger'
       })
     );

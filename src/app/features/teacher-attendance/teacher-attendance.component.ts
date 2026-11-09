@@ -147,10 +147,10 @@ export class TeacherAttendanceComponent implements OnInit {
     if (
       this.dirty() &&
       !(await this.confirm.ask({
-        title: 'فيه تعديلات في دفتر اليوم لسه ما اتحفظتش',
-        message: 'لو فتحت يوم تاني، التعديلات اللي عملتها ومحفظتهاش هتضيع.',
-        confirmText: 'افتح اليوم التاني',
-        cancelText: 'ارجع احفظها',
+        title: 'توجد تعديلات في دفتر اليوم لم يتم حفظها بعد',
+        message: 'إذا فتحت يومًا آخر، ستضيع التعديلات التي أجريتها ولم تحفظها.',
+        confirmText: 'فتح اليوم الآخر',
+        cancelText: 'العودة للحفظ',
         tone: 'danger'
       }))
     ) {
@@ -415,7 +415,7 @@ export class TeacherAttendanceComponent implements OnInit {
       next: async records => {
         try {
           if (!records.length) {
-            this.archiveError.set('مفيش سجلات في الفترة دي للتصدير.');
+            this.archiveError.set('لا توجد سجلات في هذه الفترة للتصدير.');
           } else {
             await write(records);
           }

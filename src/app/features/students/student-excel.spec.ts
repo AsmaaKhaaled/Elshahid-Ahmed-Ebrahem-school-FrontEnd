@@ -74,7 +74,7 @@ describe('parseStudentsFile', () => {
     await downloadImportTemplate();
     const result = await parseStudentsFile(new File([blob!], 'template.xlsx'), existing);
 
-    expect(result.fileError).toContain('مفيش بيانات طلاب');
+    expect(result.fileError).toContain('لا توجد بيانات طلاب');
   });
 
   it('rejects files with missing columns or the wrong format', async () => {

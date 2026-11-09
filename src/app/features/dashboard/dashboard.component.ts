@@ -206,7 +206,7 @@ export class DashboardComponent {
       {
         title: 'اكتمال الجدول المدرسي',
         value: `${completion.percent}%`,
-        note: completion.free ? `${completion.free} حصة فاضية في الفصول` : 'كل الحصص مُسندة',
+        note: completion.free ? `${completion.free} حصة فارغة في الفصول` : 'كل الحصص مُسندة',
         tone: completion.free ? 'warn' : 'ok',
         iconBg: 'bg-amber-50',
         iconColor: 'text-amber-700',

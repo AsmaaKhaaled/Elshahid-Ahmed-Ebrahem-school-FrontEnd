@@ -78,7 +78,7 @@ export class AdminsComponent {
         this.showForm.set(false);
         this.notice.set(
           isNew
-            ? `تم إنشاء حساب ${saved.fullName}. يقدر يدخل الآن من صفحة دخول الإدارة بالرقم القومي وكلمة المرور.`
+            ? `تم إنشاء حساب ${saved.fullName}. يمكنه الدخول الآن من صفحة دخول الإدارة بالرقم القومي وكلمة المرور.`
             : password
               ? `تم حفظ التعديلات وتغيير كلمة مرور ${saved.fullName}.`
               : `تم حفظ تعديلات ${saved.fullName}. الصلاحيات الجديدة تُطبق من أول تسجيل دخول له.`

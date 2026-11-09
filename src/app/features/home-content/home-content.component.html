@@ -2,7 +2,7 @@
   <div>
     <h2 class="text-2xl font-black text-slate-800 tracking-tight">محتوى الصفحة الرئيسية</h2>
     <p class="text-xs text-slate-500 mt-1">
-      كلمة المدير وصور أنشطة المدرسة اللي بتظهر للزوار في
+      كلمة المدير وصور أنشطة المدرسة التي تظهر للزوار في
       <a routerLink="/home" class="font-bold text-primary-700 hover:text-primary-900">الصفحة الرئيسية ←</a>
     </p>
   </div>
@@ -72,7 +72,7 @@
           <mat-label>نص الكلمة</mat-label>
           <textarea matInput name="message" required rows="8" maxlength="1500"
             [ngModel]="principalDraft().message" (ngModelChange)="updatePrincipal('message', $event)"></textarea>
-          <mat-hint>سيب سطر فاضي بين كل فقرة والتانية</mat-hint>
+          <mat-hint>اترك سطرًا فارغًا بين كل فقرة وأخرى</mat-hint>
           <mat-hint align="end">{{ principalDraft().message.length }} / 1500</mat-hint>
           <mat-error>اكتب كلمة المدير</mat-error>
         </mat-form-field>
@@ -104,7 +104,7 @@
       <div>
         <h3 class="text-base font-black text-slate-800">صور أنشطة المدرسة</h3>
         <p class="text-[11px] text-slate-500 mt-0.5">
-          بتظهر في «من حياة المدرسة» بنفس الترتيب ده - {{ shownCount() }} من {{ slides().length }} ظاهرين
+          تظهر في «من حياة المدرسة» بنفس هذا الترتيب - {{ shownCount() }} من {{ slides().length }} ظاهرة
         </p>
       </div>
       <button (click)="openDialog(null)" type="button"
@@ -155,8 +155,8 @@
         </li>
       } @empty {
         <li class="rounded-2xl border border-dashed border-slate-200 py-12 text-center space-y-2">
-          <p class="text-sm font-bold text-slate-600">لسه مفيش صور أنشطة</p>
-          <p class="text-xs text-slate-400">قسم «من حياة المدرسة» بيختفي من الصفحة الرئيسية لحد ما تضيف أول صورة.</p>
+          <p class="text-sm font-bold text-slate-600">لا توجد صور أنشطة بعد</p>
+          <p class="text-xs text-slate-400">يختفي قسم «من حياة المدرسة» من الصفحة الرئيسية إلى أن تضيف أول صورة.</p>
         </li>
       }
     </ul>

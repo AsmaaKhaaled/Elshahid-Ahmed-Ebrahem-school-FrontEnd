@@ -127,7 +127,7 @@ export class TeachersComponent {
         this.saving.set(false);
         this.showForm.set(false);
         this.notice.set(
-          `تم إيقاف ${teacherDisplayName(teacher)}: حسابه اتقفل ومش هيقدر يدخل المنظومة` +
+          `تم إيقاف ${teacherDisplayName(teacher)}: تم إغلاق حسابه ولن يتمكن من دخول المنظومة` +
             (removedPeriods ? `، واتشالت ${removedPeriods} حصة من الجدول.` : '.') +
             ' سجلاته القديمة محفوظة.'
         );
@@ -147,7 +147,7 @@ export class TeachersComponent {
         this.saving.set(false);
         this.showForm.set(false);
         this.selectedState.set('ACTIVE');
-        this.notice.set(`تم تفعيل ${teacherDisplayName(teacher)} ويقدر يدخل المنظومة تاني. افتح "تعديل البيانات" وحدد مواده وفصوله من جديد.`);
+        this.notice.set(`تم تفعيل ${teacherDisplayName(teacher)} ويمكنه دخول المنظومة مرة أخرى. افتح "تعديل البيانات" وحدد مواده وفصوله من جديد.`);
       },
       error: err => {
         this.saving.set(false);

@@ -72,9 +72,9 @@ export async function downloadImportTemplate(grades: GradeLevel[] = GRADE_LEVELS
     `• الصف الدراسي: اختره من القائمة (${GRADE_LEVELS.map(grade => grade.label).join(' / ')}).`,
     `• رقم الفصل: رقم فقط من 1 إلى ${maxSections}، مثلاً الطالب في فصل 2/3 يتكتب له الصف الثاني ورقم الفصل 3.`,
     '• هاتف ولي الأمر: رقم موبايل مصري 11 رقم يبدأ بـ 01.',
-    '• كود الطالب: اتركه فاضي وهيتولد تلقائياً، أو اكتب الكود الموجود عندكم.',
-    `• الحالة: اتركها فاضية لو الطالب منتظم، أو اختر (${STUDENT_STATUSES.join(' / ')}).`,
-    '• بعد رفع الملف هتظهر لك مراجعة لكل الصفوف قبل الحفظ، والصفوف اللي فيها أخطاء مش هتتسجل.'
+    '• كود الطالب: اتركه فارغًا وسيتم إنشاؤه تلقائيًا، أو اكتب الكود الموجود عندكم.',
+    `• الحالة: اتركها فارغة إذا كان الطالب منتظمًا، أو اختر (${STUDENT_STATUSES.join(' / ')}).`,
+    '• بعد رفع الملف ستظهر لك مراجعة لكل الصفوف قبل الحفظ، ولن يتم تسجيل الصفوف التي بها أخطاء.'
   ].forEach((line, index) => {
     const cell = help.getCell(index + 1, 1);
     cell.value = line;
@@ -127,11 +127,11 @@ export async function parseStudentsFile(file: File, existing: Student[], grades:
   }
 
   const sheet = workbook.worksheets.find(ws => ws.actualRowCount > 0);
-  if (!sheet) return failed('الملف فاضي');
+  if (!sheet) return failed('الملف فارغ');
 
   const header = findHeader(sheet);
   if (!header) {
-    return failed('مش لاقي صف أسماء الأعمدة - استخدم القالب الجاهز من زرار "تحميل القالب"');
+    return failed('لم يتم العثور على صف أسماء الأعمدة - استخدم القالب الجاهز من زر "تحميل القالب"');
   }
   const missing = COLUMNS.filter(column => column.required && !header.columns.has(column.key));
   if (missing.length) {
@@ -146,12 +146,12 @@ export async function parseStudentsFile(file: File, existing: Student[], grades:
     };
     if (COLUMNS.every(column => cellText(read(column.key)) === '')) continue;
     if (rows.length === MAX_IMPORT_ROWS) {
-      return failed(`الملف فيه أكثر من ${MAX_IMPORT_ROWS} طالب - قسّمه على أكثر من ملف`);
+      return failed(`الملف يحتوي على أكثر من ${MAX_IMPORT_ROWS} طالب - قسّمه على أكثر من ملف`);
     }
     rows.push(parseRow(r, read, grades));
   }
 
-  if (!rows.length) return failed('مفيش بيانات طلاب في الملف تحت صف أسماء الأعمدة');
+  if (!rows.length) return failed('لا توجد بيانات طلاب في الملف أسفل صف أسماء الأعمدة');
 
   markDuplicates(rows, existing);
   assignMissingCodes(rows, existing);

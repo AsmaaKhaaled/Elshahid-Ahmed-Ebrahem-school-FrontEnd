@@ -12,7 +12,7 @@
         @if (src()) {
           <img [src]="src()" alt="معاينة الصورة" class="w-full h-full object-cover" />
         } @else {
-          <span class="text-xs text-slate-400 font-bold">لسه مفيش صورة</span>
+          <span class="text-xs text-slate-400 font-bold">لا توجد صورة بعد</span>
         }
       </div>
       <div class="flex items-center justify-between gap-2">
@@ -23,7 +23,7 @@
         @if (photoError(); as error) {
           <p class="text-[11px] text-rose-600 font-medium">{{ error }}</p>
         } @else {
-          <p class="text-[11px] text-slate-400">صورة عرضية (JPG / PNG / WEBP) - بتتصغر تلقائياً</p>
+          <p class="text-[11px] text-slate-400">صورة عرضية (JPG / PNG / WEBP) - يتم تصغيرها تلقائيًا</p>
         }
       </div>
     </div>
@@ -45,7 +45,7 @@
 
     @if (confirmingDelete()) {
       <div class="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <span>الصورة هتتشال من الصفحة الرئيسية نهائياً. متأكد؟</span>
+        <span>ستُحذف الصورة من الصفحة الرئيسية نهائيًا. هل أنت متأكد؟</span>
         <div class="flex items-center gap-2">
           <button (click)="confirmingDelete.set(false)" type="button" class="px-3 py-1.5 rounded-lg hover:bg-rose-100 font-bold">تراجع</button>
           <button (click)="confirmDelete()" [disabled]="lock.busy()" type="button" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-bold">نعم، احذف</button>

@@ -56,7 +56,7 @@ export class CurriculumFileDialogComponent {
     if (this.lock.busy()) return;
     const byLink = this.source === 'link';
     const missingFile = !byLink && !this.file?.blob;
-    if (missingFile) this.fileError.set('اختار الملف اللي هترفعه');
+    if (missingFile) this.fileError.set('اختر الملف الذي تريد رفعه');
     if (form.invalid || missingFile) {
       form.control.markAllAsTouched();
       return;

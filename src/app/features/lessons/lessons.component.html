@@ -3,7 +3,7 @@
 <div class="space-y-6">
   <div>
     <h2 class="text-2xl font-black text-slate-800 tracking-tight">جدول حصصي</h2>
-    <p class="text-xs text-slate-500 mt-1">الحصص اللي إدارة المدرسة وزّعتها عليك · {{ currentTerm().label }}</p>
+    <p class="text-xs text-slate-500 mt-1">الحصص التي وزعتها عليك إدارة المدرسة · {{ currentTerm().label }}</p>
   </div>
 
   @switch (state()) {
@@ -20,7 +20,7 @@
 
   @if (state() === 'ready' && !hasSchedule()) {
     <p class="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl p-4">
-      الإدارة لسه ماعملتش جدول حصصك للفصل الدراسي ده. أول ما يتعمل من "هيئة التدريس" هيظهر هنا.
+      لم تُعدّ الإدارة جدول حصصك لهذا الفصل الدراسي بعد. سيظهر هنا بمجرد إعداده من "هيئة التدريس".
     </p>
   }
 
@@ -29,7 +29,7 @@
   @let stats = weekStats();
   <div class="grid grid-cols-3 gap-3 sm:gap-4">
     <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-soft">
-      <span class="text-[11px] sm:text-xs text-slate-500 block">حصص النهارده</span>
+      <span class="text-[11px] sm:text-xs text-slate-500 block">حصص اليوم</span>
       <span class="text-lg sm:text-xl font-black text-primary-800 mt-1 block">{{ stats.today }}</span>
     </div>
     <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-soft">
@@ -50,7 +50,7 @@
         class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60 flex items-center gap-1.5">
         {{ day }}
         @if (i === todayIndex) {
-          <span class="text-[9px] px-1.5 py-0.5 rounded-full" [class]="selectedDayIndex() === i ? 'bg-white/20' : 'bg-emerald-50 text-emerald-700'">النهارده</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded-full" [class]="selectedDayIndex() === i ? 'bg-white/20' : 'bg-emerald-50 text-emerald-700'">اليوم</span>
         }
         <span class="opacity-60">({{ periodsOn(i) }})</span>
       </button>
@@ -73,7 +73,7 @@
             <p class="text-xs text-slate-500 mt-0.5">{{ slot.subject }}</p>
           </div>
         } @else {
-          <p class="text-sm font-semibold text-slate-400">حصة فاضية</p>
+          <p class="text-sm font-semibold text-slate-400">حصة فارغة</p>
         }
       </li>
     }
@@ -136,14 +136,14 @@
     }
     @case ('no-class') {
       <p class="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl p-4">
-        إنت لسه مش متسكّن في فصل. أول ما شؤون الطلاب تسكّنك في فصلك هيظهر جدولك هنا.
+        لم يتم تسكينك في فصل بعد. سيظهر جدولك هنا بمجرد أن تسكّنك شؤون الطلاب في فصلك.
       </p>
     }
   }
 
   @if (state() === 'ready' && !hasLessons()) {
     <p class="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl p-4">
-      جدول فصلك لسه ماتعملش للفصل الدراسي ده. أول ما الإدارة تعمله هيظهر هنا.
+      لم يُعدّ جدول فصلك لهذا الفصل الدراسي بعد. سيظهر هنا بمجرد أن تعدّه الإدارة.
     </p>
   }
 
@@ -156,7 +156,7 @@
           class="shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-200/60 flex items-center gap-1.5">
           {{ day }}
           @if (i === todayIndex) {
-            <span class="text-[9px] px-1.5 py-0.5 rounded-full" [class]="selectedDayIndex() === i ? 'bg-white/20' : 'bg-emerald-50 text-emerald-700'">النهارده</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded-full" [class]="selectedDayIndex() === i ? 'bg-white/20' : 'bg-emerald-50 text-emerald-700'">اليوم</span>
           }
           <span class="opacity-60">({{ lessonsOn(i) }})</span>
         </button>
@@ -185,7 +185,7 @@
               <span class="shrink-0 font-mono text-[11px] text-slate-500 font-semibold dir-ltr bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{{ lesson.time }}</span>
             }
           } @else {
-            <p class="text-sm font-semibold text-slate-400">حصة فاضية</p>
+            <p class="text-sm font-semibold text-slate-400">حصة فارغة</p>
           }
         </li>
       }

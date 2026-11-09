@@ -22,7 +22,7 @@
       </button>
     </div>
     @if (locked()) {
-      <p class="text-[11px] font-semibold text-amber-700">⚠ في طلاب سلّموا بالفعل، فالأسئلة مقفولة. تقدر تعدل العنوان والتعليمات والميعاد بس.</p>
+      <p class="text-[11px] font-semibold text-amber-700">⚠ قام طلاب بالتسليم بالفعل، لذا أُغلقت الأسئلة. يمكنك تعديل العنوان والتعليمات والموعد فقط.</p>
     }
 
     <div class="space-y-4 pt-1">
@@ -71,14 +71,14 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <mat-form-field class="w-full">
-          <mat-label>متاح لحد</mat-label>
+          <mat-label>متاح حتى</mat-label>
           <input matInput type="datetime-local" name="closesAt" required [min]="quiz() ? '' : minClose" [(ngModel)]="closesAt" />
-          <mat-hint>بعد الميعاد ده محدش يقدر يسلّم</mat-hint>
+          <mat-hint>بعد هذا الموعد لا يمكن لأحد التسليم</mat-hint>
           <mat-error>حدد الميعاد</mat-error>
         </mat-form-field>
         @if (mode === 'online') {
           <mat-form-field class="w-full">
-            <mat-label>مدة الحل بالدقائق (فاضي = مفتوح)</mat-label>
+            <mat-label>مدة الحل بالدقائق (فارغ = مفتوح)</mat-label>
             <input matInput type="number" name="duration" min="1" max="300" [(ngModel)]="durationMinutes" />
           </mat-form-field>
         } @else {
@@ -141,7 +141,7 @@
               @switch (q.type) {
                 @case ('mcq') {
                   <div class="space-y-2">
-                    <span class="text-[11px] text-slate-500">علّم على الإجابة الصح</span>
+                    <span class="text-[11px] text-slate-500">حدد الإجابة الصحيحة</span>
                     @for (option of q.options; track $index; let i = $index) {
                       <div class="flex items-center gap-2">
                         <input type="radio" [name]="'correct-' + q.id" [checked]="!!option && q.answer === option" (change)="q.answer = option"
@@ -162,7 +162,7 @@
                 }
                 @case ('truefalse') {
                   <div class="flex items-center gap-4 text-sm font-semibold text-slate-700">
-                    <span class="text-[11px] text-slate-500">الإجابة الصح:</span>
+                    <span class="text-[11px] text-slate-500">الإجابة الصحيحة:</span>
                     @for (option of trueFalse; track option) {
                       <label class="flex items-center gap-1.5 cursor-pointer">
                         <input type="radio" [name]="'tf-' + q.id" [checked]="q.answer === option" (change)="q.answer = option" class="w-4 h-4 accent-emerald-600" />
@@ -172,7 +172,7 @@
                   </div>
                 }
                 @case ('short') {
-                  <input type="text" [name]="'answer-' + q.id" [(ngModel)]="q.answer" placeholder="الإجابة الصح (بتتقارن مع إجابة الطالب)"
+                  <input type="text" [name]="'answer-' + q.id" [(ngModel)]="q.answer" placeholder="الإجابة الصحيحة (تُقارن بإجابة الطالب)"
                     class="w-full h-9 px-3 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
                 }
               }

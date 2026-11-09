@@ -31,7 +31,7 @@
               <mat-option [value]="section">فصل {{ section }}</mat-option>
             }
           </mat-select>
-          <mat-hint>الفصول المسندة ليك بس</mat-hint>
+          <mat-hint>الفصول المسندة إليك فقط</mat-hint>
           <mat-error>اختر فصل واحد على الأقل</mat-error>
         </mat-form-field>
       </div>
@@ -61,7 +61,7 @@
           <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
         }
         @if (contentError()) {
-          <p class="text-xs text-rose-600 font-semibold">ارفع ملف واحد على الأقل أو ضيف رابط</p>
+          <p class="text-xs text-rose-600 font-semibold">ارفع ملفًا واحدًا على الأقل أو أضف رابطًا</p>
         }
       </div>
     </div>

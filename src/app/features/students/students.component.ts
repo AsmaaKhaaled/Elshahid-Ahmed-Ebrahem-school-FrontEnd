@@ -219,7 +219,7 @@ export class StudentsComponent implements OnInit {
         const reasons = [...new Set(notPlaced.map(s => s.reason))].join('، ');
         this.showNotice(
           notPlaced.length
-            ? `تم توزيع ${placedCount} طالب. ${notPlaced.length} طالب ماتوزعش: ${reasons}`
+            ? `تم توزيع ${placedCount} طالب. ${notPlaced.length} طالب لم يتم توزيعهم: ${reasons}`
             : `تم توزيع ${placedCount} طالب على فصولهم`,
           notPlaced.length ? 'error' : 'success'
         );

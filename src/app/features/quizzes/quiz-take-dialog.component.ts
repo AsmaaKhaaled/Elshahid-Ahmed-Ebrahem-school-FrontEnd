@@ -150,6 +150,6 @@ export class QuizTakeDialogComponent implements OnInit {
       file: this.answerFile,
       score: quiz.mode === 'online' ? gradeAnswers(quiz, answers) : null
     });
-    if (timeUp) this.formError.set('خلص الوقت واتسلّم اللي جاوبته');
+    if (timeUp) this.formError.set('انتهى الوقت وتم تسليم إجاباتك');
   }
 }

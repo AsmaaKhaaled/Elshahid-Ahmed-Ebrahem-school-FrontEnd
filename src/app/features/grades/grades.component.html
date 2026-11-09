@@ -3,7 +3,7 @@
 <div class="space-y-6">
   <div>
     <h2 class="text-2xl font-black text-slate-800 tracking-tight">درجاتي</h2>
-    <p class="text-xs text-slate-500 mt-1">فصل {{ scope.studentSection() }} · درجات الأسابيع اللي المدرسين رصدوها، ومتوسط كل شهر</p>
+    <p class="text-xs text-slate-500 mt-1">فصل {{ scope.studentSection() }} · درجات الأسابيع التي رصدها المعلمون، ومتوسط كل شهر</p>
   </div>
 
   <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="الشهر">
@@ -58,7 +58,7 @@
         </div>
       </section>
     } @empty {
-      <p class="col-span-full text-center py-10 text-sm text-slate-400">لسه مفيش درجات مرصودة.</p>
+      <p class="col-span-full text-center py-10 text-sm text-slate-400">لم تُرصد درجات بعد.</p>
     }
   </div>
 </div>
@@ -69,7 +69,7 @@
     <h2 class="text-2xl font-black text-slate-800 tracking-tight">سجل رصد الدرجات</h2>
     <p class="text-xs text-slate-500 mt-1">
       كل أسبوع: {{ criteria[0].label }} ({{ criteria[0].max }}) + {{ criteria[1].label }} ({{ criteria[1].max }}) +
-      {{ criteria[2].label }} ({{ criteria[2].max }}) = {{ weekMax }}، وفي آخر الشهر المتوسط بيتحسب لوحده
+      {{ criteria[2].label }} ({{ criteria[2].max }}) = {{ weekMax }}، وفي آخر الشهر يُحسب المتوسط تلقائيًا
     </p>
   </div>
 
@@ -114,9 +114,9 @@
       @if (notice()) {
         <span class="font-bold text-emerald-700" role="status">✓ {{ notice() }}</span>
       } @else if (dirty()) {
-        <span class="font-bold text-amber-700">• فيه درجات لسه ما اتحفظتش</span>
+        <span class="font-bold text-amber-700">• توجد درجات لم يتم حفظها بعد</span>
       } @else {
-        <span class="text-slate-500">الأسابيع الجاية بتتفتح للرصد لما ييجي ميعادها.</span>
+        <span class="text-slate-500">تُفتح الأسابيع القادمة للرصد عند حلول موعدها.</span>
       }
     </div>
     <div class="flex flex-wrap items-center gap-2">
@@ -157,7 +157,7 @@
         @let week = m.weeks[selectedWeekIndex()];
         @let locked = isFutureWeek(week);
         @if (locked) {
-          <p class="px-4 py-2.5 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100">الأسبوع ده لسه ماجاش.</p>
+          <p class="px-4 py-2.5 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100">لم يحن موعد هذا الأسبوع بعد.</p>
         }
         <table appCardTable class="w-full text-right text-sm">
           <thead class="bg-slate-50 text-xs font-bold text-slate-500">
@@ -275,7 +275,7 @@
                 <td class="py-1 px-1 font-black tabular-nums text-emerald-800 bg-emerald-50/60">{{ avg.total ?? '' }}</td>
               </tr>
             } @empty {
-              <tr><td [attr.colspan]="1 + (m.weeks.length + 1) * (criteria.length + 1)" class="py-10 text-slate-400">لا يوجد طلاب في الفصل ده.</td></tr>
+              <tr><td [attr.colspan]="1 + (m.weeks.length + 1) * (criteria.length + 1)" class="py-10 text-slate-400">لا يوجد طلاب في هذا الفصل.</td></tr>
             }
           </tbody>
         </table>

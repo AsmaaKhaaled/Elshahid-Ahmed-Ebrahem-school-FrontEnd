@@ -225,10 +225,10 @@ describe('TeacherAttendanceComponent', () => {
     component.saveHoliday({ startDate: '2026-10-29', endDate: '2026-10-29', reason: 'اختبار' });
 
     http.expectOne(`${API}/holidays`).flush(
-      { message: 'يوم 2026-10-29 اتسجل فيه حضور المعلمين بالفعل، لا يمكن تسجيله إجازة' },
+      { message: 'يوم 2026-10-29 تم تسجيل حضور المعلمين فيه بالفعل، لا يمكن تسجيله إجازة' },
       { status: 409, statusText: 'Conflict' }
     );
     expect(component.holidayDialogOpen()).toBeTrue();
-    expect(component.holidayError()).toContain('اتسجل فيه حضور');
+    expect(component.holidayError()).toContain('تم تسجيل حضور');
   });
 });

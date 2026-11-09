@@ -3,7 +3,7 @@
     <div>
       <h2 class="text-2xl font-black text-slate-800 tracking-tight">لوحة الشرف</h2>
       <p class="text-xs text-slate-500 mt-1">
-        المعلمون المتميزون والطلاب المتفوقون - بيظهروا للزوار في
+        المعلمون المتميزون والطلاب المتفوقون - يظهرون للزوار في
         <a routerLink="/home" class="font-bold text-primary-700 hover:text-primary-900">الصفحة الرئيسية ←</a>
       </p>
     </div>
@@ -64,9 +64,9 @@
     } @empty {
       <div class="col-span-full bg-white rounded-2xl border border-dashed border-slate-200 py-12 text-center space-y-2">
         <p class="text-sm font-bold text-slate-600">
-          لسه مفيش {{ selectedKind() === 'TEACHER' ? 'معلمين' : 'طلاب' }} في لوحة الشرف
+          لا يوجد {{ selectedKind() === 'TEACHER' ? 'معلمون' : 'طلاب' }} في لوحة الشرف بعد
         </p>
-        <p class="text-xs text-slate-400">القسم ده بيختفي من الصفحة الرئيسية لحد ما تضيف أول اسم.</p>
+        <p class="text-xs text-slate-400">يختفي هذا القسم من الصفحة الرئيسية إلى أن تضيف أول اسم.</p>
       </div>
     }
   </div>

@@ -109,7 +109,7 @@ export class AssignmentsStore {
     },
     {
       id: 'sub-3', assignmentId: 'as-3', studentId: 's2', studentName: 'مازن شريف عبد المنعم',
-      files: [file('الخلية.jpg', 2.2)], note: 'الرسم في الصفحة التانية', submittedAt: ago(16 * 60000), score: null, feedback: ''
+      files: [file('الخلية.jpg', 2.2)], note: 'الرسم في الصفحة الثانية', submittedAt: ago(16 * 60000), score: null, feedback: ''
     },
     {
       id: 'sub-4', assignmentId: 'as-6', studentId: 's7', studentName: 'يوسف أحمد محمد مصطفى',
