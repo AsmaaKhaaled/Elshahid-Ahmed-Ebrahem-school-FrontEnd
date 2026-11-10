@@ -57,32 +57,38 @@
           </p>
 
           @if (scope.isTeacher()) {
-            <!-- Submission Rate -->
-            @let rate = rateOf(item);
-            <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
-              <div class="flex justify-between text-sm text-slate-600">
-                <span>نسبة التسليم:</span>
-                <span class="font-bold text-slate-800">{{ item.totalSubmissions }} من {{ item.totalStudents }} طالب</span>
-              </div>
-              <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div
-                  class="h-full rounded-full transition-all duration-500"
-                  [class]="rate < lowRate ? 'bg-amber-500' : 'bg-primary-600'"
-                  [style.width.%]="rate * 100">
+            @if (item.requiresSubmission) {
+              <!-- Submission Rate -->
+              @let rate = rateOf(item);
+              <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+                <div class="flex justify-between text-sm text-slate-600">
+                  <span>نسبة التسليم:</span>
+                  <span class="font-bold text-slate-800">{{ item.totalSubmissions }} من {{ item.totalStudents }} طالب</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-500"
+                    [class]="rate < lowRate ? 'bg-amber-500' : 'bg-primary-600'"
+                    [style.width.%]="rate * 100">
+                  </div>
                 </div>
               </div>
-            </div>
+            } @else {
+              <p class="mt-4 pt-3 border-t border-slate-100 text-sm font-bold text-slate-500">التسليم على المنصة مغلق</p>
+            }
           } @else {
             @let mine = mySubmission(item);
             <div class="mt-4 pt-3 border-t border-slate-100 text-sm font-bold">
               @if (mine?.score != null) {
-                <span class="text-emerald-700">✓ اتصحح: {{ mine!.score }} من {{ item.maxScore }}</span>
+                <span class="text-emerald-700">✓ تم التصحيح: {{ mine!.score }} من {{ item.maxScore }}</span>
               } @else if (mine) {
                 <span class="text-primary-700">✓ سلّمت · بانتظار التصحيح</span>
+              } @else if (!item.requiresSubmission) {
+                <span class="text-slate-500">لا يتطلب التسليم على المنصة</span>
               } @else if (status === 'نشط ومتاح') {
                 <span class="text-amber-700">لم تسلّم بعد</span>
               } @else {
-                <span class="text-rose-600">فات ميعاد التسليم</span>
+                <span class="text-rose-600">فات موعد التسليم</span>
               }
             </div>
           }
@@ -102,19 +108,21 @@
               </div>
             } @else {
               <div class="flex items-center gap-1.5 text-xs">
-                <button type="button" (click)="reviewing.set(item)" class="relative px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 font-bold transition-colors">
-                  مراجعة التسليمات
-                  @if (ungradedCount(item); as count) {
-                    <span class="absolute -top-2 -left-2 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center">{{ count }}</span>
-                  }
-                </button>
+                @if (item.requiresSubmission || item.totalSubmissions) {
+                  <button type="button" (click)="reviewing.set(item)" class="relative px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 font-bold transition-colors">
+                    مراجعة التسليمات
+                    @if (item.ungradedSubmissions) {
+                      <span class="absolute -top-2 -left-2 min-w-5 h-5 px-1 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center">{{ item.ungradedSubmissions }}</span>
+                    }
+                  </button>
+                }
                 <button type="button" (click)="openForm(item)" class="px-2 py-1.5 rounded-xl text-slate-500 hover:bg-slate-100 font-bold" title="تعديل">✎</button>
                 <button type="button" (click)="confirmingDeleteId.set(item.id)" class="px-2 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold" title="حذف">🗑</button>
               </div>
             }
           } @else {
             <button type="button" (click)="opened.set(item)" class="px-3 py-1.5 rounded-xl bg-primary-800 hover:bg-primary-900 text-white text-xs font-bold transition-colors">
-              {{ mySubmission(item) || status !== 'نشط ومتاح' ? 'عرض' : 'تسليم الحل' }}
+              {{ item.requiresSubmission && !mySubmission(item) && status === 'نشط ومتاح' ? 'تسليم الحل' : 'عرض' }}
             </button>
           }
         </div>
@@ -132,11 +140,11 @@
 </div>
 
 @if (formOpen()) {
-  <app-assignment-form-dialog [assignment]="editing()" (saved)="publish($event)" (closed)="formOpen.set(false)" />
+  <app-assignment-form-dialog [assignment]="editing()" [saving]="saving()" (saved)="publish($event)" (closed)="formOpen.set(false)" />
 }
 @if (reviewing(); as assignment) {
   <app-assignment-submissions-dialog [assignment]="assignment" (closed)="reviewing.set(null)" />
 }
 @if (opened(); as assignment) {
-  <app-assignment-submit-dialog [assignment]="assignment" (submitted)="submit($event)" (closed)="opened.set(null)" />
+  <app-assignment-submit-dialog [assignment]="assignment" [saving]="saving()" (submitted)="submit(assignment, $event)" (closed)="opened.set(null)" />
 }

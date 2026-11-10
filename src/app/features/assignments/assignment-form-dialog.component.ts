@@ -8,7 +8,7 @@ import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-
 import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { FILE_ACCEPT, TeachingFile, readPickedFiles } from '../teaching/teaching.model';
 import { TeachingScope } from '../teaching/teaching-scope.service';
-import { Assignment, DEFAULT_CLASS_SIZE } from './assignments.store';
+import { Assignment, AssignmentFormResult } from './assignments.store';
 
 /** <input type="datetime-local"> value in local time, e.g. "2026-11-05T20:00" */
 export function toLocalInput(iso: string): string {
@@ -28,13 +28,14 @@ export class AssignmentFormDialogComponent implements OnInit {
 
   // null = new assignment (may go to several classes at once)
   readonly assignment = input<Assignment | null>(null);
-  readonly saved = output<Assignment[]>();
+  readonly saving = input(false);
+  readonly saved = output<AssignmentFormResult>();
   readonly closed = output<void>();
 
   readonly accept = FILE_ACCEPT;
   readonly minDue = toLocalInput(new Date().toISOString());
   readonly fileError = signal('');
-  readonly lock = submitLock();
+  readonly lock = submitLock({ saving: this.saving });
 
   title = '';
   description = '';
@@ -43,6 +44,7 @@ export class AssignmentFormDialogComponent implements OnInit {
   // Tomorrow 8 PM by default
   dueDate = toLocalInput(new Date(new Date().setHours(44, 0, 0, 0)).toISOString());
   maxScore = 10;
+  requiresSubmission = true;
   attachments: TeachingFile[] = [];
 
   ngOnInit(): void {
@@ -54,6 +56,7 @@ export class AssignmentFormDialogComponent implements OnInit {
       this.sections = [assignment.section];
       this.dueDate = toLocalInput(assignment.dueDate);
       this.maxScore = assignment.maxScore;
+      this.requiresSubmission = assignment.requiresSubmission;
       this.attachments = [...assignment.attachments];
     } else {
       const subjects = this.scope.subjects();
@@ -77,29 +80,19 @@ export class AssignmentFormDialogComponent implements OnInit {
       form.control.markAllAsTouched();
       return;
     }
-    const existing = this.assignment();
-    const shared = {
-      title: this.title.trim(),
-      description: this.description.trim(),
-      subject: this.subject,
-      dueDate: new Date(this.dueDate).toISOString(),
-      maxScore: this.maxScore,
-      attachments: this.attachments
-    };
     this.lock.run(() =>
-      this.saved.emit(
-        existing
-          ? [{ ...existing, ...shared }]
-          : this.sections.map(section => ({
-              ...shared,
-              id: crypto.randomUUID(),
-              teacherId: this.scope.teacherId(),
-              section,
-              publishedAt: new Date().toISOString(),
-              totalSubmissions: 0,
-              totalStudents: DEFAULT_CLASS_SIZE
-            }))
-      )
+      this.saved.emit({
+        draft: {
+          title: this.title.trim(),
+          description: this.description.trim(),
+          subject: this.subject,
+          dueDate: new Date(this.dueDate).toISOString(),
+          maxScore: this.maxScore,
+          requiresSubmission: this.requiresSubmission
+        },
+        sections: this.sections,
+        attachments: this.attachments
+      })
     );
   }
 }

@@ -15,7 +15,7 @@
     }
     @if (item.attachments.length) {
       <div class="space-y-1.5">
-        <span class="text-xs font-bold text-slate-500">ملفات المدرس</span>
+        <span class="text-xs font-bold text-slate-500">ملفات المعلم</span>
         <app-teaching-files [files]="item.attachments" />
       </div>
     }
@@ -27,10 +27,18 @@
         <p class="text-xs font-bold text-slate-700">
           ✅ سلّمت يوم {{ prev.submittedAt | arabicDate:'full' }}
         </p>
+        @if (!canSubmit()) {
+          @if (prev.note) {
+            <p class="text-xs text-slate-600 whitespace-pre-line">{{ prev.note }}</p>
+          }
+          @if (prev.files.length) {
+            <app-teaching-files [files]="prev.files" />
+          }
+        }
         @if (prev.score != null) {
           <p class="text-sm font-black text-emerald-700">درجتك: {{ prev.score }} من {{ item.maxScore }}</p>
           @if (prev.feedback) {
-            <p class="text-xs text-slate-600">ملاحظة المدرس: {{ prev.feedback }}</p>
+            <p class="text-xs text-slate-600">ملاحظة المعلم: {{ prev.feedback }}</p>
           }
         } @else {
           <p class="text-xs text-slate-500">بانتظار تصحيح المعلم</p>
@@ -41,7 +49,7 @@
     @if (canSubmit()) {
       <div class="space-y-3 pt-1">
         <mat-form-field class="w-full">
-          <mat-label>إجابتك أو ملاحظة للمدرس (اختياري عند رفع ملف)</mat-label>
+          <mat-label>إجابتك أو ملاحظة للمعلم (اختياري عند رفع ملف)</mat-label>
           <textarea matInput name="note" rows="3" [(ngModel)]="note" (ngModelChange)="emptyError.set(false)"></textarea>
         </mat-form-field>
 
@@ -57,12 +65,16 @@
             <p class="text-xs text-rose-600 font-semibold">{{ fileError() }}</p>
           }
           @if (emptyError()) {
-            <p class="text-xs text-rose-600 font-semibold">ارفع ملف أو اكتب إجابتك</p>
+            <p class="text-xs text-rose-600 font-semibold">ارفع ملفًا أو اكتب إجابتك</p>
           }
         </div>
       </div>
     } @else if (!previous()) {
-      <p class="text-sm font-bold text-rose-600">انتهى موعد التسليم ومسلّمتش الواجب.</p>
+      @if (!item.requiresSubmission) {
+        <p class="text-sm font-bold text-slate-500">لا يتطلب هذا الواجب التسليم على المنصة. يمكنك تحميل ملفات المعلم.</p>
+      } @else {
+        <p class="text-sm font-bold text-rose-600">انتهى موعد التسليم ولم تسلّم الواجب.</p>
+      }
     }
 
     <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">

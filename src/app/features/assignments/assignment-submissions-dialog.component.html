@@ -5,7 +5,7 @@
       <div>
         <h3 class="font-black text-slate-800 text-lg">تسليمات: {{ item.title }}</h3>
         <p class="text-xs text-slate-500 mt-1">
-          فصل {{ item.section }} · {{ item.totalSubmissions }} من {{ item.totalStudents }} طالب سلّموا
+          فصل {{ item.section }} · {{ submissions().length }} من {{ item.totalStudents }} طالب سلّموا
           @if (ungraded()) {
             · <span class="font-bold text-amber-700">{{ ungraded() }} بانتظار التصحيح</span>
           }
@@ -13,10 +13,6 @@
       </div>
       <button (click)="closed.emit()" type="button" class="text-slate-400 hover:text-slate-600">✕</button>
     </div>
-
-    @if (submissions().length < item.totalSubmissions) {
-      <p class="text-[11px] text-slate-400">بيانات تجريبية: تظهر هنا آخر التسليمات فقط إلى أن يتم الربط بالخادم.</p>
-    }
 
     <ul class="space-y-3">
       @for (sub of submissions(); track sub.id) {
@@ -42,7 +38,7 @@
             </label>
             <input type="text" placeholder="ملاحظة للطالب (اختياري)" [ngModel]="draft.feedback" (ngModelChange)="setDraft(sub, { feedback: $event })"
               class="flex-1 h-9 px-3 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
-            <button type="button" (click)="saveGrade(sub)" [disabled]="!isValidScore(draft.score)"
+            <button type="button" (click)="saveGrade(sub)" [disabled]="!isValidScore(draft.score) || savingId() === sub.id"
               class="px-4 h-9 rounded-lg bg-primary-800 hover:bg-primary-900 text-white font-bold text-xs disabled:opacity-50">
               {{ sub.score != null ? 'تحديث' : 'رصد الدرجة' }}
             </button>
@@ -52,7 +48,7 @@
           }
         </li>
       } @empty {
-        <li class="text-center py-8 text-slate-400 text-sm">لم يسلّم أحد بعد.</li>
+        <li class="text-center py-8 text-slate-400 text-sm">{{ loading() ? 'جارٍ التحميل...' : 'لم يسلّم أحد بعد.' }}</li>
       }
     </ul>
   </div>

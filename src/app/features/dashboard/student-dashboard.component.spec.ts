@@ -17,6 +17,11 @@ describe('StudentDashboardComponent', () => {
     const fixture = TestBed.createComponent(StudentDashboardComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
+    TestBed.inject(AssignmentsStore).assignments.set([{
+      id: 'a-1', title: 'واجب', description: '', subject: 'الرياضيات', teacherId: 't-1', section: '3/2',
+      publishedAt: new Date().toISOString(), dueDate: new Date(Date.now() + 86400000).toISOString(),
+      attachments: [], maxScore: 10, requiresSubmission: true, totalSubmissions: 0, ungradedSubmissions: 0, totalStudents: 40
+    }]);
 
     const due = component.dueItems();
     expect(due.length).toBeGreaterThan(0);
@@ -24,10 +29,10 @@ describe('StudentDashboardComponent', () => {
 
     const assignment = due.find(i => i.kind === 'واجب')!;
     const scope = TestBed.inject(TeachingScope);
-    TestBed.inject(AssignmentsStore).submit({
+    TestBed.inject(AssignmentsStore).submissions.set([{
       id: 'mine', assignmentId: assignment.id, studentId: scope.studentId(), studentName: scope.studentName(),
       files: [], note: 'تم', submittedAt: new Date().toISOString(), score: null, feedback: ''
-    });
+    }]);
     expect(component.dueItems().some(i => i.id === assignment.id)).toBeFalse();
   });
 

@@ -4,11 +4,19 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { AcademicCalendarStore } from '../../core/academic/academic-calendar.store';
 import { SchoolStructureStore } from '../../core/academic/school-structure.store';
-import { DAILY_PERIODS, SCHOOL_DAYS } from '../../core/constants/school.constants';
+import { DAILY_PERIODS, SCHOOL_DAYS, weeklyPeriodLimit } from '../../core/constants/school.constants';
+import { ToastService } from '../../core/notifications/toast.service';
 import { SchedulesService, ScheduleSlotInput, TimetableConflictDetail } from '../../core/services/schedules.service';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { apiErrorMessage } from '../../shared/utils/api-error';
 import { ScheduleSlot, Teacher, TermSchedules, WeeklySchedule, slotKey, teacherDisplayName } from './teacher.model';
+
+interface ExceededLimit extends ScheduleSlot {
+  count: number;
+  limit: number;
+}
+
+const limitKey = (slot: ScheduleSlot) => `${slot.section}|${slot.subject}`;
 
 @Component({
   selector: 'app-teacher-schedule-dialog',
@@ -27,6 +35,7 @@ export class TeacherScheduleDialogComponent implements OnInit {
 
   private readonly calendar = inject(AcademicCalendarStore);
   private readonly schedulesService = inject(SchedulesService);
+  private readonly toast = inject(ToastService);
 
   readonly terms = this.calendar.terms;
   readonly currentTermId = this.calendar.currentTermId;
@@ -84,6 +93,34 @@ export class TeacherScheduleDialogComponent implements OnInit {
     return result;
   });
   readonly hasConflicts = computed(() => Object.keys(this.conflicts()).length > 0);
+
+  // Class & subject pairs past their weekly periods, counting the periods other teachers give that class
+  readonly exceededLimits = computed<ExceededLimit[]>(() => {
+    const termSchedules = this.schedules()[this.selectedTermId()] ?? {};
+    const others = Object.entries(termSchedules)
+      .filter(([teacherId]) => teacherId !== this.teacher().id)
+      .flatMap(([, schedule]) => Object.values(schedule));
+    const mine = Object.values(this.draft());
+    const countOf = (slots: ScheduleSlot[], { section, subject }: ScheduleSlot) =>
+      slots.filter(s => s.section === section && s.subject === subject).length;
+
+    const seen = new Set<string>();
+    const exceeded: ExceededLimit[] = [];
+    for (const slot of mine) {
+      const pair = limitKey(slot);
+      if (seen.has(pair)) continue;
+      seen.add(pair);
+      const limit = weeklyPeriodLimit(slot.section, slot.subject);
+      const count = countOf(mine, slot) + countOf(others, slot);
+      if (limit !== undefined && count > limit) exceeded.push({ ...slot, count, limit });
+    }
+    return exceeded;
+  });
+  private readonly exceededKeys = computed(() => new Set(this.exceededLimits().map(limitKey)));
+
+  isOverLimit(slot: ScheduleSlot | undefined): boolean {
+    return !!slot && this.exceededKeys().has(limitKey(slot));
+  }
 
   // Key of the slot that caused a server-side 409 conflict
   readonly serverConflictKey = computed<string | null>(() => {
@@ -150,6 +187,11 @@ export class TeacherScheduleDialogComponent implements OnInit {
       }
       return next;
     });
+
+    const over = this.exceededLimits().find(e => limitKey(e) === limitKey(this.draft()[key] ?? { subject: '', section: '' }));
+    if (over) {
+      this.toast.warning(`${over.subject} لفصل ${over.section}: ${over.count} حصة والمسموح ${over.limit} فقط في الأسبوع`, 'تجاوز عدد الحصص المقرر');
+    }
   }
 
   copyPreviousTerm(): void {
@@ -164,7 +206,7 @@ export class TeacherScheduleDialogComponent implements OnInit {
   }
 
   save(): void {
-    if (this.hasConflicts()) {
+    if (this.hasConflicts() || this.exceededLimits().length) {
       return;
     }
     this.serverError.set(null);

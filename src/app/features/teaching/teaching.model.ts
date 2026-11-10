@@ -8,6 +8,9 @@ export interface TeachingFile {
   url: string;
   // The picked file itself, for pages that upload it to the server
   blob?: File;
+  // Files kept on the server: their id, and how to download them (with the sign-in token)
+  id?: string;
+  download?: () => void;
 }
 
 export const MAX_FILE_MB = 20;

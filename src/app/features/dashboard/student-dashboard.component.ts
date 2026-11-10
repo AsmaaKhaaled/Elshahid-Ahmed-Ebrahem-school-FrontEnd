@@ -50,7 +50,7 @@ export class StudentDashboardComponent {
     const now = new Date().toISOString();
     const assignments = this.assignmentsStore
       .visible()
-      .filter(a => a.dueDate > now && !this.assignmentsStore.mySubmission(a.id))
+      .filter(a => a.requiresSubmission && a.dueDate > now && !this.assignmentsStore.mySubmission(a.id))
       .map(a => ({ id: a.id, kind: 'واجب' as const, title: a.title, subject: a.subject, due: a.dueDate, link: '/student/assignments' }));
     const quizzes = this.teachingStore
       .visibleQuizzes()
@@ -74,6 +74,7 @@ export class StudentDashboardComponent {
 
   constructor() {
     this.curriculumStore.ensureLoaded();
+    this.assignmentsStore.load();
   }
 
   /** Average of the marks the student got back (graded assignments & quizzes), in %. */

@@ -11,6 +11,9 @@ import { SCHOOL_INFO } from '../../core/constants/school.constants';
 import { AnnouncementsStore, audienceLabel } from '../announcements/announcements.store';
 import { HomeContentStore } from '../home-content/home-content.store';
 import { SchoolGalleryComponent } from './school-gallery.component';
+import { arabicCount } from '../../shared/pipes/time-ago.pipe';
+
+const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 interface SchoolNotice {
   day: string;
@@ -18,6 +21,14 @@ interface SchoolNotice {
   tag: string;
   title: string;
   description: string;
+}
+
+interface UpcomingDate {
+  title: string;
+  day: string;
+  month: string;
+  daysLeft: number;
+  remaining: string;
 }
 
 interface AcademicPillar {
@@ -159,7 +170,6 @@ export class HomeComponent {
   readonly homeNotices = computed<SchoolNotice[]>(() => {
     const list = this.announcementsStore.visible();
     if (list && list.length > 0) {
-      const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
       return list.slice(0, 3).map(item => {
         const d = new Date(item.publishedAt);
         const day = isNaN(d.getDate()) ? '01' : String(d.getDate()).padStart(2, '0');
@@ -175,6 +185,42 @@ export class HomeComponent {
     }
     return this.notices;
   });
+
+  // المواعيد القادمة - TODO: placeholder dates, replace with the school's real calendar
+  private readonly schoolDates = [
+    { date: '2026-11-21', title: 'امتحانات شهر نوفمبر' },
+    { date: '2026-12-05', title: 'اجتماع مجلس الأمناء' },
+    { date: '2027-01-10', title: 'امتحانات نصف العام' },
+    { date: '2027-04-04', title: 'حفل ختام الأنشطة' }
+  ];
+  readonly upcomingDates = this.buildUpcomingDates();
+
+  private buildUpcomingDates(): UpcomingDate[] {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    return this.schoolDates
+      .map(({ date, title }) => {
+        const [year, month, day] = date.split('-').map(Number);
+        const daysLeft = Math.round((new Date(year, month - 1, day).getTime() - today) / 86400000);
+        return {
+          title,
+          day: String(day).padStart(2, '0'),
+          month: arabicMonths[month - 1],
+          daysLeft,
+          remaining: this.remainingLabel(daysLeft)
+        };
+      })
+      .filter(item => item.daysLeft >= 0)
+      .sort((a, b) => a.daysLeft - b.daysLeft)
+      .slice(0, 4);
+  }
+
+  private remainingLabel(daysLeft: number): string {
+    if (daysLeft === 0) return 'اليوم';
+    if (daysLeft === 1) return 'غدًا';
+    return `يتبقى ${arabicCount(daysLeft, 'يوم', 'يومين', 'أيام')}`;
+  }
 
   // Honor roll (لوحة الشرف) - managed by the admins from /admin/honor-roll
   private readonly honorRoll = inject(HonorRollStore);

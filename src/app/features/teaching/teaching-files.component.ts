@@ -13,6 +13,8 @@ import { TeachingFile, fileSizeLabel } from './teaching.model';
           <span aria-hidden="true">📎</span>
           @if (file.url) {
             <a [href]="file.url" [download]="file.name" class="font-semibold truncate hover:text-primary-700 hover:underline">{{ file.name }}</a>
+          } @else if (file.download) {
+            <button type="button" (click)="file.download!()" class="font-semibold truncate hover:text-primary-700 hover:underline">{{ file.name }}</button>
           } @else {
             <span class="font-semibold truncate" title="ملف تجريبي - التحميل متاح بعد ربط الباك اند">{{ file.name }}</span>
           }

@@ -49,6 +49,7 @@ export class PlatformActivityStore {
 
   constructor() {
     this.curriculumStore.ensureLoaded();
+    this.assignmentsStore.load();
   }
 
   // teacherId -> last time seen on the platform (missing = never logged in)

@@ -1,6 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, catchError, concat, forkJoin, map, of, switchMap, tap, throwError, toArray } from 'rxjs';
 import { TeachingFile } from '../teaching/teaching.model';
 import { TeachingScope } from '../teaching/teaching-scope.service';
+import { AssignmentsService } from './assignments.service';
 
 export interface Assignment {
   id: string;
@@ -13,8 +15,28 @@ export interface Assignment {
   dueDate: string;
   attachments: TeachingFile[];
   maxScore: number;
+  // false = solved outside the platform: students just read it and download its files
+  requiresSubmission: boolean;
   totalSubmissions: number;
+  ungradedSubmissions: number;
   totalStudents: number;
+}
+
+/** What the teacher fills in, without the classes and the files. */
+export interface AssignmentDraft {
+  title: string;
+  description: string;
+  subject: string;
+  dueDate: string;
+  maxScore: number;
+  requiresSubmission: boolean;
+}
+
+/** What the assignment form hands back to the page. */
+export interface AssignmentFormResult {
+  draft: AssignmentDraft;
+  sections: string[];
+  attachments: TeachingFile[];
 }
 
 export interface AssignmentSubmission {
@@ -30,6 +52,12 @@ export interface AssignmentSubmission {
   feedback: string;
 }
 
+/** What a student hands in. */
+export interface AssignmentAnswer {
+  files: TeachingFile[];
+  note: string;
+}
+
 export type AssignmentStatus = 'نشط ومتاح' | 'انتهى الموعد';
 
 export function assignmentStatus(assignment: Assignment): AssignmentStatus {
@@ -40,96 +68,43 @@ export function submissionRate(assignment: Assignment): number {
   return assignment.totalStudents ? assignment.totalSubmissions / assignment.totalStudents : 0;
 }
 
-// Class size for newly published assignments until the class rosters come from the backend
-export const DEFAULT_CLASS_SIZE = 40;
-
-const HOUR = 3600000;
-const DAY = 24 * HOUR;
-const MB = 1024 * 1024;
-const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
-const ahead = (ms: number) => new Date(Date.now() + ms).toISOString();
-const file = (name: string, size: number): TeachingFile => ({ name, size: size * MB, url: '' });
-
-/** Assignments published by teachers to their classes, and the students' submissions. */
+/** Assignments published by teachers to their classes, and the students' answers (all from the API). */
 @Injectable({ providedIn: 'root' })
 export class AssignmentsStore {
+  private readonly service = inject(AssignmentsService);
   private readonly scope = inject(TeachingScope);
 
-  readonly assignments = signal<Assignment[]>([
-    {
-      id: 'as-1', title: 'تمارين على المعادلات من الدرجة الأولى', description: 'حل تمارين صفحة 24 من الكتاب المدرسي.',
-      subject: 'الرياضيات', teacherId: '1', section: '3/2', publishedAt: ago(2 * HOUR), dueDate: ahead(3 * DAY),
-      attachments: [file('تمارين-المعادلات.pdf', 0.5)], maxScore: 10, totalSubmissions: 12, totalStudents: 43
-    },
-    {
-      id: 'as-2', title: 'Unit 3 Reading Comprehension', description: 'Read the passage and answer the questions.',
-      subject: 'اللغة الإنجليزية', teacherId: '2', section: '2/1', publishedAt: ago(5 * HOUR), dueDate: ahead(2 * DAY),
-      attachments: [file('Unit3-Reading.pdf', 0.7), file('Questions.docx', 0.1)], maxScore: 10, totalSubmissions: 30, totalStudents: 43
-    },
-    {
-      id: 'as-3', title: 'تقرير عن مكونات الخلية', description: 'تقرير صفحتين مع رسم للخلية.',
-      subject: 'العلوم', teacherId: '3', section: '1/1', publishedAt: ago(1 * DAY), dueDate: ahead(4 * DAY),
-      attachments: [file('عناصر-التقرير.pdf', 0.2)], maxScore: 10, totalSubmissions: 25, totalStudents: 42
-    },
-    {
-      id: 'as-4', title: 'حل تمارين الكسور العشرية', description: '',
-      subject: 'الرياضيات', teacherId: '4', section: '1/3', publishedAt: ago(2 * DAY), dueDate: ago(6 * HOUR),
-      attachments: [], maxScore: 10, totalSubmissions: 38, totalStudents: 40
-    },
-    {
-      id: 'as-5', title: 'إعراب الجمل الاسمية والفعلية', description: 'أعرب الجمل الموجودة في الملف.',
-      subject: 'اللغة العربية', teacherId: '5', section: '1/2', publishedAt: ago(3 * DAY), dueDate: ahead(1 * DAY),
-      attachments: [file('جمل-للإعراب.pdf', 0.3)], maxScore: 10, totalSubmissions: 18, totalStudents: 41
-    },
-    {
-      id: 'as-6', title: 'خريطة صماء لمحافظات مصر', description: 'لوّن الخريطة واكتب أسماء المحافظات.',
-      subject: 'الدراسات الاجتماعية', teacherId: '7', section: '2/2', publishedAt: ago(4 * DAY), dueDate: ago(1 * DAY),
-      attachments: [file('خريطة-صماء.png', 1.2)], maxScore: 10, totalSubmissions: 21, totalStudents: 42
-    },
-    {
-      id: 'as-7', title: 'تعبير: يوم في حياة طالب', description: 'موضوع تعبير لا يقل عن 10 سطور.',
-      subject: 'اللغة العربية', teacherId: '8', section: '2/3', publishedAt: ago(6 * DAY), dueDate: ago(2 * DAY),
-      attachments: [], maxScore: 10, totalSubmissions: 36, totalStudents: 40
-    },
-    {
-      id: 'as-8', title: 'أسئلة على الطاقة وتحولاتها', description: 'جاوب على الأسئلة في الملف.',
-      subject: 'العلوم', teacherId: '9', section: '3/1', publishedAt: ago(30 * 60000), dueDate: ahead(5 * DAY),
-      attachments: [file('أسئلة-الطاقة.pdf', 0.4), file('صور-توضيحية.zip', 3.5)], maxScore: 10, totalSubmissions: 3, totalStudents: 44
-    }
-  ]);
+  readonly assignments = signal<Assignment[]>([]);
+  readonly loading = signal(false);
 
-  readonly submissions = signal<AssignmentSubmission[]>([
-    {
-      id: 'sub-1', assignmentId: 'as-3', studentId: 's1', studentName: 'أحمد ياسين محمد إبراهيم',
-      files: [file('تقرير-الخلية.pdf', 1.6)], note: '', submittedAt: ago(2 * 60000), score: null, feedback: ''
-    },
-    {
-      id: 'sub-2', assignmentId: 'as-2', studentId: 's3', studentName: 'كريم خالد مصطفى السعيد',
-      files: [file('Reading-answers.docx', 0.1)], note: '', submittedAt: ago(5 * 60000), score: null, feedback: ''
-    },
-    {
-      id: 'sub-3', assignmentId: 'as-3', studentId: 's2', studentName: 'مازن شريف عبد المنعم',
-      files: [file('الخلية.jpg', 2.2)], note: 'الرسم في الصفحة الثانية', submittedAt: ago(16 * 60000), score: null, feedback: ''
-    },
-    {
-      id: 'sub-4', assignmentId: 'as-6', studentId: 's7', studentName: 'يوسف أحمد محمد مصطفى',
-      files: [file('خريطة.jpg', 1.9)], note: '', submittedAt: ago(2 * DAY), score: 9, feedback: 'ممتاز، راجع اسم محافظة الوادي الجديد'
-    },
-    {
-      id: 'sub-5', assignmentId: 'as-1', studentId: 's4', studentName: 'نور الدين حسام حسن رضوان',
-      files: [file('حل-المعادلات.pdf', 0.9)], note: '', submittedAt: ago(7 * HOUR), score: 10, feedback: 'برافو يا نور'
-    }
-  ]);
+  // A student: their own answers. A teacher: the answers of the assignments they opened.
+  readonly submissions = signal<AssignmentSubmission[]>([]);
+  readonly loadingSubmissions = signal(false);
 
-  // A teacher sees their own assignments, a student their class's; newest first
-  readonly visible = computed(() => {
-    const list = this.scope.isTeacher()
-      ? this.assignments().filter(a => a.teacherId === this.scope.teacherId())
-      : this.scope.isStudent()
-        ? this.assignments().filter(a => a.section === this.scope.studentSection())
-        : this.assignments();
-    return [...list].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-  });
+  // Newest first
+  readonly visible = computed(() => [...this.assignments()].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)));
+
+  /** Fetched on every visit: this store outlives a sign-out, and the list belongs to who is signed in. */
+  load(): void {
+    if (this.loading()) return;
+    this.loading.set(true);
+    this.refresh().subscribe({
+      next: () => this.loading.set(false),
+      error: () => this.loading.set(false)
+    });
+  }
+
+  /** Teacher side: fetches the answers of one assignment. */
+  loadSubmissions(assignmentId: string): void {
+    this.loadingSubmissions.set(true);
+    this.service.submissions(assignmentId).subscribe({
+      next: answers => {
+        this.submissions.update(list => [...answers, ...list.filter(s => s.assignmentId !== assignmentId)]);
+        this.loadingSubmissions.set(false);
+      },
+      error: () => this.loadingSubmissions.set(false)
+    });
+  }
 
   submissionsOf(assignmentId: string): AssignmentSubmission[] {
     return this.submissions()
@@ -143,34 +118,79 @@ export class AssignmentsStore {
     return this.submissions().find(s => s.assignmentId === assignmentId && s.studentId === studentId);
   }
 
-  /** Publishes (or updates) assignments - one per class, so each class keeps its own submissions. */
-  publish(assignments: Assignment[]): void {
-    const ids = new Set(assignments.map(a => a.id));
-    this.assignments.update(list => [...assignments, ...list.filter(a => !ids.has(a.id))]);
-  }
-
-  delete(id: string): void {
-    this.assignments.update(list => list.filter(a => a.id !== id));
-    this.submissions.update(list => list.filter(s => s.assignmentId !== id));
-  }
-
-  /** A student's submission; re-submitting replaces the previous one. */
-  submit(submission: AssignmentSubmission): void {
-    const isNew = !this.submissions().some(
-      s => s.assignmentId === submission.assignmentId && s.studentId === submission.studentId
+  /** Publishes to each class (one assignment per class); if a file fails, nothing stays half published. */
+  create(result: AssignmentFormResult): Observable<void> {
+    return this.service.create(result.draft, result.sections).pipe(
+      switchMap(created =>
+        this.upload(created[0].id, created.slice(1).map(a => a.id), result.attachments).pipe(
+          catchError(error => this.undo(created).pipe(switchMap(() => throwError(() => error))))
+        )
+      ),
+      switchMap(() => this.refresh())
     );
-    this.submissions.update(list => [
-      submission,
-      ...list.filter(s => !(s.assignmentId === submission.assignmentId && s.studentId === submission.studentId))
-    ]);
-    if (isNew) {
-      this.assignments.update(list =>
-        list.map(a => (a.id === submission.assignmentId ? { ...a, totalSubmissions: a.totalSubmissions + 1 } : a))
-      );
-    }
   }
 
-  grade(submissionId: string, score: number, feedback: string): void {
-    this.submissions.update(list => list.map(s => (s.id === submissionId ? { ...s, score, feedback } : s)));
+  /** Saves the edits, removes the files taken out, and uploads the new ones. */
+  update(existing: Assignment, result: AssignmentFormResult): Observable<void> {
+    const kept = new Set(result.attachments.map(file => file.id).filter(Boolean));
+    const removals = existing.attachments
+      .filter(file => file.id && !kept.has(file.id))
+      .map(file => this.service.deleteAttachment(existing.id, file.id!));
+    return this.service.update(existing.id, result.draft).pipe(
+      switchMap(() => concat(...removals).pipe(toArray())),
+      switchMap(() => this.upload(existing.id, [], result.attachments)),
+      switchMap(() => this.refresh())
+    );
+  }
+
+  remove(id: string): Observable<void> {
+    return this.service.remove(id).pipe(
+      tap(() => {
+        this.assignments.update(list => list.filter(a => a.id !== id));
+        this.submissions.update(list => list.filter(s => s.assignmentId !== id));
+      })
+    );
+  }
+
+  /** A student's answer; handing in again replaces the previous one. */
+  submit(assignmentId: string, answer: AssignmentAnswer): Observable<void> {
+    return this.service.submit(assignmentId, answer.files, answer.note).pipe(
+      tap(saved => this.submissions.update(list => [saved, ...list.filter(s => s.assignmentId !== assignmentId)])),
+      map(() => undefined)
+    );
+  }
+
+  grade(submission: AssignmentSubmission, score: number, feedback: string): Observable<void> {
+    return this.service.grade(submission.assignmentId, submission.id, score, feedback).pipe(
+      tap(saved => {
+        this.submissions.update(list => list.map(s => (s.id === saved.id ? saved : s)));
+        if (submission.score == null) {
+          this.assignments.update(list =>
+            list.map(a => (a.id === saved.assignmentId ? { ...a, ungradedSubmissions: a.ungradedSubmissions - 1 } : a))
+          );
+        }
+      }),
+      map(() => undefined)
+    );
+  }
+
+  private refresh(): Observable<void> {
+    return this.service.list().pipe(
+      tap(({ assignments, mine }) => {
+        this.assignments.set(assignments);
+        this.submissions.set(mine);
+      }),
+      map(() => undefined)
+    );
+  }
+
+  /** Uploads the newly picked files one after the other. */
+  private upload(id: string, alsoFor: string[], files: TeachingFile[]): Observable<void[]> {
+    const uploads = files.filter(file => file.blob).map(file => this.service.addAttachment(id, file.blob!, alsoFor));
+    return concat(...uploads).pipe(toArray());
+  }
+
+  private undo(created: Assignment[]): Observable<unknown> {
+    return forkJoin(created.map(a => this.service.remove(a.id).pipe(catchError(() => of(undefined)))));
   }
 }

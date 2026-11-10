@@ -7,8 +7,7 @@ import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-
 import { ArabicDatePipe } from '../../shared/pipes/arabic-date.pipe';
 import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { FILE_ACCEPT, TeachingFile, readPickedFiles } from '../teaching/teaching.model';
-import { TeachingScope } from '../teaching/teaching-scope.service';
-import { Assignment, AssignmentSubmission, AssignmentsStore, assignmentStatus } from './assignments.store';
+import { Assignment, AssignmentAnswer, AssignmentsStore, assignmentStatus } from './assignments.store';
 
 /** Student side: open an assignment and hand in the answer (files and / or a note). */
 @Component({
@@ -20,21 +19,22 @@ import { Assignment, AssignmentSubmission, AssignmentsStore, assignmentStatus } 
 })
 export class AssignmentSubmitDialogComponent implements OnInit {
   private readonly store = inject(AssignmentsStore);
-  private readonly scope = inject(TeachingScope);
 
   readonly assignment = input.required<Assignment>();
-  readonly submitted = output<AssignmentSubmission>();
+  readonly saving = input(false);
+  readonly submitted = output<AssignmentAnswer>();
   readonly closed = output<void>();
 
   readonly accept = FILE_ACCEPT;
   readonly fileError = signal('');
   readonly emptyError = signal(false);
-  readonly lock = submitLock();
+  readonly lock = submitLock({ saving: this.saving });
 
   readonly previous = computed(() => this.store.mySubmission(this.assignment().id));
+  readonly isExpired = computed(() => assignmentStatus(this.assignment()) === 'انتهى الموعد');
   // Re-submitting is allowed until the due date, as long as the teacher hasn't graded it
   readonly canSubmit = computed(
-    () => assignmentStatus(this.assignment()) === 'نشط ومتاح' && this.previous()?.score == null
+    () => this.assignment().requiresSubmission && !this.isExpired() && this.previous()?.score == null
   );
 
   files: TeachingFile[] = [];
@@ -64,18 +64,6 @@ export class AssignmentSubmitDialogComponent implements OnInit {
     const note = this.note.trim();
     this.emptyError.set(!this.files.length && !note);
     if (this.emptyError()) return;
-    this.lock.run(() =>
-      this.submitted.emit({
-        id: this.previous()?.id ?? crypto.randomUUID(),
-        assignmentId: this.assignment().id,
-        studentId: this.scope.studentId(),
-        studentName: this.scope.studentName(),
-        files: this.files,
-        note,
-        submittedAt: new Date().toISOString(),
-        score: null,
-        feedback: ''
-      })
-    );
+    this.lock.run(() => this.submitted.emit({ files: this.files, note }));
   }
 }

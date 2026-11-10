@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { TimeAgoPipe } from '../../shared/pipes/time-ago.pipe';
@@ -13,18 +13,24 @@ import { Assignment, AssignmentSubmission, AssignmentsStore } from './assignment
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './assignment-submissions-dialog.component.html'
 })
-export class AssignmentSubmissionsDialogComponent {
+export class AssignmentSubmissionsDialogComponent implements OnInit {
   private readonly store = inject(AssignmentsStore);
 
   readonly assignment = input.required<Assignment>();
   readonly closed = output<void>();
 
+  readonly loading = this.store.loadingSubmissions;
   readonly submissions = computed(() => this.store.submissionsOf(this.assignment().id));
   readonly ungraded = computed(() => this.submissions().filter(s => s.score == null).length);
 
   // submissionId -> the score / feedback being typed
   readonly drafts = signal<Record<string, { score: number | null; feedback: string }>>({});
   readonly savedId = signal<string | null>(null);
+  readonly savingId = signal<string | null>(null);
+
+  ngOnInit(): void {
+    this.store.loadSubmissions(this.assignment().id);
+  }
 
   draftOf(submission: AssignmentSubmission): { score: number | null; feedback: string } {
     return this.drafts()[submission.id] ?? { score: submission.score, feedback: submission.feedback };
@@ -41,8 +47,14 @@ export class AssignmentSubmissionsDialogComponent {
 
   saveGrade(submission: AssignmentSubmission): void {
     const draft = this.draftOf(submission);
-    if (!this.isValidScore(draft.score)) return;
-    this.store.grade(submission.id, draft.score!, draft.feedback.trim());
-    this.savedId.set(submission.id);
+    if (!this.isValidScore(draft.score) || this.savingId()) return;
+    this.savingId.set(submission.id);
+    this.store.grade(submission, draft.score!, draft.feedback.trim()).subscribe({
+      next: () => {
+        this.savingId.set(null);
+        this.savedId.set(submission.id);
+      },
+      error: () => this.savingId.set(null)
+    });
   }
 }

@@ -5,7 +5,7 @@ import { TeachingScope } from '../teaching/teaching-scope.service';
 import { AssignmentFormDialogComponent } from './assignment-form-dialog.component';
 import { AssignmentSubmissionsDialogComponent } from './assignment-submissions-dialog.component';
 import { AssignmentSubmitDialogComponent } from './assignment-submit-dialog.component';
-import { Assignment, AssignmentSubmission, AssignmentsStore, assignmentStatus, submissionRate } from './assignments.store';
+import { Assignment, AssignmentAnswer, AssignmentFormResult, AssignmentSubmission, AssignmentsStore, assignmentStatus, submissionRate } from './assignments.store';
 
 // Below this submission rate an assignment is flagged for follow-up
 const LOW_SUBMISSION_RATE = 0.6;
@@ -28,6 +28,7 @@ export class AssignmentsComponent {
 
   constructor() {
     this.scope.ensureLoaded();
+    this.assignmentsStore.load();
   }
 
   readonly statusOf = assignmentStatus;
@@ -37,22 +38,19 @@ export class AssignmentsComponent {
   readonly filteredAssignments = this.assignmentsStore.visible;
 
   readonly formOpen = signal(false);
+  readonly saving = signal(false);
   readonly editing = signal<Assignment | null>(null);
   readonly reviewing = signal<Assignment | null>(null);
   readonly opened = signal<Assignment | null>(null);
   readonly confirmingDeleteId = signal<string | null>(null);
 
-  // Student: what's still to hand in
+  // Student: what's still to hand in on the platform
   readonly pendingCount = computed(
-    () => this.filteredAssignments().filter(a => this.statusOf(a) === 'نشط ومتاح' && !this.mySubmission(a)).length
+    () => this.filteredAssignments().filter(a => a.requiresSubmission && this.statusOf(a) === 'نشط ومتاح' && !this.mySubmission(a)).length
   );
 
   mySubmission(assignment: Assignment): AssignmentSubmission | undefined {
     return this.assignmentsStore.mySubmission(assignment.id);
-  }
-
-  ungradedCount(assignment: Assignment): number {
-    return this.assignmentsStore.submissionsOf(assignment.id).filter(s => s.score == null).length;
   }
 
   openForm(assignment: Assignment | null): void {
@@ -60,18 +58,34 @@ export class AssignmentsComponent {
     this.formOpen.set(true);
   }
 
-  publish(assignments: Assignment[]): void {
-    this.assignmentsStore.publish(assignments);
-    this.formOpen.set(false);
+  /** Errors are announced by the notify interceptor; the dialog stays open to try again. */
+  publish(result: AssignmentFormResult): void {
+    const existing = this.editing();
+    this.saving.set(true);
+    (existing ? this.assignmentsStore.update(existing, result) : this.assignmentsStore.create(result)).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.formOpen.set(false);
+      },
+      error: () => this.saving.set(false)
+    });
   }
 
   deleteAssignment(id: string): void {
-    this.assignmentsStore.delete(id);
-    this.confirmingDeleteId.set(null);
+    this.assignmentsStore.remove(id).subscribe({
+      next: () => this.confirmingDeleteId.set(null),
+      error: () => this.confirmingDeleteId.set(null)
+    });
   }
 
-  submit(submission: AssignmentSubmission): void {
-    this.assignmentsStore.submit(submission);
-    this.opened.set(null);
+  submit(assignment: Assignment, answer: AssignmentAnswer): void {
+    this.saving.set(true);
+    this.assignmentsStore.submit(assignment.id, answer).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.opened.set(null);
+      },
+      error: () => this.saving.set(false)
+    });
   }
 }
