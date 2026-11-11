@@ -23,13 +23,15 @@ export class ClassAdvisorDialogComponent implements OnInit {
   readonly teachers = input.required<Teacher[]>();
   // teacherId -> section they already advise this year (other classes only)
   readonly advisorsElsewhere = input.required<Record<string, string>>();
+  readonly saving = input(false);
+  readonly serverError = input<string | null>(null);
   readonly saved = output<AdvisorAssignment>();
   readonly closed = output<void>();
 
   readonly year = inject(AcademicCalendarStore).currentYear;
   readonly reasons = ADVISOR_CHANGE_REASONS;
-  // Locked from the click until the page closes the dialog
-  readonly lock = submitLock();
+  // Locked from the click until the page closes the dialog or server responds
+  readonly lock = submitLock({ saving: this.saving, error: this.serverError });
 
   readonly current = computed(() => currentAdvisor(this.schoolClass(), this.year()));
   readonly history = computed(() => [...this.schoolClass().advisorHistory].reverse());

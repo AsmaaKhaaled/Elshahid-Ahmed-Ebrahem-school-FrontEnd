@@ -72,6 +72,12 @@
       </div>
     }
 
+    @if (serverError()) {
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
+        {{ serverError() }}
+      </div>
+    }
+
     <div class="dialog-foot pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
       <button (click)="closed.emit()" type="button" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs">إلغاء</button>
       <button type="submit" [disabled]="lock.busy()" class="px-5 py-2 rounded-xl bg-primary-800 text-white font-bold text-xs hover:bg-primary-900 shadow disabled:opacity-60">حفظ</button>

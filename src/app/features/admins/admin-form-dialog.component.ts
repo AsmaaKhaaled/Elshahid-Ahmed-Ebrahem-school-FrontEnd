@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -7,6 +8,8 @@ import { ADMIN_PASSWORD_PATTERN, AdminAccount } from '../../core/admin/admin-acc
 import { ADMIN_PERMISSIONS, AdminPermission } from '../../core/admin/admin-permissions';
 import { PortalToBodyDirective } from '../../shared/directives/portal-to-body.directive';
 import { SubmitLockDirective, submitLock } from '../../shared/directives/submit-lock.directive';
+import { Teacher } from '../teachers/teacher.model';
+import { TeachersStore } from '../teachers/teachers.store';
 
 export interface AdminFormResult {
   account: AdminAccount;
@@ -17,12 +20,22 @@ export interface AdminFormResult {
 @Component({
   selector: 'app-admin-form-dialog',
   standalone: true,
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatCheckboxModule, PortalToBodyDirective, SubmitLockDirective],
+  imports: [
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCheckboxModule,
+    MatAutocompleteModule,
+    PortalToBodyDirective,
+    SubmitLockDirective
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-form-dialog.component.html',
   styleUrl: './admin-form-dialog.component.css'
 })
 export class AdminFormDialogComponent implements OnInit {
+  private readonly teachersStore = inject(TeachersStore);
+
   // null = add mode
   readonly admin = input<AdminAccount | null>(null);
   // National IDs already used by other accounts (must be unique - it's the login identifier)
@@ -45,6 +58,27 @@ export class AdminFormDialogComponent implements OnInit {
   // Locked from the click until the page closes the dialog (or the backend refuses the change)
   readonly lock = submitLock({ saving: this.saving, error: this.serverError });
 
+  // Autocomplete search query for teachers
+  readonly teacherSearch = signal('');
+
+  // Suggested teachers for autocomplete (searches by name, national ID, phone, job title, specialization)
+  readonly filteredTeachers = computed<Teacher[]>(() => {
+    const query = this.teacherSearch().trim().toLowerCase();
+    const all = this.teachersStore.teachers();
+    if (!query) {
+      return all.filter(t => t.active).slice(0, 15);
+    }
+    return all
+      .filter(t => t.active && (
+        t.name.toLowerCase().includes(query) ||
+        t.nationalId.includes(query) ||
+        t.phone.includes(query) ||
+        (t.title && t.title.toLowerCase().includes(query)) ||
+        (t.specialization && t.specialization.toLowerCase().includes(query))
+      ))
+      .slice(0, 15);
+  });
+
   readonly isEdit = computed(() => !!this.admin());
   readonly showPasswordFields = computed(() => !this.isEdit() || this.resettingPassword());
   readonly allSelected = computed(() => this.permissions().size === ADMIN_PERMISSIONS.length);
@@ -64,11 +98,50 @@ export class AdminFormDialogComponent implements OnInit {
   confirmPassword = '';
 
   ngOnInit(): void {
+    this.teachersStore.ensureLoaded();
+
     const admin = this.admin();
     if (admin) {
       this.draft = { ...admin };
       this.permissions.set(new Set(admin.permissions));
+      this.teacherSearch.set(admin.fullName);
     }
+  }
+
+  onNameInput(value: string | Teacher): void {
+    const name = typeof value === 'string' ? value : value?.name || '';
+    this.draft.fullName = name;
+    this.teacherSearch.set(name);
+  }
+
+  onNameFocus(): void {
+    this.teacherSearch.set(this.draft.fullName || '');
+  }
+
+  displayTeacher = (val: string | Teacher | null | undefined): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    return val.name || '';
+  };
+
+  onTeacherSelected(event: MatAutocompleteSelectedEvent): void {
+    const teacher = event.option.value as Teacher;
+    if (!teacher) return;
+
+    this.draft.fullName = teacher.name;
+    this.teacherSearch.set(teacher.name);
+
+    if (teacher.nationalId) {
+      this.draft.nationalId = teacher.nationalId;
+    }
+    if (teacher.phone) {
+      this.draft.phone = teacher.phone;
+    }
+
+    const defaultTitle = teacher.title
+      ? teacher.title
+      : (teacher.specialization ? `معلم ${teacher.specialization}` : 'عضو هيئة تدريس');
+    this.draft.jobTitle = defaultTitle;
   }
 
   togglePermission(permission: AdminPermission, checked: boolean): void {
@@ -94,6 +167,9 @@ export class AdminFormDialogComponent implements OnInit {
       return;
     }
 
+    const fullName = (typeof this.draft.fullName === 'string' ? this.draft.fullName : (this.draft.fullName as any)?.name ?? '').trim();
+    const jobTitle = (typeof this.draft.jobTitle === 'string' ? this.draft.jobTitle : '').trim();
+
     // Keep the permissions in the same order as the sidebar
     const permissions = ADMIN_PERMISSIONS.map(p => p.key).filter(key => this.permissions().has(key));
     this.lock.run(() =>
@@ -101,8 +177,8 @@ export class AdminFormDialogComponent implements OnInit {
         account: {
           ...this.draft,
           id: this.draft.id || crypto.randomUUID(),
-          fullName: this.draft.fullName.trim(),
-          jobTitle: this.draft.jobTitle.trim(),
+          fullName,
+          jobTitle,
           permissions,
           createdAt: this.draft.createdAt || new Date().toISOString()
         },

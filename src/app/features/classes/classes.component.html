@@ -116,7 +116,7 @@
           </div>
 
           @if (canManage()) {
-            <button (click)="advisorClass.set(cls)" type="button"
+            <button (click)="openAdvisorDialog(cls)" type="button"
               class="shrink-0 px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors"
               [class]="advisor.kind === 'active' ? 'text-slate-500 hover:text-slate-800 hover:bg-slate-100' : 'bg-primary-800 text-white hover:bg-primary-900'">
               {{ advisor.kind === 'active' || advisor.kind === 'on-leave' ? 'تغيير' : 'تعيين رائد' }}
@@ -132,8 +132,10 @@
       [schoolClass]="cls"
       [teachers]="teachers()"
       [advisorsElsewhere]="advisorsElsewhere(cls.id)"
+      [saving]="savingAdvisor()"
+      [serverError]="advisorError()"
       (saved)="assignAdvisor(cls.id, $event)"
-      (closed)="advisorClass.set(null)" />
+      (closed)="closeAdvisorDialog()" />
   }
 
   @if (setupOpen()) {
