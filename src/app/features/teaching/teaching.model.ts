@@ -50,6 +50,8 @@ export interface Material {
   description: string;
   subject: string;
   teacherId: string;
+  // Sent by the API (the administration sees every teacher's)
+  teacherName?: string;
   sections: string[];
   files: TeachingFile[];
   link?: string;

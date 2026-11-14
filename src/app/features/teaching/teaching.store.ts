@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Material, Quiz, QuizAttempt } from './teaching.model';
+import { Quiz, QuizAttempt } from './teaching.model';
 import { TeachingScope } from './teaching-scope.service';
 
 const MIN = 60000;
@@ -10,42 +10,14 @@ const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
 const ahead = (ms: number) => new Date(Date.now() + ms).toISOString();
 
 /**
- * Lesson materials, quizzes & exams published by teachers, and the students' attempts.
+ * Quizzes & exams published by teachers, and the students' attempts.
  * A teacher publishes straight to their classes (no approval); the admin panel follows it all
  * from "نشاط المستخدمين على المنصة". Mock data until the backend stores them.
+ * (Lesson materials come from the API: MaterialsStore.)
  */
 @Injectable({ providedIn: 'root' })
 export class TeachingStore {
   private readonly scope = inject(TeachingScope);
-
-  readonly materials = signal<Material[]>([
-    {
-      id: 'm-1', title: 'ملخص درس الكسور العشرية', description: 'ملخص الدرس مع أمثلة محلولة وتمارين للمراجعة.',
-      subject: 'الرياضيات', teacherId: '4', sections: ['1/3'],
-      files: [{ name: 'ملخص-الكسور-العشرية.pdf', size: 1.4 * MB, url: '' }], publishedAt: ago(1 * MIN)
-    },
-    {
-      id: 'm-2', title: 'ملخص الوحدة الأولى: المعادلات', description: 'كل قوانين الوحدة في ورقتين، اطبعوها قبل الحصة القادمة.',
-      subject: 'الرياضيات', teacherId: '1', sections: ['3/2', '3/3'],
-      files: [{ name: 'ملخص-المعادلات.pdf', size: 2.1 * MB, url: '' }, { name: 'تمارين-إضافية.docx', size: 0.3 * MB, url: '' }],
-      publishedAt: ago(3 * HOUR)
-    },
-    {
-      id: 'm-3', title: 'Unit 3 Vocabulary', description: 'Vocabulary list with examples.',
-      subject: 'اللغة الإنجليزية', teacherId: '2', sections: ['2/1'],
-      files: [{ name: 'Unit3-Vocabulary.pdf', size: 0.8 * MB, url: '' }], publishedAt: ago(6 * HOUR)
-    },
-    {
-      id: 'm-4', title: 'تجربة عملية: الخلية تحت المجهر', description: 'فيديو التجربة التي أُجريت في المعمل.',
-      subject: 'العلوم', teacherId: '3', sections: ['1/1'],
-      files: [], link: 'https://www.youtube.com/', publishedAt: ago(1 * DAY)
-    },
-    {
-      id: 'm-5', title: 'فيديو شرح حل المعادلات', description: 'شرح مبسط لخطوات حل المعادلة من الدرجة الأولى.',
-      subject: 'الرياضيات', teacherId: '1', sections: ['3/2'],
-      files: [], link: 'https://www.youtube.com/', publishedAt: ago(2 * DAY)
-    }
-  ]);
 
   readonly quizzes = signal<Quiz[]>([
     {
@@ -102,7 +74,6 @@ export class TeachingStore {
 
   // ---- What the signed-in user sees: a teacher their own content, a student their class's ----
 
-  readonly visibleMaterials = computed(() => this.visible(this.materials()));
   readonly visibleQuizzes = computed(() => this.visible(this.quizzes()));
 
   private visible<T extends { teacherId: string; sections: string[]; publishedAt: string }>(items: T[]): T[] {
@@ -122,14 +93,6 @@ export class TeachingStore {
   myAttempt(quizId: string): QuizAttempt | undefined {
     const studentId = this.scope.studentId();
     return this.attempts().find(a => a.quizId === quizId && a.studentId === studentId);
-  }
-
-  saveMaterial(material: Material): void {
-    this.materials.update(list => [material, ...list.filter(m => m.id !== material.id)]);
-  }
-
-  deleteMaterial(id: string): void {
-    this.materials.update(list => list.filter(m => m.id !== id));
   }
 
   saveQuiz(quiz: Quiz): void {

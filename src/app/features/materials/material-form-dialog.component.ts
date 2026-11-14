@@ -9,6 +9,9 @@ import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { FILE_ACCEPT, MAX_FILE_MB, Material, VIDEO_UPLOAD_SOON, readPickedFiles } from '../teaching/teaching.model';
 import { TeachingScope } from '../teaching/teaching-scope.service';
 
+// As the server allows for one material
+const MAX_FILES = 10;
+
 @Component({
   selector: 'app-material-form-dialog',
   standalone: true,
@@ -21,15 +24,17 @@ export class MaterialFormDialogComponent implements OnInit {
 
   // null = new material
   readonly material = input<Material | null>(null);
+  readonly saving = input(false);
   readonly saved = output<Material>();
   readonly closed = output<void>();
 
   readonly accept = FILE_ACCEPT;
   readonly maxMb = MAX_FILE_MB;
+  readonly maxFiles = MAX_FILES;
   readonly videoSoon = VIDEO_UPLOAD_SOON;
   readonly fileError = signal('');
   readonly contentError = signal(false);
-  readonly lock = submitLock();
+  readonly lock = submitLock({ saving: this.saving });
 
   draft: Material = {
     id: '',
@@ -56,8 +61,10 @@ export class MaterialFormDialogComponent implements OnInit {
 
   onFilesSelected(event: Event): void {
     const { files, error } = readPickedFiles(event);
-    this.fileError.set(error);
-    this.draft.files = [...this.draft.files, ...files];
+    const room = MAX_FILES - this.draft.files.length;
+    const tooMany = files.length > room ? `يمكن إرفاق ${MAX_FILES} ملفات على الأكثر` : '';
+    this.fileError.set([error, tooMany].filter(Boolean).join(' — '));
+    this.draft.files = [...this.draft.files, ...files.slice(0, Math.max(room, 0))];
     this.contentError.set(false);
   }
 

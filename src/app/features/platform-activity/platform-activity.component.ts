@@ -58,6 +58,7 @@ export class PlatformActivityComponent {
 
   constructor() {
     this.teachersStore.ensureLoaded();
+    this.activityStore.loadPublished();
   }
 
   readonly presenceLabels = PRESENCE_LABELS;

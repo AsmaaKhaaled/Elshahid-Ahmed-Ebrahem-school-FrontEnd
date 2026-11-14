@@ -38,12 +38,13 @@
 
       <mat-form-field class="w-full">
         <mat-label>وصف أو ملاحظة للطلاب (اختياري)</mat-label>
-        <textarea matInput name="description" rows="3" [(ngModel)]="draft.description"></textarea>
+        <textarea matInput name="description" rows="3" maxlength="3000" [(ngModel)]="draft.description"></textarea>
       </mat-form-field>
 
       <mat-form-field class="w-full">
         <mat-label>رابط (اختياري) - فيديو يوتيوب، درايف...</mat-label>
-        <input matInput type="url" name="link" dir="ltr" [(ngModel)]="draft.link" (ngModelChange)="contentError.set(false)" placeholder="https://" />
+        <input matInput type="url" name="link" dir="ltr" maxlength="500" pattern="https?://.+" [(ngModel)]="draft.link" (ngModelChange)="contentError.set(false)" placeholder="https://" />
+        <mat-error>الرابط يجب أن يبدأ بـ https:// أو http://</mat-error>
       </mat-form-field>
 
       <!-- Files -->
@@ -52,7 +53,7 @@
           📎 إرفاق ملفات (PDF، Word، PowerPoint، صور)
           <input type="file" multiple class="hidden" [accept]="accept" (change)="onFilesSelected($event)" />
         </label>
-        <p class="text-[11px] text-slate-400">حتى {{ maxMb }} ميجا للملف الواحد</p>
+        <p class="text-[11px] text-slate-400">حتى {{ maxFiles }} ملفات، و{{ maxMb }} ميجا للملف الواحد</p>
         <p class="text-[11px] font-semibold text-amber-700">🎬 {{ videoSoon }}</p>
         @if (draft.files.length) {
           <app-teaching-files [files]="draft.files" [removable]="true" (removed)="removeFile($event)" />

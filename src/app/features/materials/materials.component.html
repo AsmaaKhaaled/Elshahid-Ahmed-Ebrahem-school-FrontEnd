@@ -4,7 +4,7 @@
       <h2 class="text-2xl font-black text-slate-800 tracking-tight">المواد التعليمية والملفات</h2>
       <p class="text-xs text-slate-500 mt-1">
         @if (scope.isTeacher()) {
-          ارفع ملخصات وشروحات ولينكات فيديو لفصولك، وبتظهر للطلاب على طول
+          ارفع ملخصات وشروحات وروابط فيديو لفصولك، وتظهر للطلاب فور نشرها
         } @else {
           الملخصات والشروحات والفيديوهات التي نشرها معلمو فصل {{ scope.studentSection() }}
         }
@@ -26,19 +26,27 @@
   <div class="flex flex-col md:flex-row md:items-center gap-3">
     <div class="flex flex-wrap gap-2">
       @for (tab of subjectTabs(); track tab.id) {
-        <button type="button" (click)="selectedSubject.set(tab.id)"
+        <button type="button" (click)="selectSubject(tab.id)" [disabled]="loading()"
           [class]="selectedSubject() === tab.id ? 'bg-primary-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100'"
           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-200/60">
           {{ tab.id }} <span class="opacity-70">({{ tab.count }})</span>
         </button>
       }
     </div>
-    <input type="text" [(ngModel)]="searchQuery" placeholder="البحث بالعنوان..."
+    <input type="search" [value]="searchQuery()" (input)="onSearch($any($event.target).value)" placeholder="البحث بالعنوان أو الوصف..."
+      maxlength="100" aria-label="البحث في المواد التعليمية"
       class="md:mr-auto md:w-64 h-10 px-4 rounded-[10px] border border-slate-200 bg-white text-[13px] font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500/20" />
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-    @for (item of filteredMaterials(); track item.id) {
+  @if (listError()) {
+    <div class="flex items-center justify-between gap-3 p-4 rounded-2xl bg-rose-50 border border-rose-100 text-sm text-rose-700">
+      <span>{{ listError() }}</span>
+      <button type="button" (click)="load()" class="px-3 py-1.5 rounded-xl bg-white border border-rose-200 font-bold text-xs hover:bg-rose-100">إعادة المحاولة</button>
+    </div>
+  }
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" [class.opacity-60]="loading() && list()">
+    @for (item of materials(); track item.id) {
       <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 flex flex-col justify-between hover:border-primary-200 transition-all space-y-4">
         <div class="space-y-2">
           <div class="flex items-start justify-between gap-2">
@@ -47,10 +55,12 @@
           </div>
           <h3 class="text-lg font-bold text-slate-800 leading-snug">{{ item.title }}</h3>
           @if (item.description) {
-            <p class="text-sm text-slate-500 leading-relaxed">{{ item.description }}</p>
+            <p class="text-sm text-slate-500 leading-relaxed whitespace-pre-line">{{ item.description }}</p>
           }
           @if (scope.isTeacher()) {
             <p class="text-xs text-slate-500">منشورة لـ: <strong class="text-slate-700">فصل {{ sectionsLabel(item.sections) }}</strong></p>
+          } @else if (item.teacherName) {
+            <p class="text-xs text-slate-500">المعلم: <strong class="text-slate-700">{{ item.teacherName }}</strong></p>
           }
           @if (item.files.length) {
             <app-teaching-files [files]="item.files" />
@@ -65,9 +75,9 @@
         @if (scope.isTeacher()) {
           <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 text-xs">
             @if (confirmingDeleteId() === item.id) {
-              <span class="text-slate-500 ml-auto">تحذف المادة من عند الطلاب؟</span>
-              <button type="button" (click)="deleteMaterial(item.id)" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold">حذف</button>
-              <button type="button" (click)="confirmingDeleteId.set(null)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">إلغاء</button>
+              <span class="text-slate-500 ml-auto">حذف المادة من عند الطلاب؟</span>
+              <button type="button" (click)="deleteMaterial(item.id)" [disabled]="deleting()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold disabled:opacity-60">حذف</button>
+              <button type="button" (click)="confirmingDeleteId.set(null)" [disabled]="deleting()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">إلغاء</button>
             } @else {
               <button type="button" (click)="openForm(item)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-primary-50 hover:text-primary-800 text-slate-700 font-bold transition-colors">تعديل</button>
               <button type="button" (click)="confirmingDeleteId.set(item.id)" class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold transition-colors">حذف</button>
@@ -77,7 +87,13 @@
       </div>
     } @empty {
       <div class="col-span-full text-center py-10 text-slate-400 text-sm">
-        @if (scope.isTeacher()) {
+        @if (loading()) {
+          جاري تحميل المواد التعليمية...
+        } @else if (listError()) {
+          <!-- The error above says what happened -->
+        } @else if (searchQuery().trim() || selectedSubject() !== allSubjects) {
+          لا توجد مواد تطابق البحث.
+        } @else if (scope.isTeacher()) {
           لم ترفع مواد تعليمية بعد. اضغط "رفع مادة تعليمية" للبدء.
         } @else {
           لا توجد مواد تعليمية منشورة لفصلك بعد.
@@ -85,8 +101,16 @@
       </div>
     }
   </div>
+
+  @if (list(); as l) {
+    @if (l.meta.total > 0) {
+      <app-pagination [page]="l.meta.page" [pageSize]="l.meta.limit" [total]="l.meta.total" itemLabel="مادة"
+        [pageSizeOptions]="pageSizeOptions" [disabled]="loading()"
+        (pageChange)="goToPage($event)" (pageSizeChange)="changePageSize($event)" />
+    }
+  }
 </div>
 
 @if (formOpen()) {
-  <app-material-form-dialog [material]="editing()" (saved)="saveMaterial($event)" (closed)="formOpen.set(false)" />
+  <app-material-form-dialog [material]="editing()" [saving]="saving()" (saved)="saveMaterial($event)" (closed)="formOpen.set(false)" />
 }

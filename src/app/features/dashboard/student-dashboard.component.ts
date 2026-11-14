@@ -12,6 +12,7 @@ import { TeachingFilesComponent } from '../teaching/teaching-files.component';
 import { isClosed } from '../teaching/teaching.model';
 import { TeachingScope } from '../teaching/teaching-scope.service';
 import { TeachingStore } from '../teaching/teaching.store';
+import { MaterialsStore } from '../materials/materials.store';
 
 interface DueItem {
   id: string;
@@ -37,6 +38,7 @@ export class StudentDashboardComponent {
   readonly scope = inject(TeachingScope);
   private readonly assignmentsStore = inject(AssignmentsStore);
   private readonly teachingStore = inject(TeachingStore);
+  private readonly materialsStore = inject(MaterialsStore);
   private readonly curriculumStore = inject(CurriculumStore);
   readonly currentTerm = inject(AcademicCalendarStore).currentTerm;
 
@@ -64,10 +66,10 @@ export class StudentDashboardComponent {
 
   readonly newMaterials = computed(() => {
     const weekAgo = new Date(Date.now() - 7 * DAY).toISOString();
-    return this.teachingStore.visibleMaterials().filter(m => m.publishedAt >= weekAgo).length;
+    return this.materialsStore.recent().filter(m => m.publishedAt >= weekAgo).length;
   });
 
-  readonly latestMaterials = computed(() => this.teachingStore.visibleMaterials().slice(0, 4));
+  readonly latestMaterials = computed(() => this.materialsStore.recent().slice(0, 4));
 
   // The latest few; "كل المناهج" opens the full, paged list
   readonly curricula = computed(() => this.curriculumStore.recent().slice(0, 6));
@@ -75,6 +77,7 @@ export class StudentDashboardComponent {
   constructor() {
     this.curriculumStore.ensureLoaded();
     this.assignmentsStore.load();
+    this.materialsStore.load();
   }
 
   /** Average of the marks the student got back (graded assignments & quizzes), in %. */

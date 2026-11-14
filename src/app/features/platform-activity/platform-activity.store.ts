@@ -4,6 +4,7 @@ import { TeachersStore } from '../teachers/teachers.store';
 import { teacherDisplayName } from '../teachers/teacher.model';
 import { sectionsLabel } from '../teaching/teaching.model';
 import { TeachingStore } from '../teaching/teaching.store';
+import { MaterialsStore } from '../materials/materials.store';
 import { CurriculumStore } from '../subjects/curriculum.store';
 
 export type ActorType = 'teacher' | 'student';
@@ -45,11 +46,17 @@ export class PlatformActivityStore {
   private readonly teachersStore = inject(TeachersStore);
   private readonly assignmentsStore = inject(AssignmentsStore);
   private readonly teachingStore = inject(TeachingStore);
+  private readonly materialsStore = inject(MaterialsStore);
   private readonly curriculumStore = inject(CurriculumStore);
 
-  constructor() {
+  /**
+   * Fetches what teachers published, for the activity feed & the counts. Called by the activity page only:
+   * the teachers page needs just the last-seen times, not the curricula, assignments and materials.
+   */
+  loadPublished(): void {
     this.curriculumStore.ensureLoaded();
     this.assignmentsStore.load();
+    this.materialsStore.load();
   }
 
   // teacherId -> last time seen on the platform (missing = never logged in)
@@ -101,7 +108,7 @@ export class PlatformActivityStore {
       ...assignments.map(a =>
         teacherEvent(`assignment-${a.id}`, 'assignment', 'نشر واجب', `${a.title} — فصل ${a.section}`, a.teacherId, a.publishedAt)
       ),
-      ...this.teachingStore.materials().map(m =>
+      ...this.materialsStore.recent().map(m =>
         teacherEvent(
           `material-${m.id}`, 'file', m.files.length ? `رفع ${m.files.length > 1 ? `${m.files.length} ملفات` : 'ملف'} شرح` : 'نشر رابط شرح',
           `${m.title} — فصل ${sectionsLabel(m.sections)}`, m.teacherId, m.publishedAt
@@ -142,7 +149,7 @@ export class PlatformActivityStore {
     const counts: Record<string, { curricula: number; materials: number; assignments: number; quizzes: number }> = {};
     const of = (id: string) => (counts[id] ??= { curricula: 0, materials: 0, assignments: 0, quizzes: 0 });
     this.curriculumStore.recent().forEach(c => of(c.teacherId).curricula++);
-    this.teachingStore.materials().forEach(m => of(m.teacherId).materials++);
+    this.materialsStore.recent().forEach(m => of(m.teacherId).materials++);
     this.assignmentsStore.assignments().forEach(a => of(a.teacherId).assignments++);
     this.teachingStore.quizzes().forEach(q => of(q.teacherId).quizzes++);
     return counts;
