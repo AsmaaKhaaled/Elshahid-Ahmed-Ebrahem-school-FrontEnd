@@ -13,8 +13,37 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-4">
       <mat-form-field class="w-full sm:col-span-2">
         <mat-label>الاسم بالكامل</mat-label>
-        <input matInput name="fullName" required [(ngModel)]="draft.fullName" placeholder="مثال: أ. محمد سعيد حسن" />
+        <input matInput name="fullName" required [ngModel]="draft.fullName"
+          (ngModelChange)="onNameInput($event)"
+          (focus)="onNameFocus()"
+          [matAutocomplete]="autoTeacher"
+          autocomplete="off"
+          placeholder="ابحث باسم المعلم لاقتراح البيانات وتعبئتها تلقائياً..." />
+        <mat-hint>اختر معلماً لتعبئة الرقم القومي والهاتف والمسمى تلقائياً، أو اكتب اسماً جديداً</mat-hint>
         <mat-error>اسم المسؤول مطلوب</mat-error>
+
+        <mat-autocomplete #autoTeacher="matAutocomplete" [displayWith]="displayTeacher" (optionSelected)="onTeacherSelected($event)">
+          @for (teacher of filteredTeachers(); track teacher.id) {
+            <mat-option [value]="teacher" class="h-auto py-2.5">
+              <div class="flex items-center justify-between gap-3 text-right w-full">
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-bold text-slate-900 truncate">{{ teacher.name }}</p>
+                  <p class="text-[11px] text-slate-500 truncate mt-0.5">
+                    <span class="text-primary-700 font-semibold">{{ teacher.title || (teacher.specialization ? ('معلم ' + teacher.specialization) : 'عضو هيئة تدريس') }}</span>
+                    @if (teacher.phone) {
+                      <span> • {{ teacher.phone }}</span>
+                    }
+                  </p>
+                </div>
+                @if (teacher.nationalId) {
+                  <span class="text-[10px] text-slate-600 font-mono bg-slate-100 px-2 py-0.5 rounded shrink-0 border border-slate-200">
+                    {{ teacher.nationalId }}
+                  </span>
+                }
+              </div>
+            </mat-option>
+          }
+        </mat-autocomplete>
       </mat-form-field>
 
       <mat-form-field class="w-full">

@@ -80,6 +80,18 @@ export class ClassesComponent {
 
   readonly selectedTab = signal<string>('ALL');
   readonly advisorClass = signal<SchoolClass | null>(null);
+  readonly savingAdvisor = signal(false);
+  readonly advisorError = signal<string | null>(null);
+
+  openAdvisorDialog(cls: SchoolClass): void {
+    this.advisorError.set(null);
+    this.advisorClass.set(cls);
+  }
+
+  closeAdvisorDialog(): void {
+    this.advisorError.set(null);
+    this.advisorClass.set(null);
+  }
 
   readonly canManage = computed(() => ['ADMIN', 'SUPER_ADMIN'].includes(this.authService.userRole() ?? ''));
 
@@ -130,7 +142,20 @@ export class ClassesComponent {
   }
 
   assignAdvisor(classId: string, assignment: AdvisorAssignment): void {
-    this.classesStore.assignAdvisor(classId, assignment);
-    this.advisorClass.set(null);
+    this.savingAdvisor.set(true);
+    this.advisorError.set(null);
+    this.classesStore.assignAdvisor(classId, assignment).subscribe({
+      next: () => {
+        this.savingAdvisor.set(false);
+        this.closeAdvisorDialog();
+      },
+      error: (err: unknown) => {
+        this.savingAdvisor.set(false);
+        const message = err instanceof HttpErrorResponse && typeof err.error?.message === 'string'
+          ? err.error.message
+          : 'تعذر حفظ تعيين رائد الفصل. حاول مرة أخرى.';
+        this.advisorError.set(message);
+      }
+    });
   }
 }
