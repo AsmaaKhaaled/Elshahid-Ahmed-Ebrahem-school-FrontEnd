@@ -11,5 +11,5 @@ import { SCHOOL_INFO } from '../../../core/constants/school.constants';
 })
 export class AuthBrandPanelComponent {
   readonly school = SCHOOL_INFO;
-  readonly subtitle = input<string>('بوابة التعلم والخدمات الإلكترونية');
+  readonly subtitle = input<string>('أول منصة تعليمية إلكترونية بسلوا بحري');
 }
