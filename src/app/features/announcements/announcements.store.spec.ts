@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { loginAs, provideTestDefaults } from '../../../testing/test-helpers';
+import { TokenService } from '../../core/auth/token.service';
 import { Announcement, AnnouncementsStore, audienceLabel, isExpired } from './announcements.store';
 
 function announcement(overrides: Partial<Announcement>): Announcement {
@@ -21,6 +22,8 @@ describe('AnnouncementsStore', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: provideTestDefaults() });
+    // Signed in = a user and a valid token (without one, the store shows only what visitors see)
+    spyOn(TestBed.inject(TokenService), 'hasValidToken').and.returnValue(true);
     store = TestBed.inject(AnnouncementsStore);
     store.announcements.set([]);
   });

@@ -36,7 +36,8 @@ describe('HonorEntryDialogComponent', () => {
   it('saves a teacher with the subject only', async () => {
     await create('TEACHER');
     component.draft.name = '  طارق عبد الحميد ';
-    component.draft.subject = 'العلوم';
+    // A teacher's subjects are picked in a multi-select
+    component.onTeacherSubjectsChange(['العلوم']);
     component.draft.section = '1/1';
     fixture.detectChanges();
     await fixture.whenStable();
@@ -44,6 +45,7 @@ describe('HonorEntryDialogComponent', () => {
 
     expect(saved?.kind).toBe('TEACHER');
     expect(saved?.name).toBe('طارق عبد الحميد');
+    expect(saved?.subjects).toEqual(['العلوم']);
     expect(saved?.subject).toBe('العلوم');
     expect(saved?.section).toBe('');
   });

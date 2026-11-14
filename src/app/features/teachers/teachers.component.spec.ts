@@ -24,6 +24,9 @@ describe('TeachersComponent', () => {
     fixture.detectChanges();
     http.expectOne(API).flush({ data: { teachers: [teacherDto(makeTeacher('1', 'نشوه يوسف', { classes: ['3/2', '3/3', '3/4'] }))] } });
     http.expectOne(`${API}/class-options`).flush({ data: { classes: ['1/1', '3/2'] } });
+    // Each teacher's periods come from the school timetable
+    http.expectOne(r => r.url.endsWith('/schedules/school'))
+      .flush({ status: 'success', data: { termId: 'T1', totalPeriodsCount: 0, byClass: {}, byTeacher: {}, conflicts: [] } });
     fixture.detectChanges();
   });
 
